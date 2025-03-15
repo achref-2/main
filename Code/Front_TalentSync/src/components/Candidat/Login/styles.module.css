@@ -1,0 +1,74 @@
+/* Centering container with full height */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.login_container {
+    width: 100%;
+    min-height: 100vh;
+    
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  
+    padding: 90px; /* Padding to prevent edge clipping on small screens */
+}
+
+/* Form container with improved spacing and shadow */
+.login_form_container {
+    width: 100%;
+    
+    max-width: 420px; /* Slightly increased max-width for better layout */
+    display: flex;
+    flex-direction: column;
+    border-radius: 12px;
+   /* Ensure contrast with the background */
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1),
+                0px 2px 4px rgba(0, 0, 0, 0.06);
+    padding: 25px;
+    transition: transform 0.2s ease-in-out; /* Smooth effect on hover */
+}
+
+/* Hover effect for a subtle interaction */
+.login_form_container:hover {
+    transform: scale(1.02);
+}
+
+/* Error message styling */
+.error_msg {
+    width: 100%;
+    padding: 12px;
+    margin-top: 10px;
+    font-size: 14px;
+    background-color: #dc3545; /* Bootstrap red for better contrast */
+    color: white;
+    border-radius: 5px;
+    text-align: center;
+    font-weight: bold;
+    height: auto; /* Allow height to adjust */
+    animation: fadeIn 0.3s ease-in-out; /* Smooth appearance effect */
+}
+
+/* Keyframe animation for the error message */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive Design Adjustments */
+@media (max-width: 480px) {
+    .login_form_container {
+        padding: 20px; /* Slightly less padding on smaller screens */
+        max-width: 90%; /* Allow it to shrink for better responsiveness */
+    }
+    
+    .error_msg {
+        font-size: 13px; /* Reduce text size for smaller screens */
+    }
+}
