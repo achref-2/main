@@ -17,7 +17,7 @@ const ResumeForm = ({ onUpdate }) => {
 
   const generateWithAI = async (field) => {
     const prompts = {
-      summary: `Generate a professional summary for someone in ${formData.jobTitle}.`,
+      summary: `Generate a professional summary forr someone in ${formData.jobTitle}.`,
       skills: `List the top 5 skills for a ${formData.jobTitle}.`,
       experience: `Write a brief experience description for a ${formData.jobTitle}.`,
     };
