@@ -9,11 +9,13 @@ module.exports = function (req, res, next) {
 
     try {
         const decoded = jwt.verify(token, process.env.JWTPRIVATEKEY);
-        req.user = decoded;
-        next();
+        req.user = decoded; // Attach user data to request
+        console.log("Decoded token payload:", decoded);
+        console.log("User role:", req.user.role);
+        
+        next(); // Proceed to next middleware
     } catch (error) {
+        console.error("Token verification error:", error.message);
         res.status(401).json({ error: "Invalid token." });
     }
 };
-
-

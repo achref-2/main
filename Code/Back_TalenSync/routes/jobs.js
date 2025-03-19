@@ -40,18 +40,20 @@ router.post("/add-default-job", async (req, res) => {
     await defaultJob.save();
     res.status(201).json({ message: "Default job added successfully", job: defaultJob });
   } catch (error) {
-    console.error("Error adding default job:", error);
+    console.error("Error adding default job:", error.response?.data?.message || error.message);
     res.status(500).json({ message: "Internal Server Error" });
   }
 });
-router.post("/add", auth, checkRole(["recruiter"]), async (req, res) => {
+router.post("/add", auth, async (req, res) => {
   try {
     console.log("Request body:", req.body); // Log the request body
     console.log("Authenticated user:", req.user); // Log the authenticated user
 
-    const { company, role, location, salary, type, description } = req.body;
+    // Get the fields directly from the request body
+    const { title, companyName, location, salary, jobType, description, requirements, skills } = req.body;
 
-    if (!company || !role || !location || !salary || !type || !description) {
+    // Validate all required fields
+    if (!title || !companyName || !location || !salary || !jobType || !description || !requirements) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
@@ -60,14 +62,17 @@ router.post("/add", auth, checkRole(["recruiter"]), async (req, res) => {
       return res.status(401).json({ message: "Unauthorized. Recruiter ID is missing." });
     }
 
+    // Create a new job with the validated data
     const job = new Job({
-      company,
-      role,
+      title,
+      companyName,
       location,
       salary,
-      type,
+      jobType,
       description,
-      recruiter: req.user._id, // Set recruiter to the authenticated user's ID
+      requirements,
+      skills: skills || [],
+      recruiter: req.user._id,
     });
 
     console.log("Job to be saved:", job); // Log the job object before saving
@@ -76,8 +81,8 @@ router.post("/add", auth, checkRole(["recruiter"]), async (req, res) => {
     console.log("Job saved successfully:", job); // Log the saved job
     res.status(201).json(job);
   } catch (error) {
-    console.error("Error creating job:", error); // Log the error
-    res.status(500).json({ message: "Internal Server Error" });
+    console.error("Error creating job:", error);
+    res.status(500).json({ message: "Internal Server Error", error: error.message });
   }
 });
 

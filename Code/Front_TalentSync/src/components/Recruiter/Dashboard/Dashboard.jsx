@@ -191,6 +191,7 @@ const AddJobForm = ({ onClose }) => {
     salary: "",
     type: "",
     description: "",
+    requirements: "", // Add this new field
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
@@ -219,7 +220,8 @@ const AddJobForm = ({ onClose }) => {
       !jobDetails.location ||
       !jobDetails.salary ||
       !jobDetails.type ||
-      !jobDetails.description
+      !jobDetails.description ||
+      !jobDetails.requirements
     ) {
       setErrorMessage("All fields are required.");
       setIsSubmitting(false);
@@ -227,14 +229,43 @@ const AddJobForm = ({ onClose }) => {
     }
   
     try {
-      const token = localStorage.getItem("token"); // Retrieve the JWT token from localStorage
+      const token = localStorage.getItem("token"); 
+      console.log("Token from localStorage:", token);
+      
+      // Format job type to match the exact enum values in the schema
+      // This ensures the correct capitalization - "Full-time" instead of "full-time"
+      let jobTypeFormatted;
+      switch(jobDetails.type) {
+        case "Full Time":
+          jobTypeFormatted = "Full-time";
+          break;
+        case "Part Time":
+          jobTypeFormatted = "Part-time";
+          break;
+        default:
+          // For other cases, just use the value directly if it already matches an enum value
+          jobTypeFormatted = jobDetails.type;
+      }
+      
+      // Map the frontend fields to the backend expected field names
+      const jobData = {
+        title: jobDetails.role,
+        companyName: jobDetails.company,
+        location: jobDetails.location,
+        salary: jobDetails.salary,
+        jobType: jobTypeFormatted, // Use the properly formatted job type with correct case
+        description: jobDetails.description,
+        requirements: jobDetails.requirements,
+        skills: [] // Initialize with empty array as per schema
+      };
+      
       const response = await fetch("http://localhost:5000/api/jobs/add", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`, // Include the token in the Authorization header
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(jobDetails),
+        body: JSON.stringify(jobData),
       });
   
       if (!response.ok) {
@@ -253,6 +284,7 @@ const AddJobForm = ({ onClose }) => {
         salary: "",
         type: "",
         description: "",
+        requirements: "",
       });
       onClose(); // Close the modal after successful submission
     } catch (error) {
@@ -283,6 +315,15 @@ const AddJobForm = ({ onClose }) => {
         className="w-full px-4 py-2 border rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-300"
         required
       />
+       <input
+        type="text"
+        name="requirements"
+        placeholder="Job requirements"
+        value={jobDetails.requirements}
+        onChange={handleChange}
+        className="w-full px-4 py-2 border rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-300"
+        required
+      />
       <input
         type="text"
         name="location"
@@ -309,8 +350,8 @@ const AddJobForm = ({ onClose }) => {
         required
       >
         <option value="">Select Job Type</option>
-        <option value="Full Time">Full Time</option>
-        <option value="Part Time">Part Time</option>
+        <option value="Full-time">Full Time</option>
+        <option value="Part-Time">Part Time</option>
       </select>
       <textarea
         name="description"
