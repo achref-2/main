@@ -16,23 +16,4 @@ module.exports = function (req, res, next) {
     }
 };
 
-// Middleware to check if user has required role
-const checkRole = (roles) => {
-    return (req, res, next) => {
-      if (!req.user) {
-        return res.status(401).json({ error: "Unauthorized" });
-      }
-      
-      if (!roles.includes(req.user.role)) {
-        return res.status(403).json({ error: "Access denied. Insufficient permissions." });
-      }
-      
-      next();
-    };
-  };
-  
-  // Example usage:
-  // app.get("/api/candidates", auth, checkRole(["admin", "recruiter"]), async (req, res) => { ... });
-  // app.get("/api/my-profile", auth, checkRole(["candidate"]), async (req, res) => { ... });
-  
-  module.exports = checkRole;
+

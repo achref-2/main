@@ -4,6 +4,82 @@ const { Job } = require("../models/Job");
 const { Application, validateApplication } = require("../models/Application");
 const auth = require("../middleware/auth");
 const checkRole = require("../middleware/checkRole");
+// Mock job data (replace with database query)
+let jobs = [];
+router.get("/", async (req, res) => {
+  try {
+    console.log("Fetching jobs...");
+    const jobs = await Job.find({ status: "active" }).select("-applicants");
+    console.log("Jobs fetched from database:", jobs); // Debugging
+    res.status(200).json(jobs);
+  } catch (error) {
+    console.error("Error fetching jobs:", error);
+    res.status(500).send({ message: "Internal Server Error" });
+  }
+});
+router.post("/add-default-job", async (req, res) => {
+  try {
+    const existingJob = await Job.findOne({ title: "Default Job" });
+    if (existingJob) {
+      return res.status(200).json({ message: "Default job already exists.", job: existingJob });
+    }
+
+    const defaultJob = new Job({
+      title: "Default Job",
+      description: "This is a default job for testing purposes.",
+      requirements: "Basic programming skills",
+      location: "Remote",
+      salary: "50,000 USD",
+      jobType: "Full-time",
+      skills: ["JavaScript", "Node.js", "React"],
+      recruiter: "64b7f9e2f2a4e2a4b7f9e2f2", // Replace with a valid recruiter ID from your database
+      companyName: "Default Company",
+      status: "active",
+    });
+
+    await defaultJob.save();
+    res.status(201).json({ message: "Default job added successfully", job: defaultJob });
+  } catch (error) {
+    console.error("Error adding default job:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+router.post("/add", auth, checkRole(["recruiter"]), async (req, res) => {
+  try {
+    console.log("Request body:", req.body); // Log the request body
+    console.log("Authenticated user:", req.user); // Log the authenticated user
+
+    const { company, role, location, salary, type, description } = req.body;
+
+    if (!company || !role || !location || !salary || !type || !description) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+
+    // Ensure req.user._id is being passed to the recruiter field
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({ message: "Unauthorized. Recruiter ID is missing." });
+    }
+
+    const job = new Job({
+      company,
+      role,
+      location,
+      salary,
+      type,
+      description,
+      recruiter: req.user._id, // Set recruiter to the authenticated user's ID
+    });
+
+    console.log("Job to be saved:", job); // Log the job object before saving
+
+    await job.save();
+    console.log("Job saved successfully:", job); // Log the saved job
+    res.status(201).json(job);
+  } catch (error) {
+    console.error("Error creating job:", error); // Log the error
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+});
 
 // Get all available jobs
 router.get("/jobs", auth, checkRole(["candidate"]), async (req, res) => {
@@ -96,57 +172,53 @@ router.post("/jobs/:id/apply", auth, checkRole(["candidate"]), async (req, res) 
   try {
     const jobId = req.params.id;
     const { coverLetter } = req.body;
-    
-    // Find the job
+
+    if (!coverLetter) {
+      return res.status(400).send({ message: "Cover letter is required" });
+    }
+
     const job = await Job.findOne({ _id: jobId, status: "active" });
     if (!job) 
       return res.status(404).send({ message: "Job posting not found or not active" });
-    
-    // Check if deadline has passed
+
     if (job.deadline && new Date() > new Date(job.deadline)) {
       return res.status(400).send({ message: "Application deadline has passed" });
     }
-    
-    // Find the candidate associated with logged-in user
+
     const candidate = await Candidate.findOne({ userId: req.user._id });
     if (!candidate) 
       return res.status(404).send({ message: "Candidate profile not found" });
-    
-    // Check if candidate has already applied
+
     const existingApplication = await Application.findOne({ 
       jobId,
       candidateId: candidate._id
     });
-    
+
     if (existingApplication) {
       return res.status(409).send({ message: "You have already applied for this job" });
     }
-    
-    // Get candidate's latest CV
+
     const latestCV = candidate.getLatestCVWithAnalysis();
     if (!latestCV) {
       return res.status(400).send({ message: "Please upload a CV before applying for jobs" });
     }
-    
-    // Create application
+
     const application = new Application({
       jobId,
       candidateId: candidate._id,
       resumeUrl: latestCV.fileUrl,
-      coverLetter: coverLetter || "",
+      coverLetter,
       status: "pending",
       appliedAt: new Date()
     });
-    
-    // Save application
+
     await application.save();
-    
-    // Add candidate to job's applicants list
+
     if (!job.applicants.includes(candidate._id)) {
       job.applicants.push(candidate._id);
       await job.save();
     }
-    
+
     res.status(201).send({ 
       message: "Successfully applied for the job",
       application

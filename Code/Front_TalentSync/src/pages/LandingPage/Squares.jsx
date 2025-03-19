@@ -56,10 +56,10 @@ export const Squares = ({
 
       const gradient = ctx.createRadialGradient(
         canvas.width / 2,
-        canvas.height / 2,
+        canvas.height / 4,
         0,
         canvas.width / 2,
-        canvas.height / 2,
+        canvas.height / 4,
         Math.sqrt(Math.pow(canvas.width, 2) + Math.pow(canvas.height, 2)) / 2
       );
 

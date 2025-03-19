@@ -20,15 +20,16 @@ import { BellIcon } from "@heroicons/react/24/outline";
 import { MenuButton, MenuItem, MenuItems } from "@headlessui/react";
 import Card from "./Desactivate";
 import styled from "styled-components";
+import { useDarkMode } from "../../DarkModeProvider";
 
 const NavLink = ({ href, icon: Icon, children, isActive }) => (
   <a
     href={href}
-    className={`group flex items-center gap-3 px-3 py-2 rounded-lg  transition-all duration-300 ease-in-out z-30
+    className={`group flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-300 ease-in-out z-30
       ${
         isActive
-          ? "bg-zinc-200 text-black dark:bg-zinc-900 dark:text-white transition-all duration-300 ease-in-out z-30"
-          : "text-gray-500 hover:bg-gray-100 hover:text-black dark:text-gray-400 dark:hover:bg-zinc-900  dark:hover:text-white "
+          ? "bg-zinc-200 text-black dark:bg-zinc-900 dark:text-white"
+          : "text-gray-500 hover:bg-zinc-200 hover:text-black dark:text-gray-400 dark:hover:bg-zinc-900 dark:hover:text-white"
       }
     `}
     aria-current={isActive ? "page" : undefined}
@@ -37,7 +38,6 @@ const NavLink = ({ href, icon: Icon, children, isActive }) => (
     <span className="truncate">{children}</span>
   </a>
 );
-
 // Reuse your existing components
 const SearchBar = () => (
   <div className="relative max-w-md w-full transition-all duration-300 ease-in-out z-30">
@@ -53,11 +53,23 @@ const SearchBar = () => (
 );
 
 const UserMenu = () => {
+  const handleSignout = () => {
+    localStorage.removeItem("token");
+    fetch("http://localhost:5000/api/auth/logout", {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer " + localStorage.getItem("token"),
+      },
+    }).then(() => {
+      window.location.href = "/";
+    });
+  };
+
   const menuItems = [
-    { label: "Your Profile", href: "#profile" },
+    { label: "Your History", href: "#profile" },
     { label: "Settings", href: "/Settings" },
-    { label: "Sign out", href: "#signout" },
   ];
+  const { isDarkMode, toggleTheme } = useDarkMode();
 
   return (
     <HeadlessMenu as="div" className="relative">
@@ -69,14 +81,28 @@ const UserMenu = () => {
           alt="User avatar"
         />
       </MenuButton>
-      <MenuItems className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-gray-800 py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+
+      <MenuItems
+        className={`absolute right-0 z-50 mt-2 w-48 rounded-md py-1 border-2 border-dashed  shadow-xl  focus:outline-none 
+     ${
+       isDarkMode
+         ? "bg-zinc-900 text-white bg-opacity-100 border-zinc-400"
+         : "bg-zinc-200 text-black bg-opacity-5  border-zinc-700"
+     } backdrop-blur-sm`}
+      >
         {menuItems.map(({ label, href }) => (
           <MenuItem key={label}>
             {({ active }) => (
               <a
                 href={href}
-                className={`block px-4 py-2 text-sm ${
-                  active ? "bg-gray-700 text-white" : "text-gray-300"
+                className={`block px-4 py-2 text-sm  border-b-2 border-dashed ${
+                  active
+                    ? isDarkMode
+                      ? "bg-zinc-900 text-white " // Dark mode: Different active bg color
+                      : "bg-zinc-300 text-black" // Light mode: Default active color
+                    : isDarkMode
+                    ? "bg-zinc-950 text-zinc-100 border-zinc-400" // Dark mode: Normal state
+                    : "text-black" // Light mode: Normal state
                 }`}
               >
                 {label}
@@ -84,23 +110,67 @@ const UserMenu = () => {
             )}
           </MenuItem>
         ))}
+
+        <MenuItem>
+          {({ active }) => (
+            <button
+              onClick={handleSignout}
+              className={`block w-full text-left px-4 py-2 text-sm border-b-2 border-dashed ${
+                active
+                  ? isDarkMode
+                    ? "bg-zinc-900 text-white " // Dark mode: Different active bg color
+                    : "bg-zinc-300 text-black" // Light mode: Default active color
+                  : isDarkMode
+                  ? "bg-zinc-950 text-zinc-100 border-zinc-400" // Dark mode: Normal state
+                  : "text-black" // Light mode: Normal state
+              }`}
+            >
+              Sign out
+            </button>
+          )}
+        </MenuItem>
+        <MenuItem>
+          {({ active }) => (
+            <button
+              onClick={toggleTheme}
+              className={` w-full text-left px-4 py-2 text-sm flex items-center justify-between ${
+                active
+                  ? isDarkMode
+                    ? "bg-zinc-900 text-white" // Dark mode: Active bg color
+                    : "bg-zinc-300 text-black" // Light mode: Active bg color
+                  : isDarkMode
+                  ? "bg-zinc-950 text-zinc-100 border-zinc-400" // Dark mode: Normal state
+                  : "text-black" // Light mode: Normal state
+              }`}
+              aria-label={
+                isDarkMode ? "Switch to light mode" : "Switch to dark mode"
+              }
+            >
+              <span>Theme</span>
+              {isDarkMode ? (
+                <Sun className="w-5 h-5 text-gray-600 dark:text-zinc-100" />
+              ) : (
+                <Moon className="w-5 h-5 text-gray-900 dark:text-gray-400" />
+              )}
+            </button>
+          )}
+        </MenuItem>
       </MenuItems>
     </HeadlessMenu>
   );
 };
-
 const SettingsComp = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  // Initialize dark mode based on system preference
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    // Check if window is defined (client-side)
-    if (typeof window !== "undefined") {
-      return window.matchMedia("(prefers-color-scheme: dark)").matches;
-    }
-    return false;
-  });
+  const { isDarkMode } = useDarkMode();
 
+  useEffect(() => {
+    // Ensure the dark class is applied globally
+    if (isDarkMode) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, [isDarkMode]);
   const navigation_menu = [
     { name: "Dashboard", href: "/dashboard", icon: Menu, current: false },
     {
@@ -117,46 +187,26 @@ const SettingsComp = () => {
     { name: "Support", href: "/cv", icon: Settings, current: false },
   ];
 
-  // Handle system theme changes
-  useEffect(() => {
-    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-    const handleChange = (e) => setIsDarkMode(e.matches);
-
-    mediaQuery.addEventListener("change", handleChange);
-    return () => mediaQuery.removeEventListener("change", handleChange);
-  }, []);
-
-  // Apply dark mode class
-  useEffect(() => {
-    document.documentElement.classList.toggle("dark", isDarkMode);
-  }, [isDarkMode]);
-
-  // Theme toggle function
-  const toggleTheme = () => {
-    setIsDarkMode((prev) => !prev);
-  };
   const [showDesactivate, setShowDesactivate] = useState(false);
   const handleDesactivate = () => {
     setShowDesactivate(true);
     setTimeout(() => {
-      setShowDesactivate(false); // Hide the warning after a few seconds
-    }, 10000)
+      setShowDesactivate(false);
+    }, 10000);
   };
   const handleCancel = () => {
-    setShowDesactivate(false); 
-    
+    setShowDesactivate(false);
   };
 
   const handleSupp = () => {
     setTimeout(() => {
-      setShowDesactivate(false); 
-    }, 100)
+      setShowDesactivate(false);
+    }, 100);
     alert("Account deleted");
-    
   };
-  
+
   return (
-    <div className={`min-h-screen ${isDarkMode ? "dark" : ""} `}>
+    <div className={`min-h-screen ${isDarkMode ? "dark" : ""} transition-all duration-300 ease-in-out`}>
       <div className="flex h-screen bg-white dark:bg-black transition-all duration-300 ease-in-out z-30">
         {/* Sidebar */}
         <aside
@@ -178,7 +228,7 @@ const SettingsComp = () => {
             </div>
             <button
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="p-2 rounded-lg hover:bg-gray-100  dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
               aria-label={isSidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
             >
               {isSidebarOpen ? (
@@ -189,13 +239,9 @@ const SettingsComp = () => {
             </button>
           </div>
 
-          {/* Navigation - update classes for dark mode */}
-
-          <nav className="flex-1 overflow-y-auto p-4 space-y-8">
-            <div className="space-y-3 ">
-              <div className="text-sm font-medium text-gray-400 px-2 ">
-                MENU
-              </div>
+          <nav className="flex-1 overflow-y-auto p-4  ">
+            <div className="space-y-3">
+              <div className="text-sm font-medium text-gray-400 px-2">MENU</div>
               {navigation_menu.map((item) => (
                 <NavLink
                   key={item.name}
@@ -206,7 +252,7 @@ const SettingsComp = () => {
                   {item.name}
                 </NavLink>
               ))}
-              <div className="text-sm font-medium  text-gray-400 px-2">
+              <div className="text-sm font-medium text-gray-400 px-2">
                 OPTIONS
               </div>
               {navigation_option.map((item) => (
@@ -222,7 +268,6 @@ const SettingsComp = () => {
             </div>
           </nav>
 
-          {/* Premium Card - already has dark mode styling */}
           {isSidebarOpen && (
             <div className="p-3  border-gray-200 dark:border-gray-900 transition-all duration-300 ease-in-out z-30">
               <div className="   rounded-lg p-4 space-y-4 transition-all duration-300 ease-in-out z-30 ">
@@ -254,31 +299,16 @@ const SettingsComp = () => {
             <div className="flex items-center justify-between px-6 py-4">
               <SearchBar />
               <div className="flex items-center gap-4">
-                {/* Notification button */}
                 <button
                   type="button"
                   className="relative p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg
-                    focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                         focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <span className="sr-only">View notifications</span>
                   <BellIcon className="h-6 w-6" />
                   <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white dark:ring-gray-900" />
                 </button>
                 <UserMenu />
-                {/* Dark mode toggle */}
-                <button
-                  onClick={toggleTheme}
-                  className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  aria-label={
-                    isDarkMode ? "Switch to light mode" : "Switch to dark mode"
-                  }
-                >
-                  {isDarkMode ? (
-                    <Sun className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                  ) : (
-                    <Moon className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                  )}
-                </button>
               </div>
             </div>
           </header>
@@ -422,56 +452,59 @@ const SettingsComp = () => {
                           </p>
                         </div>
                         <button
-        className="px-4 py-2 dark:text-red-200 text-red-100 border-2 border-red-500 rounded-lg hover:bg-red-600 bg-red-500 transition-colors"
-        onClick={handleDesactivate}
-      >
-        Delete Account
-      </button>
+                          className="px-4 py-2 dark:text-red-200 text-red-100 border-2 border-red-500 rounded-lg hover:bg-red-600 bg-red-500 transition-colors"
+                          onClick={handleDesactivate}
+                        >
+                          Delete Account
+                        </button>
 
-      {showDesactivate && (
-        <StyledWrapper>
-          <div className="card" role="alert">
-            <div className="group select-none w-[250px] flex flex-col p-4 relative items-center justify-center bg-gray-800 border border-gray-800 shadow-lg rounded-2xl">
-              <div>
-                <div className="text-center p-3 flex-auto justify-center">
-                  <svg
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                    className="group-hover:animate-bounce w-12 h-12 flex items-center text-gray-600 fill-red-500 mx-auto"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      clipRule="evenodd"
-                      d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
-                      fillRule="evenodd"
-                    />
-                  </svg>
-                  <h2 className="text-xl font-bold py-4 text-gray-200">
-                    Are you sure?
-                  </h2>
-                  <p className="font-bold text-sm text-gray-500 px-2">
-                    Do you really want to continue? This process cannot be undone.
-                  </p>
-                </div>
-                <div className="p-2 mt-2 text-center space-x-1 md:block">
-                  <button
-                    className="mb-2 md:mb-0 bg-gray-700 px-5 py-2 text-sm shadow-sm font-medium tracking-wider border-2 border-gray-600 hover:border-gray-700 text-gray-300 rounded-full hover:shadow-lg hover:bg-gray-800 transition ease-in duration-300"
-                    type="button"
-                    onClick={handleCancel} // Close modal on Cancel
-                  >
-                    Cancel
-                  </button>
-                  <button  type="button"
-                    onClick={handleSupp} className="bg-red-500 hover:bg-transparent px-5 ml-4 py-2 text-sm shadow-sm hover:shadow-lg font-medium tracking-wider border-2 border-red-500 hover:border-red-500 text-white hover:text-red-500 rounded-full transition ease-in duration-300">
-                    Confirm
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </StyledWrapper>
-      )}
-    
+                        {showDesactivate && (
+                          <StyledWrapper>
+                            <div className="card" role="alert">
+                              <div className="group select-none w-[250px] flex flex-col p-4 relative items-center justify-center bg-gray-800 border border-gray-800 shadow-lg rounded-2xl">
+                                <div>
+                                  <div className="text-center p-3 flex-auto justify-center">
+                                    <svg
+                                      fill="currentColor"
+                                      viewBox="0 0 20 20"
+                                      className="group-hover:animate-bounce w-12 h-12 flex items-center text-gray-600 fill-red-500 mx-auto"
+                                      xmlns="http://www.w3.org/2000/svg"
+                                    >
+                                      <path
+                                        clipRule="evenodd"
+                                        d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                                        fillRule="evenodd"
+                                      />
+                                    </svg>
+                                    <h2 className="text-xl font-bold py-4 text-gray-200">
+                                      Are you sure?
+                                    </h2>
+                                    <p className="font-bold text-sm text-gray-500 px-2">
+                                      Do you really want to continue? This
+                                      process cannot be undone.
+                                    </p>
+                                  </div>
+                                  <div className="p-2 mt-2 text-center space-x-1 md:block">
+                                    <button
+                                      className="mb-2 md:mb-0 bg-gray-700 px-5 py-2 text-sm shadow-sm font-medium tracking-wider border-2 border-gray-600 hover:border-gray-700 text-gray-300 rounded-full hover:shadow-lg hover:bg-gray-800 transition ease-in duration-300"
+                                      type="button"
+                                      onClick={handleCancel} // Close modal on Cancel
+                                    >
+                                      Cancel
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={handleSupp}
+                                      className="bg-red-500 hover:bg-transparent px-5 ml-4 py-2 text-sm shadow-sm hover:shadow-lg font-medium tracking-wider border-2 border-red-500 hover:border-red-500 text-white hover:text-red-500 rounded-full transition ease-in duration-300"
+                                    >
+                                      Confirm
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </StyledWrapper>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -510,7 +543,7 @@ const StyledWrapper = styled.div`
   .card {
     overflow: hidden;
     position: relative;
-   
+
     text-align: left;
     border-radius: 0.5rem;
     max-width: 290px;

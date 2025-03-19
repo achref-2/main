@@ -76,12 +76,21 @@ const Signup = () => {
 
   return (
     <div>
-      <div >
-        <h1 className="flex justify-center items-center mt-5  text-center text-2xl font-bold tracking-tight ">
-          Sign up Recruiter
-        </h1>
+      <div>
+        <img
+          alt="TalentSync"
+          src="img/Logo2.png"
+          className="mx-auto h-9 w-auto"
+        />
+        <h2 className="my-4 text-center text-2xl font-semibold tracking-tight  ">
+          Sign Up
+        </h2>
+        <p className="text-center  font-thin tracking-tight border-b  border-zinc-300 text-zinc-500 dark:border-zinc-700 pb-7">
+          Ready to ace your next Candidate ?
+        </p>
+     
 
-        <div className=" p-10 mt-1 sm:mx-auto sm:w-full sm:max-w-sm">
+        <div className=" mt-8 sm:mx-auto sm:w-full sm:max-w-sm">
           <form onSubmit={handleSubmit} className="  w-full max-w-md  relative">
             
 

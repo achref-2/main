@@ -146,42 +146,36 @@ const SidebarLayout = () => {
     salary100_150: false,
   });
 
-  const allJobs = [
-    {
-      id: 1,
-      company: "Medium Inc.",
-      role: "Engineering Manager Developer Experience",
-      location: "Remote",
-      salary: "$200k - $250k",
-      type: "Full Time",
-      logo: <Layout className="h-8 w-8 text-purple-500" />,
-      postedDate: "26 August 2023",
-      description: `In the world of AI, infrastructure predictions are exciting the change to better machine learning...`,
-      // ... rest of the job details
-    },
-    {
-      id: 2,
-      company: "GitHub",
-      role: "Remote Shopify Website Tester",
-      location: "Remote",
-      salary: "$90k - $120k",
-      type: "Part Time",
-      logo: <Layout className="h-8 w-8 text-purple-500" />,
-    },
-    {
-      id: 3,
-      company: "Vercel",
-      role: "Software Engineer Backend",
-      location: "Remote",
-      salary: "$150k - $200k",
-      type: "Full Time",
-      logo: <Terminal className="h-8 w-8  text-purple-500" />,
-    },
-  ];
+  const [allJobs, setAllJobs] = useState([]); // State for jobs
+  const [loading, setLoading] = useState(true); // State for loading
+  const [error, setError] = useState(""); // State for error
+
+  // Fetch jobs from the backend
+  useEffect(() => {
+    const fetchJobs = async () => {
+      try {
+        console.log("Fetching jobs...");
+        const response = await fetch("http://localhost:5000/api/jobs");
+        if (!response.ok) {
+          throw new Error("Failed to fetch jobs");
+        }
+        const data = await response.json();
+        console.log("Jobs fetched:", data);
+        setAllJobs(data);
+        setLoading(false);
+      } catch (err) {
+        console.error("Error fetching jobs:", err.message);
+        setError(err.message);
+        setLoading(false);
+      }
+    };
+
+    fetchJobs();
+  }, []);
 
   const handleFilterChange = (filterName) => {
     setFilters((prev) => ({
-      ...prev,
+ ...prev,
       [filterName]: !prev[filterName],
     }));
   };
@@ -436,53 +430,35 @@ const SidebarLayout = () => {
                         </div>
                         <div className="p-4">
                           <div className="space-y-4">
-                            {filteredJobs.map((job) => (
-                              <div
-                                key={job.id}
-                                className="flex items-center p-4 border rounded-lg hover:shadow-md transition-shadow cursor-pointer"
-                                onClick={() => setSelectedJob(job)}>
-                                <div className="mr-4 p-2 bg-gray-100 rounded-lg">
-                                  {job.logo}
-                                </div>
-                                <div className="flex-grow">
-                                  <h3 className="font-medium">{job.company}</h3>
-                                  <p className="text-lg font-semibold">
-                                    {job.role}
-                                  </p>
-                                  <div className="flex gap-2 text-sm text-gray-500">
-                                    <span>{job.location}</span>
-                                    <span>•</span>
-                                    <span>{job.salary}</span>
-                                    <span>•</span>
-                                    <span>{job.type}</span>
+                            {loading ? (
+                              <p>Loading jobs...</p>
+                            ) : error ? (
+                              <p className="text-red-500">{error}</p>
+                            ) : (
+                              filteredJobs.map((job) => (
+                                <div
+                                  key={job.id}
+                                  className="flex items-center p-4 border rounded-lg hover:shadow-md transition-shadow cursor-pointer"
+                                  onClick={() => setSelectedJob(job)}>
+                                  <div className="mr-4 p-2 bg-gray-100 rounded-lg">
+                                    {job.logo}
+                                  </div>
+                                  <div className="flex-grow">
+                                    <h3 className="font-medium">{job.company}</h3>
+                                    <p className="text-lg font-semibold">
+                                      {job.role}
+                                    </p>
+                                    <div className="flex gap-2 text-sm text-gray-500">
+                                      <span>{job.location}</span>
+                                      <span>•</span>
+                                      <span>{job.salary}</span>
+                                      <span>•</span>
+                                      <span>{job.type}</span>
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
-                            ))}
-                              {filteredJobs.map((job) => (
-                              <div
-                                key={job.id}
-                                className="flex items-center p-4 border rounded-lg hover:shadow-md transition-shadow cursor-pointer"
-                                onClick={() => setSelectedJob(job)}
-                              >
-                                <div className="mr-4 p-2 bg-gray-100 rounded-lg">
-                                  {job.logo}
-                                </div>
-                                <div className="flex-grow">
-                                  <h3 className="font-medium">{job.company}</h3>
-                                  <p className="text-lg font-semibold">
-                                    {job.role}
-                                  </p>
-                                  <div className="flex gap-2 text-sm text-gray-500">
-                                    <span>{job.location}</span>
-                                    <span>•</span>
-                                    <span>{job.salary}</span>
-                                    <span>•</span>
-                                    <span>{job.type}</span>
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
+                              ))
+                            )}
                           </div>
                         </div>
                       </div>

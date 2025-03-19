@@ -9,6 +9,7 @@ const userRoutes = require("./routes/users");
 const authRoutes = require("./routes/auth");
 const candidateRoutes = require("./routes/candidates");
 const recruitersRoutes = require("./routes/recruiters");
+const jobsRouter = require("./routes/jobs");
 const Joi = require("joi");
 const { User } = require("./models/user"); // Fixed import for User model
 const { Candidate, validateAnalysis, validateCV } = require("./models/candidate"); // Proper import with named exports
@@ -20,6 +21,7 @@ const pdfParse = require('pdf-parse');
 const { OAuth2Client } = require("google-auth-library");
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const jwt = require("jsonwebtoken"); // Added missing jwt import
+
 
 const fs = require('fs');
 const path = require('path');
@@ -78,6 +80,8 @@ app.use("/api/auth", authRoutes);
 app.use("/api/candidates", candidateRoutes);
 app.use("/api/recruiters", recruitersRoutes);
 app.use("/api/admin", adminRoutes);  
+app.use("/api/jobs", jobsRouter);
+
 
 app.use('/api', cvRoutes);
 app.post('/api/upload-cv', auth, upload.single('cv'), async (req, res) => {

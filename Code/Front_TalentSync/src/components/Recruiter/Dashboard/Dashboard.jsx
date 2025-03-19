@@ -38,7 +38,25 @@ const NavLink = ({ href, icon: Icon, children, isActive }) => (
 );
 
 
-
+const Modal = ({ isOpen, onClose, children }) => (
+  <Dialog open={isOpen} onClose={onClose} className="relative z-50">
+    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" aria-hidden="true" />
+    <div className="fixed inset-0 flex items-center justify-center p-4">
+      <Dialog.Panel className="w-full max-w-3xl rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 shadow-xl">
+        <div className="flex justify-end p-4">
+          <button
+            onClick={onClose}
+            className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+            aria-label="Close modal"
+          >
+            <X className="w-5 h-5 text-gray-500" />
+          </button>
+        </div>
+        <div className="p-6">{children}</div>
+      </Dialog.Panel>
+    </div>
+  </Dialog>
+);
 // Reuse your existing components
 const SearchBar = () => (
   <div className="relative max-w-md w-full transition-all duration-300 ease-in-out z-30">
@@ -165,35 +183,162 @@ const UserMenu = () => {
     </HeadlessMenu>
   );
 };
+const AddJobForm = ({ onClose }) => {
+  const [jobDetails, setJobDetails] = useState({
+    company: "",
+    role: "",
+    location: "",
+    salary: "",
+    type: "",
+    description: "",
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 
-const Modal = ({ isOpen, onClose, children }) => {
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setJobDetails((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setSuccessMessage("");
+    setErrorMessage("");
+  
+    console.log("Submitting job details:", jobDetails); // Debugging
+  
+    // Validate job details before sending the request
+    if (
+      !jobDetails.company ||
+      !jobDetails.role ||
+      !jobDetails.location ||
+      !jobDetails.salary ||
+      !jobDetails.type ||
+      !jobDetails.description
+    ) {
+      setErrorMessage("All fields are required.");
+      setIsSubmitting(false);
+      return;
+    }
+  
+    try {
+      const token = localStorage.getItem("token"); // Retrieve the JWT token from localStorage
+      const response = await fetch("http://localhost:5000/api/jobs/add", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`, // Include the token in the Authorization header
+        },
+        body: JSON.stringify(jobDetails),
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to add job");
+      }
+  
+      const data = await response.json();
+      console.log("Job added successfully:", data); // Debugging
+  
+      setSuccessMessage("Job added successfully!");
+      setJobDetails({
+        company: "",
+        role: "",
+        location: "",
+        salary: "",
+        type: "",
+        description: "",
+      });
+      onClose(); // Close the modal after successful submission
+    } catch (error) {
+      console.error("Error adding job:", error.message); // Debugging
+      setErrorMessage(error.message || "An unexpected error occurred.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
   return (
-    <Dialog
-      open={isOpen}
-      onClose={onClose}
-      className="relative z-50"
-    >
-      {/* Backdrop */}
-      <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" aria-hidden="true" />
-
-      {/* Full-screen container for centering */}
-      <div className="fixed inset-0 flex items-center justify-center p-4">
-        <Dialog.Panel className="w-full max-w-3xl rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 shadow-xl">
-          <div className="flex justify-end p-4">
-            <button
-              onClick={onClose}
-              className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
-              aria-label="Close modal"
-            >
-              <X className="w-5 h-5 text-gray-500" />
-            </button>
-          </div>
-          <div className="p-6">
-            {children}
-          </div>
-        </Dialog.Panel>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <h2 className="text-xl font-bold text-gray-900 dark:text-white">Add a New Job</h2>
+      <input
+        type="text"
+        name="company"
+        placeholder="Company Name"
+        value={jobDetails.company}
+        onChange={handleChange}
+        className="w-full px-4 py-2 border rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-300"
+        required
+      />
+      <input
+        type="text"
+        name="role"
+        placeholder="Job Role"
+        value={jobDetails.role}
+        onChange={handleChange}
+        className="w-full px-4 py-2 border rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-300"
+        required
+      />
+      <input
+        type="text"
+        name="location"
+        placeholder="Location"
+        value={jobDetails.location}
+        onChange={handleChange}
+        className="w-full px-4 py-2 border rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-300"
+        required
+      />
+      <input
+        type="text"
+        name="salary"
+        placeholder="Salary"
+        value={jobDetails.salary}
+        onChange={handleChange}
+        className="w-full px-4 py-2 border rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-300"
+        required
+      />
+      <select
+        name="type"
+        value={jobDetails.type}
+        onChange={handleChange}
+        className="w-full px-4 py-2 border rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-300"
+        required
+      >
+        <option value="">Select Job Type</option>
+        <option value="Full Time">Full Time</option>
+        <option value="Part Time">Part Time</option>
+      </select>
+      <textarea
+        name="description"
+        placeholder="Job Description"
+        value={jobDetails.description}
+        onChange={handleChange}
+        className="w-full px-4 py-2 border rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-300"
+        required
+      />
+      <div className="flex justify-end space-x-4">
+        <button
+          type="button"
+          onClick={onClose}
+          className="px-4 py-2 bg-gray-300 dark:bg-gray-700 text-gray-900 dark:text-gray-300 rounded-lg"
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+        >
+          {isSubmitting ? "Submitting..." : "Add Job"}
+        </button>
       </div>
-    </Dialog>
+      {successMessage && <p className="text-green-500">{successMessage}</p>}
+      {errorMessage && <p className="text-red-500">{errorMessage}</p>}
+    </form>
   );
 };
 const SidebarLayout = () => {
@@ -334,34 +479,30 @@ const SidebarLayout = () => {
           </header>
 
           {/* Main Content Area */}
-          <div className="p-8 ">
-            <div className="flex flex-col items-center justify-center min-h-[60vh]  border-2 border-dashed rounded-lg  text-center  border-gray-400 dark:border-gray-800">
-              <div className="p-4 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full mb-6">
-                <PenTool className="w-12 h-12 text-white" />
-              </div>
+          <div className="p-8">
+            <div className="flex flex-col items-center justify-center min-h-[60vh] border-2 border-dashed rounded-lg text-center border-gray-400 dark:border-gray-800">
+              <PenTool className="w-12 h-12 text-blue-500 mb-6" />
               <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
                 Add a new Job
               </h1>
               <p className="text-gray-600 dark:text-gray-400 mb-8 max-w-md text-lg">
-              Add a new Job
+                Add a new job to your list and start recruiting today.
               </p>
-
               <button
-            className="group flex items-center gap-2 bg-blue-600 text-white px-8 py-3 rounded-full
-              hover:bg-blue-700 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 
-              focus:ring-offset-2 focus:ring-offset-gray-900"
-            onClick={() => setIsModalOpen(true)}
-          >
-             Add Job
-          </button>
-
-          <Modal
-            isOpen={isModalOpen}
-            onClose={() => setIsModalOpen(false)}
-          >
-            <CV />
-          </Modal>
-
+                className="bg-blue-600 text-white px-8 py-3 rounded-full hover:bg-blue-700"
+                onClick={() => {
+                  console.log("Opening modal..."); // Debugging
+                  setIsModalOpen(true);
+                }}
+              >
+                Add Job
+              </button>
+              <Modal isOpen={isModalOpen} onClose={() => {
+                console.log("Closing modal..."); // Debugging
+                setIsModalOpen(false);
+              }}>
+                <AddJobForm onClose={() => setIsModalOpen(false)} />
+              </Modal>
             </div>
           </div>
         </main>

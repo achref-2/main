@@ -4,6 +4,8 @@ import { Menu, History, PlusSquare, Settings, CreditCard, PenTool, Moon, Sun,
 import { Menu as HeadlessMenu } from '@headlessui/react';
 import { BellIcon } from '@heroicons/react/24/outline';
 import { MenuButton, MenuItem, MenuItems } from '@headlessui/react';
+import { useDarkMode } from "../../DarkModeProvider"; // Import the hook
+
 const NavLink = ({ href, icon: Icon, children, isActive }) => (
   <a
     href={href}
@@ -162,13 +164,24 @@ fetch('/api/cv-history', {
 
 // Reuse your existing components
 
-
 const UserMenu = () => {
+  const handleSignout = () => {
+    localStorage.removeItem("token");
+    fetch("http://localhost:5000/api/auth/logout", {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer " + localStorage.getItem("token"),
+      },
+    }).then(() => {
+      window.location.href = "/";
+    });
+  };
+
   const menuItems = [
-    { label: 'Your Profile', href: '#profile' },
-    { label: 'Settings', href: '/Settings' },
-    { label: 'Sign out', href: '#signout' }
+    { label: "Your History", href: "#profile" },
+    { label: "Settings", href: "/Settings" },
   ];
+  const { isDarkMode, toggleTheme } = useDarkMode();
 
   return (
     <HeadlessMenu as="div" className="relative">
@@ -180,14 +193,28 @@ const UserMenu = () => {
           alt="User avatar"
         />
       </MenuButton>
-      <MenuItems className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-gray-800 py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+
+      <MenuItems
+        className={`absolute right-0 z-50 mt-2 w-48 rounded-md py-1 border-2 border-dashed  shadow-xl  focus:outline-none 
+     ${
+       isDarkMode
+         ? "bg-zinc-900 text-white bg-opacity-100 border-zinc-400"
+         : "bg-zinc-200 text-black bg-opacity-5  border-zinc-700"
+     } backdrop-blur-sm`}
+      >
         {menuItems.map(({ label, href }) => (
           <MenuItem key={label}>
             {({ active }) => (
               <a
                 href={href}
-                className={`block px-4 py-2 text-sm ${
-                  active ? 'bg-gray-700 text-white' : 'text-gray-300'
+                className={`block px-4 py-2 text-sm  border-b-2 border-dashed ${
+                  active
+                    ? isDarkMode
+                      ? "bg-zinc-900 text-white " // Dark mode: Different active bg color
+                      : "bg-zinc-300 text-black" // Light mode: Default active color
+                    : isDarkMode
+                    ? "bg-zinc-950 text-zinc-100 border-zinc-400" // Dark mode: Normal state
+                    : "text-black" // Light mode: Normal state
                 }`}
               >
                 {label}
@@ -195,6 +222,51 @@ const UserMenu = () => {
             )}
           </MenuItem>
         ))}
+
+        <MenuItem>
+          {({ active }) => (
+            <button
+              onClick={handleSignout}
+              className={`block w-full text-left px-4 py-2 text-sm border-b-2 border-dashed ${
+                active
+                  ? isDarkMode
+                    ? "bg-zinc-900 text-white " // Dark mode: Different active bg color
+                    : "bg-zinc-300 text-black" // Light mode: Default active color
+                  : isDarkMode
+                  ? "bg-zinc-950 text-zinc-100 border-zinc-400" // Dark mode: Normal state
+                  : "text-black" // Light mode: Normal state
+              }`}
+            >
+              Sign out
+            </button>
+          )}
+        </MenuItem>
+        <MenuItem>
+          {({ active }) => (
+            <button
+              onClick={toggleTheme}
+              className={` w-full text-left px-4 py-2 text-sm flex items-center justify-between ${
+                active
+                  ? isDarkMode
+                    ? "bg-zinc-900 text-white" // Dark mode: Active bg color
+                    : "bg-zinc-300 text-black" // Light mode: Active bg color
+                  : isDarkMode
+                  ? "bg-zinc-950 text-zinc-100 border-zinc-400" // Dark mode: Normal state
+                  : "text-black" // Light mode: Normal state
+              }`}
+              aria-label={
+                isDarkMode ? "Switch to light mode" : "Switch to dark mode"
+              }
+            >
+              <span>Theme</span>
+              {isDarkMode ? (
+                <Sun className="w-5 h-5 text-gray-600 dark:text-zinc-100" />
+              ) : (
+                <Moon className="w-5 h-5 text-gray-900 dark:text-gray-400" />
+              )}
+            </button>
+          )}
+        </MenuItem>
       </MenuItems>
     </HeadlessMenu>
   );
@@ -202,12 +274,7 @@ const UserMenu = () => {
 
 const SidebarLayout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return window.matchMedia('(prefers-color-scheme: dark)').matches;
-    }
-    return false;
-  });
+  const { isDarkMode, toggleTheme } = useDarkMode(); // Use the hook
 
   const navigation_menu = [
     { name: 'Dashboard', href: '/dashboard', icon: Menu, current: false},
@@ -222,20 +289,13 @@ const SidebarLayout = () => {
   ];
 
   useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleChange = (e) => setIsDarkMode(e.matches);
-    
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
-  }, []);
-
-  useEffect(() => {
-    document.documentElement.classList.toggle('dark', isDarkMode);
+    // Ensure the dark class is applied globally
+    if (isDarkMode) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
   }, [isDarkMode]);
-
-  const toggleTheme = () => {
-    setIsDarkMode(prev => !prev);
-  };
 
   return (
     <div className={`min-h-screen ${isDarkMode ? 'dark' : ''}`}>
@@ -334,16 +394,7 @@ const SidebarLayout = () => {
                   <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white dark:ring-gray-900" />
                 </button>
                 <UserMenu />
-                <button
-                  onClick={toggleTheme}
-                  className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  {isDarkMode ? (
-                    <Sun className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                  ) : (
-                    <Moon className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                  )}
-                </button>
+                
               </div>
             </div>
           </header>

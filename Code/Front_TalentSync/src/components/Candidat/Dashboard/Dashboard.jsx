@@ -205,7 +205,6 @@ const Modal = ({ isOpen, onClose, children }) => {
 const SidebarLayout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  // Initialize dark mode based on system preference
  
 
   const navigation_menu = [
@@ -313,14 +312,11 @@ const SidebarLayout = () => {
                     )}
         </aside>
 
-        {/* Main Content */}
         <main className="flex-1 overflow-auto bg-white dark:bg-black transition-all duration-300 ease-in-out z-30">
-          {/* Header */}
           <header className="bg-white dark:bg-black  border-gray-200 dark:border-gray-800 sticky top-0 transition-all duration-300 ease-in-out z-30">
             <div className="flex items-center justify-between px-6 py-4">
               <SearchBar />
               <div className="flex items-center gap-4">
-                {/* Notification button */}
                 <button
                   type="button"
                   className="relative p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg
@@ -340,25 +336,38 @@ const SidebarLayout = () => {
           </header>
 
           <div className="p-8 ">
-            <div className="flex flex-col items-center justify-center min-h-[60vh]  border-2 border-dashed rounded-lg  text-center  border-gray-400 dark:border-gray-800">
-              <div className="p-4 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full mb-6">
-                <PenTool className="w-12 h-12 text-white" />
-              </div>
-              <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
-                Create Your Professional CV
-              </h1>
+
+          <div className="flex flex-col items-center justify-center min-h-[60vh] border-2 border-dashed rounded-xl text-center border-gray-300 dark:border-gray-700 p-8 shadow-lg bg-white dark:bg-gray-900 transition-all duration-300 transform hover:scale-60 hover:shadow-2xl">
+            <div className="p-4 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full mb-6 animate-pulse">
+              <PenTool className="w-12 h-12 text-white" />
+            </div>
+              <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4 animate-fade-in">
+              Create Your Professional CV
+            </h1>
               <p className="text-gray-600 dark:text-gray-400 mb-8 max-w-md text-lg">
                 Build a stunning CV that highlights your skills and experience
                 with our intuitive builder.
               </p>
 
               <button
-            className="group flex items-center gap-2 bg-blue-600 text-white px-8 py-3 rounded-full
-              hover:bg-blue-700 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 
-              focus:ring-offset-2 focus:ring-offset-gray-900"
-            onClick={() => setIsModalOpen(true)}
-          >
+              className="group flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-3 rounded-full hover:bg-gradient-to-r hover:from-blue-700 hover:to-purple-700 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900 animate-slide-up"
+              onClick={() => setIsModalOpen(true)}
+            >
             Create New CV
+            <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5 ml-2 transition-transform transform group-hover:translate-x-1"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M17 8l4 4m0 0l-4 4m4-4H3"
+                />
+              </svg>
           </button>
 
           <Modal

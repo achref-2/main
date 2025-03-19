@@ -41,7 +41,7 @@ const jobSchema = new mongoose.Schema({
   }],
   deadline: {
     type: Date,
-    default: () => new Date(+new Date() + 30*24*60*60*1000) // 30 days from now
+    default: () => new Date(+new Date() + 30 * 24 * 60 * 60 * 1000) // 30 days from now
   },
   recruiter: {
     type: mongoose.Schema.Types.ObjectId,
@@ -87,10 +87,11 @@ const validateJob = (job) => {
     deadline: Joi.date().min('now'),
     status: Joi.string().valid('active', 'closed', 'draft')
   });
-  
+
   return schema.validate(job);
 };
 
-const Job = mongoose.model('Job', jobSchema);
+// Check if the model already exists before defining it
+const Job = mongoose.models.Job || mongoose.model('Job', jobSchema);
 
 module.exports = { Job, validateJob };
