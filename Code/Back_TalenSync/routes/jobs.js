@@ -44,49 +44,7 @@ router.post("/add-default-job", async (req, res) => {
     res.status(500).json({ message: "Internal Server Error" });
   }
 });
-router.post("/add", auth, async (req, res) => {
-  try {
-    console.log("Request body:", req.body); // Log the request body
-    console.log("Authenticated user:", req.user); // Log the authenticated user
 
-    // Get the fields directly from the request body
-    const { title, companyName, location, salary, jobType, description, requirements, skills } = req.body;
-
-    // Validate all required fields
-    if (!title || !companyName || !location || !salary || !jobType || !description || !requirements) {
-      return res.status(400).json({ message: "All fields are required" });
-    }
-
-    // Ensure req.user._id is being passed to the recruiter field
-    if (!req.user || !req.user._id) {
-      return res.status(401).json({ message: "Unauthorized. Recruiter ID is missing." });
-    }
-
-    // Create a new job with the validated data
-    const job = new Job({
-      title,
-      companyName,
-      location,
-      salary,
-      jobType,
-      description,
-      requirements,
-      skills: skills || [],
-      recruiter: req.user._id,
-    });
-
-    console.log("Job to be saved:", job); // Log the job object before saving
-
-    await job.save();
-    console.log("Job saved successfully:", job); // Log the saved job
-    res.status(201).json(job);
-  } catch (error) {
-    console.error("Error creating job:", error);
-    res.status(500).json({ message: "Internal Server Error", error: error.message });
-  }
-});
-
-// Get all available jobs
 router.get("/jobs", auth, checkRole(["candidate"]), async (req, res) => {
   try {
     // Get query parameters

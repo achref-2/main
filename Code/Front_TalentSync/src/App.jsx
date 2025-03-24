@@ -15,6 +15,7 @@ import CVBuilder from "./old/create";
 import History from "./components/Candidat/Dashboard/History";
 import LandingPage from "./pages/LandingPage/LandingPage";
 import JobList from "./components/Recruiter/JOB_LIST/Job";
+import Jobcandidate from "./components/Candidat/JOB_LIST/Job";
 import Settings from "./components/Candidat/Dashboard/Settings";
 import Pricing from "./pages/Pricing/Prising";
 import { DarkModeProvider } from "./components/DarkModeProvider";
@@ -25,6 +26,7 @@ import RecruiterHistory from "./components/Recruiter/Dashboard/History";
 import RecruiterJobList from "./components/Recruiter/JOB_LIST/Job";
 import RecruiterSettings from "./components/Recruiter/Dashboard/Settings";
 import JOBBuilder from "./components/Recruiter/JOB_LIST/JobBuilder";
+
 export const scroll = new SmoothScroll('a[href*="#"]', {
   speed: 1000,
   speedAsDuration: true,
@@ -41,6 +43,7 @@ const App = () => {
           <Routes>
             <Route path="/Pricing" element={<Pricing />} />
             <Route path="/JobList" element={<JobList />} />
+            <Route path="/Jobcandidate" element={<Jobcandidate />} />
             <Route path="/Settings" element={<Settings />} />
             <Route path="/" element={<LandingPage />} />
             <Route path="/cv" element={<CVcomponent />} />

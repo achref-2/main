@@ -46,27 +46,23 @@ const handleSubmit = async (credentials) => {
 
   const navigate = useNavigate(); // Hook for navigation
 
-  const handleLoginSuccess = async (response) => {
+const handleLoginSuccess = async (response) => {
     try {
-     
-     
-      const res = await axios.post("http://localhost:5000/api/auth/google", {
-        token: response.credential,
-        role: "recruiter" // Set role for Google login
-      });
+        const res = await axios.post("http://localhost:5000/api/recruiters/auth/google", {
+            token: response.credential // Only send the token
+        });
 
-     
-      localStorage.setItem("token", res.data.token);
+        localStorage.setItem("token", res.data.token);
 
-      // Redirect to /dashboard
-      navigate("/dashboard/recuiter");
+        // Redirect to /dashboard
+        navigate("/dashboard/recuiter");
     } catch (error) {
-      console.error("Google Auth Error:", error);
+        console.error("Google Auth Error:", error);
     }
-  };
-  const handleLoginError = () => {
-    console.error("Google Login Failed");
-  };
+};
+const handleLoginError = () => {
+  console.error("Google Login Failed");
+};
 
   const { isDarkMode } = useDarkMode();
 

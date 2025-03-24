@@ -199,7 +199,7 @@ app.post("/api/auth/google", async (req, res) => {
         if (role === "candidate") {
           const candidate = new Candidate({ userId: user._id });
           await candidate.save();
-        } else if (role === "recruite") {
+        } else if (role === "recruiter") {
           const recruiter = new Recruiter({ userId: user._id });
           await recruiter.save();
         }

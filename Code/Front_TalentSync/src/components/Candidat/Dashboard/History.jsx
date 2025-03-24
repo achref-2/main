@@ -5,23 +5,27 @@ import { Menu as HeadlessMenu } from '@headlessui/react';
 import { BellIcon } from '@heroicons/react/24/outline';
 import { MenuButton, MenuItem, MenuItems } from '@headlessui/react';
 import { useDarkMode } from "../../DarkModeProvider"; // Import the hook
+import { Link } from 'react-router-dom';
 
 const NavLink = ({ href, icon: Icon, children, isActive }) => (
-  <a
-    href={href}
-    className={`group flex items-center gap-3 px-3 py-2 rounded-lg  transition-all duration-300 ease-in-out z-30
+  <Link
+    to={href}
+    className={`group flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-300 ease-in-out z-30
       ${
         isActive
           ? "bg-zinc-200 text-black dark:bg-zinc-900 dark:text-white transition-all duration-300 ease-in-out z-30"
-          : "text-gray-500 hover:bg-zinc-200 hover:text-black dark:text-gray-400 dark:hover:bg-zinc-900  dark:hover:text-white "
+          : "text-gray-500 hover:bg-zinc-200 hover:text-black dark:text-gray-400 dark:hover:bg-zinc-900 dark:hover:text-white"
       }
     `}
     aria-current={isActive ? "page" : undefined}
   >
     <Icon className="w-5 h-5 flex-shrink-0" />
     <span className="truncate">{children}</span>
-  </a>
+  </Link>
 );
+
+
+
 
 
 
@@ -301,31 +305,36 @@ const SidebarLayout = () => {
     <div className={`min-h-screen ${isDarkMode ? 'dark' : ''}`}>
       <div className="flex h-screen bg-white dark:bg-black">
         {/* Sidebar */}
-        <aside
-          className={`fixed md:relative flex flex-col h-full bg-white dark:bg-black  border-gray-200 dark:border-gray-800
-            transition-all duration-300 ease-in-out z-30
-            ${isSidebarOpen ? 'w-64' : 'w-20'}`}
-        >
-          <div className="flex items-center justify-between p-5  border-gray-200 dark:border-gray-800">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg">
-                <Menu className="w-5 h-5 text-gray-600 dark:text-white transition-all duration-300 ease-in-out z-3 " />
-              </div>
-              {isSidebarOpen && (
-                <span className="text-lg font-semibold text-gray-900 dark:text-white transition-all duration-300 ease-in-out z-">TalentSync</span>
-              )}
-            </div>
-            <button
-              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              {isSidebarOpen ? (
-                <ChevronLeft className="w-5 h-5 text-gray-400" />
-              ) : (
-                <ChevronRight className="w-5 h-5 text-gray-400" />
-              )}
-            </button>
-          </div>
+       <aside
+                 className={`fixed md:relative flex flex-col h-full bg-white dark:bg-black  border-gray-200 dark:border-gray-800
+                   transition-all duration-300 ease-in-out z-30
+                   ${isSidebarOpen ? "w-64" : "w-20"}`}
+               >
+                 {/* Rest of the sidebar content remains the same, but update classes to use dark: prefix */}
+                 <div className="flex items-center justify-between p-4  border-gray-200 dark:border-gray-800">
+                   <div className="flex items-center gap-3">
+                     <div className="p-2  rounded-lg">
+                                      <Menu className="w-5 h-5 text-gray-600 dark:text-white transition-all duration-300 ease-in-out z-30 " />
+                      
+                     </div>
+                     {isSidebarOpen && (
+                       <span className="text-lg font-semibold text-gray-900 dark:text-white transition-all duration-300 ease-in-out z-30">
+                       TalentSync
+                     </span>
+                     )}
+                   </div>
+                   <button
+                     onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                     className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                     aria-label={isSidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+                   >
+                     {isSidebarOpen ? (
+                       <ChevronLeft className="w-5 h-5 text-gray-400" />
+                     ) : (
+                       <ChevronRight className="w-5 h-5 text-gray-400" />
+                     )}
+                   </button>
+                 </div>
 
           <nav className="flex-1 overflow-y-auto p-4 space-y-8">
             <div className="space-y-3">

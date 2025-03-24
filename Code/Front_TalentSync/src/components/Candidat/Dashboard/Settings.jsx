@@ -21,14 +21,15 @@ import { MenuButton, MenuItem, MenuItems } from "@headlessui/react";
 import Card from "./Desactivate";
 import styled from "styled-components";
 import { useDarkMode } from "../../DarkModeProvider";
+import { Link } from 'react-router-dom';
 
 const NavLink = ({ href, icon: Icon, children, isActive }) => (
-  <a
-    href={href}
+  <Link
+    to={href}
     className={`group flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-300 ease-in-out z-30
       ${
         isActive
-          ? "bg-zinc-200 text-black dark:bg-zinc-900 dark:text-white"
+          ? "bg-zinc-200 text-black dark:bg-zinc-900 dark:text-white transition-all duration-300 ease-in-out z-30"
           : "text-gray-500 hover:bg-zinc-200 hover:text-black dark:text-gray-400 dark:hover:bg-zinc-900 dark:hover:text-white"
       }
     `}
@@ -36,9 +37,10 @@ const NavLink = ({ href, icon: Icon, children, isActive }) => (
   >
     <Icon className="w-5 h-5 flex-shrink-0" />
     <span className="truncate">{children}</span>
-  </a>
+  </Link>
 );
-// Reuse your existing components
+
+
 const SearchBar = () => (
   <div className="relative max-w-md w-full transition-all duration-300 ease-in-out z-30">
     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-black dark:text-zinc-300 transition-all duration-300 ease-in-out z-30" />

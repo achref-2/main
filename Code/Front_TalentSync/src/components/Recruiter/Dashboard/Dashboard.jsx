@@ -19,23 +19,26 @@ import { BellIcon } from "@heroicons/react/24/outline";
 import { MenuButton, MenuItem, MenuItems } from "@headlessui/react";
 import CV from "./CV/CvCreation";
 import { useDarkMode } from '../../DarkModeProvider';
+import { Link } from 'react-router-dom';
 
 const NavLink = ({ href, icon: Icon, children, isActive }) => (
-  <a
-    href={href}
-    className={`group flex items-center gap-3 px-3 py-2 rounded-lg  transition-all duration-300 ease-in-out z-30
+  <Link
+    to={href}
+    className={`group flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-300 ease-in-out z-30
       ${
         isActive
           ? "bg-zinc-200 text-black dark:bg-zinc-900 dark:text-white transition-all duration-300 ease-in-out z-30"
-          : "text-gray-500 hover:bg-zinc-200 hover:text-black dark:text-gray-400 dark:hover:bg-zinc-900  dark:hover:text-white "
+          : "text-gray-500 hover:bg-zinc-200 hover:text-black dark:text-gray-400 dark:hover:bg-zinc-900 dark:hover:text-white"
       }
     `}
     aria-current={isActive ? "page" : undefined}
   >
     <Icon className="w-5 h-5 flex-shrink-0" />
     <span className="truncate">{children}</span>
-  </a>
+  </Link>
 );
+
+
 
 
 const Modal = ({ isOpen, onClose, children }) => (
@@ -57,7 +60,6 @@ const Modal = ({ isOpen, onClose, children }) => (
     </div>
   </Dialog>
 );
-// Reuse your existing components
 const SearchBar = () => (
   <div className="relative max-w-md w-full transition-all duration-300 ease-in-out z-30">
     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-black dark:text-zinc-300 transition-all duration-300 ease-in-out z-30" />
@@ -185,13 +187,15 @@ const UserMenu = () => {
 };
 const AddJobForm = ({ onClose }) => {
   const [jobDetails, setJobDetails] = useState({
-    company: "",
+    companyName: "",
     role: "",
     location: "",
     salary: "",
     type: "",
     description: "",
-    requirements: "", // Add this new field
+    requirements: "",
+    skills: [], // Added skills array
+    deadline: "" // Added deadline field
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
@@ -205,17 +209,26 @@ const AddJobForm = ({ onClose }) => {
     }));
   };
 
+  // For handling skills input (comma separated)
+  const handleSkillsChange = (e) => {
+    const skillsArray = e.target.value.split(',').map(skill => skill.trim()).filter(skill => skill);
+    setJobDetails(prev => ({
+      ...prev,
+      skills: skillsArray
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
     setSuccessMessage("");
     setErrorMessage("");
   
-    console.log("Submitting job details:", jobDetails); // Debugging
+    console.log("Submitting job details:", jobDetails);
   
-    // Validate job details before sending the request
+    // Validate required fields
     if (
-      !jobDetails.company ||
+      !jobDetails.companyName ||
       !jobDetails.role ||
       !jobDetails.location ||
       !jobDetails.salary ||
@@ -229,37 +242,24 @@ const AddJobForm = ({ onClose }) => {
     }
   
     try {
-      const token = localStorage.getItem("token"); 
+      const token = localStorage.getItem("token");
       console.log("Token from localStorage:", token);
       
-      // Format job type to match the exact enum values in the schema
-      // This ensures the correct capitalization - "Full-time" instead of "full-time"
-      let jobTypeFormatted;
-      switch(jobDetails.type) {
-        case "Full Time":
-          jobTypeFormatted = "Full-time";
-          break;
-        case "Part Time":
-          jobTypeFormatted = "Part-time";
-          break;
-        default:
-          // For other cases, just use the value directly if it already matches an enum value
-          jobTypeFormatted = jobDetails.type;
-      }
-      
-      // Map the frontend fields to the backend expected field names
+      // Format the job data according to backend API expectations
       const jobData = {
         title: jobDetails.role,
-        companyName: jobDetails.company,
+        companyName: jobDetails.companyName,
         location: jobDetails.location,
         salary: jobDetails.salary,
-        jobType: jobTypeFormatted, // Use the properly formatted job type with correct case
+        jobType: jobDetails.type,
         description: jobDetails.description,
         requirements: jobDetails.requirements,
-        skills: [] // Initialize with empty array as per schema
+        skills: jobDetails.skills,
+        deadline: jobDetails.deadline || undefined
       };
       
-      const response = await fetch("http://localhost:5000/api/jobs/add", {
+      // Updated endpoint to match backend route
+      const response = await fetch("http://localhost:5000/api/recruiters/jobs", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -268,99 +268,198 @@ const AddJobForm = ({ onClose }) => {
         body: JSON.stringify(jobData),
       });
   
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to add job");
+      // Check the content type of the response
+      const contentType = response.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        // It's a JSON response
+        const data = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(data.message || "Failed to add job");
+        }
+        
+        console.log("Job added successfully:", data);
+        setSuccessMessage("Job added successfully!");
+        
+        // Reset form
+        setJobDetails({
+          companyName: "",
+          role: "",
+          location: "",
+          salary: "",
+          type: "",
+          description: "",
+          requirements: "",
+          skills: [],
+          deadline: ""
+        });
+        
+        onClose();
+      } else {
+        // It's not a JSON response (probably HTML)
+        const textResponse = await response.text();
+        console.error("Non-JSON response:", textResponse);
+        
+        // Check if it's an authentication issue
+        if (response.status === 401) {
+          throw new Error("Authentication failed. Please log in again.");
+        } else {
+          throw new Error(`Server error: ${response.status} ${response.statusText}`);
+        }
       }
-  
-      const data = await response.json();
-      console.log("Job added successfully:", data); // Debugging
-  
-      setSuccessMessage("Job added successfully!");
-      setJobDetails({
-        company: "",
-        role: "",
-        location: "",
-        salary: "",
-        type: "",
-        description: "",
-        requirements: "",
-      });
-      onClose(); // Close the modal after successful submission
     } catch (error) {
-      console.error("Error adding job:", error.message); // Debugging
+      console.error("Error adding job:", error.message);
       setErrorMessage(error.message || "An unexpected error occurred.");
+      
+      // If it's an authentication error, redirect to login
+      if (error.message.includes("Authentication failed")) {
+        // Optional: redirect to login page
+        // window.location.href = '/login';
+      }
     } finally {
       setIsSubmitting(false);
     }
   };
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <h2 className="text-xl font-bold text-gray-900 dark:text-white">Add a New Job</h2>
-      <input
-        type="text"
-        name="company"
-        placeholder="Company Name"
-        value={jobDetails.company}
-        onChange={handleChange}
-        className="w-full px-4 py-2 border rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-300"
-        required
-      />
-      <input
-        type="text"
-        name="role"
-        placeholder="Job Role"
-        value={jobDetails.role}
-        onChange={handleChange}
-        className="w-full px-4 py-2 border rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-300"
-        required
-      />
-       <input
-        type="text"
-        name="requirements"
-        placeholder="Job requirements"
-        value={jobDetails.requirements}
-        onChange={handleChange}
-        className="w-full px-4 py-2 border rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-300"
-        required
-      />
-      <input
-        type="text"
-        name="location"
-        placeholder="Location"
-        value={jobDetails.location}
-        onChange={handleChange}
-        className="w-full px-4 py-2 border rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-300"
-        required
-      />
-      <input
-        type="text"
-        name="salary"
-        placeholder="Salary"
-        value={jobDetails.salary}
-        onChange={handleChange}
-        className="w-full px-4 py-2 border rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-300"
-        required
-      />
-      <select
-        name="type"
-        value={jobDetails.type}
-        onChange={handleChange}
-        className="w-full px-4 py-2 border rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-300"
-        required
-      >
-        <option value="">Select Job Type</option>
-        <option value="Full-time">Full Time</option>
-        <option value="Part-Time">Part Time</option>
-      </select>
-      <textarea
-        name="description"
-        placeholder="Job Description"
-        value={jobDetails.description}
-        onChange={handleChange}
-        className="w-full px-4 py-2 border rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-300"
-        required
-      />
+      {/* Company Name */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          Company Name
+        </label>
+        <input
+          type="text"
+          name="companyName"
+          value={jobDetails.companyName}
+          onChange={handleChange}
+          className="w-full px-4 py-2 border rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-300"
+          required
+        />
+      </div>
+      
+      {/* Job Title */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          Job Title
+        </label>
+        <input
+          type="text"
+          name="role"
+          value={jobDetails.role}
+          onChange={handleChange}
+          className="w-full px-4 py-2 border rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-300"
+          required
+        />
+      </div>
+      
+      {/* Job Requirements */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          Job Requirements
+        </label>
+        <textarea
+          name="requirements"
+          value={jobDetails.requirements}
+          onChange={handleChange}
+          className="w-full px-4 py-2 border rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-300"
+          required
+        />
+      </div>
+      
+      {/* Location */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          Location
+        </label>
+        <input
+          type="text"
+          name="location"
+          value={jobDetails.location}
+          onChange={handleChange}
+          className="w-full px-4 py-2 border rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-300"
+          required
+        />
+      </div>
+      
+      {/* Salary */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          Salary
+        </label>
+        <input
+          type="text"
+          name="salary"
+          value={jobDetails.salary}
+          onChange={handleChange}
+          className="w-full px-4 py-2 border rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-300"
+          required
+        />
+      </div>
+      
+      {/* Job Type */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          Job Type
+        </label>
+        <select
+          name="type"
+          value={jobDetails.type}
+          onChange={handleChange}
+          className="w-full px-4 py-2 border rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-300"
+          required
+        >
+          <option value="">Select Job Type</option>
+          <option value="Full-time">Full-time</option>
+          <option value="Part-time">Part-time</option>
+          <option value="Contract">Contract</option>
+          <option value="Remote">Remote</option>
+        </select>
+      </div>
+      
+      {/* Skills */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          Skills (comma separated)
+        </label>
+        <input
+          type="text"
+          value={jobDetails.skills.join(', ')}
+          onChange={handleSkillsChange}
+          className="w-full px-4 py-2 border rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-300"
+        />
+      </div>
+      
+      {/* Deadline */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          Application Deadline
+        </label>
+        <input
+          type="date"
+          name="deadline"
+          value={jobDetails.deadline}
+          onChange={handleChange}
+          className="w-full px-4 py-2 border rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-300"
+        />
+      </div>
+      
+      {/* Job Description */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          Job Description
+        </label>
+        <textarea
+          name="description"
+          value={jobDetails.description}
+          onChange={handleChange}
+          className="w-full px-4 py-2 border rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-300 h-32"
+          required
+        />
+      </div>
+      
+      {/* Form Actions */}
       <div className="flex justify-end space-x-4">
         <button
           type="button"
@@ -372,20 +471,29 @@ const AddJobForm = ({ onClose }) => {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
         >
           {isSubmitting ? "Submitting..." : "Add Job"}
         </button>
       </div>
-      {successMessage && <p className="text-green-500">{successMessage}</p>}
-      {errorMessage && <p className="text-red-500">{errorMessage}</p>}
+      
+      {/* Status Messages */}
+      {successMessage && (
+        <div className="p-3 bg-green-100 border border-green-400 text-green-700 rounded">
+          {successMessage}
+        </div>
+      )}
+      {errorMessage && (
+        <div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+          {errorMessage}
+        </div>
+      )}
     </form>
   );
 };
 const SidebarLayout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  // Initialize dark mode based on system preference
  
 
   const navigation_menu = [
@@ -472,7 +580,6 @@ const SidebarLayout = () => {
             </div>
           </nav>
 
-          {/* Premium Card - already has dark mode styling */}
            {isSidebarOpen && (
                       <div className="p-3  border-gray-200 dark:border-gray-900 transition-all duration-300 ease-in-out z-30">
                         <div className="   rounded-lg p-4 space-y-4 transition-all duration-300 ease-in-out z-30 ">
@@ -496,14 +603,11 @@ const SidebarLayout = () => {
                     )}
         </aside>
 
-        {/* Main Content */}
         <main className="flex-1 overflow-auto bg-white dark:bg-black transition-all duration-300 ease-in-out z-30">
-          {/* Header */}
           <header className="bg-white dark:bg-black  border-gray-200 dark:border-gray-800 sticky top-0 transition-all duration-300 ease-in-out z-30">
             <div className="flex items-center justify-between px-6 py-4">
               <SearchBar />
               <div className="flex items-center gap-4">
-                {/* Notification button */}
                 <button
                   type="button"
                   className="relative p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg
@@ -519,32 +623,49 @@ const SidebarLayout = () => {
             </div>
           </header>
 
-          {/* Main Content Area */}
           <div className="p-8">
-            <div className="flex flex-col items-center justify-center min-h-[60vh] border-2 border-dashed rounded-lg text-center border-gray-400 dark:border-gray-800">
-              <PenTool className="w-12 h-12 text-blue-500 mb-6" />
-              <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
-                Add a new Job
-              </h1>
-              <p className="text-gray-600 dark:text-gray-400 mb-8 max-w-md text-lg">
-                Add a new job to your list and start recruiting today.
-              </p>
-              <button
-                className="bg-blue-600 text-white px-8 py-3 rounded-full hover:bg-blue-700"
-                onClick={() => {
-                  console.log("Opening modal..."); // Debugging
-                  setIsModalOpen(true);
-                }}
-              >
-                Add Job
-              </button>
-              <Modal isOpen={isModalOpen} onClose={() => {
-                console.log("Closing modal..."); // Debugging
-                setIsModalOpen(false);
-              }}>
-                <AddJobForm onClose={() => setIsModalOpen(false)} />
-              </Modal>
-            </div>
+          <div className="flex flex-col items-center justify-center min-h-[60vh] border-2 border-dashed rounded-xl text-center border-gray-300 dark:border-gray-700 p-8 shadow-lg bg-white dark:bg-zinc-950 transition-all duration-300 transform hover:scale-60 hover:shadow-2xl">
+                     <div className="p-4 bg-gradient-to-br from-blue-900 to-purple-900 rounded-full mb-6 animate-pulse">
+                       <PenTool className="w-12 h-12 text-white" />
+                     </div>
+                       <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4 animate-fade-in">
+                       Add a new Job
+                     </h1>
+                       <p className="text-gray-600 dark:text-gray-400 mb-8 max-w-md text-lg">
+                       Add a new job to your list and start recruiting today.
+
+                       </p>
+         
+                       <button
+                       className="group flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-3 rounded-full hover:bg-gradient-to-r hover:from-blue-700 hover:to-purple-700 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900 animate-slide-up"
+                       onClick={() => setIsModalOpen(true)}
+                     >
+                     Add New Job
+                     <svg
+                         xmlns="http://www.w3.org/2000/svg"
+                         className="h-5 w-5 ml-2 transition-transform transform group-hover:translate-x-1"
+                         fill="none"
+                         viewBox="0 0 24 24"
+                         stroke="currentColor"
+                       >
+                         <path
+                           strokeLinecap="round"
+                           strokeLinejoin="round"
+                           strokeWidth={2}
+                           d="M17 8l4 4m0 0l-4 4m4-4H3"
+                         />
+                       </svg>
+                   </button>
+         
+                   <Modal
+                     isOpen={isModalOpen}
+                     onClose={() => setIsModalOpen(false)}
+                    
+                   >
+                     <CV />
+                   </Modal>
+         
+                     </div>
           </div>
         </main>
       </div>

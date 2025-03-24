@@ -57,7 +57,7 @@ const Signup = () => {
     try {
       console.log("Google Token:", response.credential);
 
-      const res = await axios.post("http://localhost:5000/api/auth/google", {
+      const res = await axios.post("http://localhost:5000/api/recruiters/auth/google", {
         token: response.credential,
       });
 

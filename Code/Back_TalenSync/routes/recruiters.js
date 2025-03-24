@@ -7,7 +7,8 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const auth = require("../middleware/auth");
 const checkRole = require("../middleware/checkRole");
-
+const { OAuth2Client } = require("google-auth-library");
+const { validateJob } = require("../models/Job"); // Adjust the path based on your project structure
 router.post("/signup", async (req, res) => {
     try {
       const { error: userError } = validateUser(req.body);
@@ -110,9 +111,68 @@ router.post("/login", async (req, res) => {
     res.status(500).send({ message: "Internal Server Error" });
   }
 });
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+router.post("/auth/google", async (req, res) => {
+    try {
+        const { token } = req.body;
+
+        if (!token) {
+            return res.status(400).json({ error: "Google token is required" });
+        }
+
+        const ticket = await client.verifyIdToken({
+            idToken: token,
+            audience: process.env.GOOGLE_CLIENT_ID,
+        });
+
+        const { email, given_name, family_name, sub } = ticket.getPayload();
+        let user = await User.findOne({ email });
+
+        if (!user) {
+            user = new User({
+                firstName: given_name,
+                lastName: family_name,
+                email,
+                password: Math.random().toString(36).slice(-10),
+                role: "recruiter",
+                googleId: sub,
+            });
+            await user.save();
+
+            const recruiter = new Recruiter({ userId: user._id });
+            await recruiter.save();
+        } else if (user.role !== "recruiter") {
+            return res.status(403).json({ error: "Only recruiters can log in here." });
+        }
+
+        const jwtToken = jwt.sign(
+            { _id: user._id, role: user.role, email: user.email },
+            process.env.JWTPRIVATEKEY,
+            { expiresIn: "7d" }
+        );
+
+        const recruiterData = await Recruiter.findOne({ userId: user._id });
+
+        res.json({
+            token: jwtToken,
+            user: {
+                _id: user._id,
+                email: user.email,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                role: user.role,
+            },
+            recruiterData,
+        });
+    } catch (error) {
+        console.error("Google authentication error:", error);
+        res.status(400).json({ error: "Invalid Google token" });
+    }
+});
 
 // Get recruiter profile
-router.get("/profile", auth, checkRole(["recruiter"]), async (req, res) => {
+router.get("/profile", auth, checkRole(["candidate"]), async (req, res) => {
   try {
     const recruiter = await Recruiter.findOne({ userId: req.user._id })
       .populate('userId', '-password')
@@ -147,7 +207,6 @@ router.put("/profile", auth, checkRole(["recruiter"]), async (req, res) => {
     res.status(500).send({ message: "Internal Server Error" });
   }
 });
-
 // Create a new job posting
 router.post("/jobs", auth, checkRole(["recruiter"]), async (req, res) => {
   try {
@@ -159,8 +218,16 @@ router.post("/jobs", auth, checkRole(["recruiter"]), async (req, res) => {
       salary, 
       jobType, 
       deadline,
-      skills
+      skills,
+      experienceLevel,
+      educationRequirements,
+      industry,
+      featured
     } = req.body;
+    
+    // Validate job data
+    const { error } = validateJob(req.body);
+    if (error) return res.status(400).send({ message: error.details[0].message });
     
     // Find the recruiter
     const recruiter = await Recruiter.findOne({ userId: req.user._id });
@@ -180,7 +247,13 @@ router.post("/jobs", auth, checkRole(["recruiter"]), async (req, res) => {
       recruiter: recruiter._id,
       companyName: recruiter.companyName,
       applicants: [],
-      status: "active"
+      applicationCount: 0,
+      viewCount: 0,
+      status: "active",
+      experienceLevel: experienceLevel || "Mid-level",
+      educationRequirements: educationRequirements || "",
+      industry: industry || "",
+      featured: featured || false
     });
     
     // Save the job
@@ -207,12 +280,30 @@ router.get("/jobs", auth, checkRole(["recruiter"]), async (req, res) => {
     if (!recruiter) 
       return res.status(404).send({ message: "Recruiter profile not found" });
     
-    const jobs = await Job.find({ _id: { $in: recruiter.jobPostings } })
+    // Get query params for filtering
+    const { status, sort, jobType, experienceLevel } = req.query;
+    
+    // Build query
+    let query = { _id: { $in: recruiter.jobPostings } };
+    if (status) query.status = status;
+    if (jobType) query.jobType = jobType;
+    if (experienceLevel) query.experienceLevel = experienceLevel;
+    
+    // Build sort options
+    let sortOption = {};
+    if (sort === 'newest') sortOption = { createdAt: -1 };
+    else if (sort === 'deadline') sortOption = { deadline: 1 };
+    else if (sort === 'applications') sortOption = { applicationCount: -1 };
+    else sortOption = { createdAt: -1 }; // Default sort
+    
+    const jobs = await Job.find(query)
+                         .sort(sortOption)
                          .populate('applicants', '-password');
     
     res.status(200).send(jobs);
   } catch (error) {
     console.error("Error fetching jobs:", error);
+    console.log("Request body:", req.body);
     res.status(500).send({ message: "Internal Server Error" });
   }
 });
@@ -221,6 +312,7 @@ router.get("/jobs", auth, checkRole(["recruiter"]), async (req, res) => {
 router.get("/jobs/:id", auth, checkRole(["recruiter"]), async (req, res) => {
   try {
     const recruiter = await Recruiter.findOne({ userId: req.user._id });
+
     if (!recruiter) 
       return res.status(404).send({ message: "Recruiter profile not found" });
     
@@ -237,6 +329,16 @@ router.get("/jobs/:id", auth, checkRole(["recruiter"]), async (req, res) => {
     
     if (!job) 
       return res.status(404).send({ message: "Job posting not found" });
+    
+    // Increment view count
+    job.viewCount += 1;
+    await job.save();
+    
+    // Check if job is expired and update status if needed
+    if (job.deadline < new Date() && job.status === 'active') {
+      job.status = 'closed';
+      await job.save();
+    }
     
     res.status(200).send(job);
   } catch (error) {
@@ -259,6 +361,10 @@ router.put("/jobs/:id", auth, checkRole(["recruiter"]), async (req, res) => {
       return res.status(403).send({ message: "Access denied. This job posting doesn't belong to you." });
     }
     
+    // Validate the update data
+    const { error } = validateJob(req.body);
+    if (error) return res.status(400).send({ message: error.details[0].message });
+    
     const { 
       title, 
       description, 
@@ -268,7 +374,11 @@ router.put("/jobs/:id", auth, checkRole(["recruiter"]), async (req, res) => {
       jobType, 
       deadline,
       skills,
-      status
+      status,
+      experienceLevel,
+      educationRequirements,
+      industry,
+      featured
     } = req.body;
     
     // Find and update the job
@@ -286,6 +396,10 @@ router.put("/jobs/:id", auth, checkRole(["recruiter"]), async (req, res) => {
     if (deadline !== undefined) job.deadline = new Date(deadline);
     if (skills !== undefined) job.skills = skills;
     if (status !== undefined) job.status = status;
+    if (experienceLevel !== undefined) job.experienceLevel = experienceLevel;
+    if (educationRequirements !== undefined) job.educationRequirements = educationRequirements;
+    if (industry !== undefined) job.industry = industry;
+    if (featured !== undefined) job.featured = featured;
     
     // Save updated job
     const updatedJob = await job.save();
@@ -304,8 +418,90 @@ router.put("/jobs/:id", auth, checkRole(["recruiter"]), async (req, res) => {
 router.delete("/jobs/:id", auth, checkRole(["recruiter"]), async (req, res) => {
   try {
     const jobId = req.params.id;
+    console.log("Job ID from request params:", jobId); // Debug log
+    console.log("User ID from token:", req.user._id); // Debug log
     const recruiter = await Recruiter.findOne({ userId: req.user._id });
+    if (!recruiter) {
+      console.error("Recruiter profile not found for user:", req.user._id);
+      return res.status(404).send({ message: "Recruiter profile not found" });
+    }
+
+    console.log("Recruiter jobPostings:", recruiter.jobPostings);
+
+    if (!recruiter.jobPostings.map(id => id.toString()).includes(jobId)) {
+      console.error("Access denied. Job does not belong to recruiter:", jobId);
+      return res.status(403).send({ message: "Access denied. This job posting doesn't belong to you." });
+    }
+
+    const job = await Job.findById(jobId);
+    if (!job) {
+      console.error("Job not found in database:", jobId);
+      return res.status(404).send({ message: "Job posting not found" });
+    }
+
+    await Job.findByIdAndDelete(jobId);
+    recruiter.jobPostings = recruiter.jobPostings.filter(id => id.toString() !== jobId);
+    await recruiter.save();
+
+    res.status(200).send({ message: "Job posting deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting job posting:", error);
+    res.status(500).send({ message: "Internal Server Error" });
+  }
+});
+
+// Get job posting statistics
+router.get("/jobs/stats/overview", auth, checkRole(["recruiter"]), async (req, res) => {
+  try {
+    const recruiter = await Recruiter.findOne({ userId: req.user._id });
+    if (!recruiter) 
+      return res.status(404).send({ message: "Recruiter profile not found" });
     
+    // Get all jobs by this recruiter
+    const jobs = await Job.find({ recruiter: recruiter._id });
+    
+    // Calculate statistics
+    const stats = {
+      totalJobs: jobs.length,
+      activeJobs: jobs.filter(job => job.status === 'active').length,
+      closedJobs: jobs.filter(job => job.status === 'closed').length,
+      draftJobs: jobs.filter(job => job.status === 'draft').length,
+      totalApplications: jobs.reduce((sum, job) => sum + job.applicationCount, 0),
+      totalViews: jobs.reduce((sum, job) => sum + job.viewCount, 0),
+      featuredJobs: jobs.filter(job => job.featured).length,
+      jobsByType: {},
+      jobsByExperience: {},
+      mostViewedJobs: jobs.sort((a, b) => b.viewCount - a.viewCount).slice(0, 5),
+      mostAppliedJobs: jobs.sort((a, b) => b.applicationCount - a.applicationCount).slice(0, 5)
+    };
+    
+    // Count jobs by type
+    jobs.forEach(job => {
+      if (!stats.jobsByType[job.jobType]) stats.jobsByType[job.jobType] = 0;
+      stats.jobsByType[job.jobType]++;
+      
+      if (!stats.jobsByExperience[job.experienceLevel]) stats.jobsByExperience[job.experienceLevel] = 0;
+      stats.jobsByExperience[job.experienceLevel]++;
+    });
+    
+    res.status(200).send(stats);
+  } catch (error) {
+    console.error("Error fetching job statistics:", error);
+    res.status(500).send({ message: "Internal Server Error" });
+  }
+});
+
+// Feature/unfeature a job
+router.patch("/jobs/:id/feature", auth, checkRole(["recruiter"]), async (req, res) => {
+  try {
+    const jobId = req.params.id;
+    const { featured } = req.body;
+    
+    if (featured === undefined) {
+      return res.status(400).send({ message: "Featured status is required" });
+    }
+    
+    const recruiter = await Recruiter.findOne({ userId: req.user._id });
     if (!recruiter) 
       return res.status(404).send({ message: "Recruiter profile not found" });
     
@@ -314,20 +510,24 @@ router.delete("/jobs/:id", auth, checkRole(["recruiter"]), async (req, res) => {
       return res.status(403).send({ message: "Access denied. This job posting doesn't belong to you." });
     }
     
-    // Delete the job
-    await Job.findByIdAndDelete(jobId);
+    // Update the featured status
+    const job = await Job.findByIdAndUpdate(
+      jobId,
+      { featured: featured },
+      { new: true }
+    );
     
-    // Remove job from recruiter's job postings
-    recruiter.jobPostings = recruiter.jobPostings.filter(id => id.toString() !== jobId);
-    await recruiter.save();
+    if (!job) return res.status(404).send({ message: "Job posting not found" });
     
-    res.status(200).send({ message: "Job posting deleted successfully" });
+    res.status(200).send({ 
+      message: featured ? "Job has been featured" : "Job has been unfeatured",
+      job: job
+    });
   } catch (error) {
-    console.error("Error deleting job posting:", error);
+    console.error("Error updating job featured status:", error);
     res.status(500).send({ message: "Internal Server Error" });
   }
 });
-
 // Get all candidates who applied to a specific job
 router.get("/jobs/:id/applicants", auth, checkRole(["recruiter"]), async (req, res) => {
   try {

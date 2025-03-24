@@ -346,23 +346,7 @@ router.get(
   })
 );
 
-// Get candidate by ID - For recruiters and admins
-router.get(
-  "/:id",
-  auth,
-  checkRole(["admin", "recruiter"]),
-  asyncHandler(async (req, res) => {
-    const candidate = await Candidate.findById(req.params.id).populate(
-      "userId",
-      "-password"
-    );
 
-    if (!candidate)
-      return res.status(404).json({ message: "Candidate not found" });
-
-    res.status(200).json(candidate);
-  })
-);
 
 // Analyze CV with job description
 router.post(

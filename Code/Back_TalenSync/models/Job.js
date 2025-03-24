@@ -50,7 +50,7 @@ const jobSchema = new mongoose.Schema({
   },
   companyName: {
     type: String,
-    required: true,
+    required: false,
     trim: true
   },
   applicants: [{
@@ -62,17 +62,70 @@ const jobSchema = new mongoose.Schema({
     enum: ['active', 'closed', 'draft'],
     default: 'active'
   },
+  applicationCount: {
+    type: Number,
+    default: 0
+  },
+  viewCount: {
+    type: Number,
+    default: 0
+  },
+  featured: {
+    type: Boolean,
+    default: false
+  },
+  experienceLevel: {
+    type: String,
+    enum: ['Entry-level', 'Mid-level', 'Senior', 'Executive'],
+    default: 'Mid-level'
+  },
+  educationRequirements: {
+    type: String,
+    trim: true
+  },
+  industry: {
+    type: String,
+    trim: true
+  },
   createdAt: {
+    type: Date,
+    default: Date.now
+  },
+  updatedAt: {
     type: Date,
     default: Date.now
   }
 }, { timestamps: true });
 
 // Create indexes for better performance
-jobSchema.index({ title: 'text', description: 'text', skills: 'text' });
+jobSchema.index({ title: 'text', description: 'text', skills: 'text', location: 'text' });
 jobSchema.index({ status: 1 });
 jobSchema.index({ recruiter: 1 });
 jobSchema.index({ deadline: 1 });
+jobSchema.index({ featured: 1 });
+jobSchema.index({ createdAt: -1 });
+jobSchema.index({ experienceLevel: 1 });
+jobSchema.index({ jobType: 1 });
+
+// Add a virtual field to check if job is expired
+jobSchema.virtual('isExpired').get(function() {
+  return this.deadline < new Date();
+});
+
+// Pre-save middleware to update timestamps
+jobSchema.pre('save', function(next) {
+  this.updatedAt = new Date();
+  next();
+});
+
+// Method to update application count when a candidate applies
+jobSchema.methods.addApplicant = function(candidateId) {
+  if (!this.applicants.includes(candidateId)) {
+    this.applicants.push(candidateId);
+    this.applicationCount = this.applicants.length;
+  }
+  return this.save();
+};
 
 // Validation function for creating/updating jobs
 const validateJob = (job) => {
@@ -85,7 +138,12 @@ const validateJob = (job) => {
     jobType: Joi.string().valid('Full-time', 'Part-time', 'Contract', 'Internship', 'Remote').required(),
     skills: Joi.array().items(Joi.string()),
     deadline: Joi.date().min('now'),
-    status: Joi.string().valid('active', 'closed', 'draft')
+    status: Joi.string().valid('active', 'closed', 'draft'),
+    experienceLevel: Joi.string().valid('Entry-level', 'Mid-level', 'Senior', 'Executive'),
+    educationRequirements: Joi.string(),
+    industry: Joi.string(),
+    featured: Joi.boolean(),
+    companyName: Joi.string().required() // Add companyName to the schema
   });
 
   return schema.validate(job);
