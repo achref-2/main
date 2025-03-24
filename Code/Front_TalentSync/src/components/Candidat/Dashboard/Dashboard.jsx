@@ -12,6 +12,7 @@ import {
   ChevronRight,
   Search,
   X,
+  Upload, FileText,
 } from "lucide-react";
 import { Dialog } from "@headlessui/react";
 import { Menu as HeadlessMenu } from "@headlessui/react";
@@ -174,38 +175,173 @@ const UserMenu = () => {
     </HeadlessMenu>
   );
 };
-
 const Modal = ({ isOpen, onClose, children }) => {
+  const { isDarkMode } = useDarkMode(); // Access the current theme state
+
   return (
     <Dialog
       open={isOpen}
       onClose={onClose}
       className="relative z-50"
     >
-      <div className="fixed inset-0 bg-black/1 backdrop-blur-sm" aria-hidden="true" />
-        <div className="fixed inset-0 flex items-center justify-center ">
-        <Dialog.Panel className="w-full max-w-2xl h-4/5 rounded-lg bg-white dark:bg-zinc-950 border border-gray-200 dark:border-gray-700 shadow-xl">
-          <div className="flex justify-end ">
+      {/* Backdrop */}
+      <div
+        className={`fixed inset-0 ${
+          isDarkMode ? "bg-black/80" : "bg-black/50"
+        } backdrop-blur-sm transition-all duration-300`}
+        aria-hidden="true"
+      />
+      <div className="fixed inset-0 flex items-center justify-center">
+        {/* Modal Panel */}
+        <Dialog.Panel
+          className={`w-full max-w-2xl  rounded-lg ${
+            isDarkMode
+              ? "bg-zinc-900 text-gray-100 border-zinc-700"
+              : "bg-white text-gray-900 border-gray-200"
+          } border shadow-xl transition-all duration-300`}
+        >
+          {/* Close Button */}
+          <div className="flex justify-end p-2">
             <button
               onClick={onClose}
-              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+              className={`p-2 rounded-lg ${
+                isDarkMode
+                  ? "hover:bg-zinc-800 text-gray-400"
+                  : "hover:bg-gray-100 text-gray-500"
+              } transition-all duration-300`}
               aria-label="Close modal"
             >
-              <X className="w-5 h-5 text-gray-500" />
+              <X className="w-5 h-5" />
             </button>
           </div>
-          <div className="p-0">
-            {children}
+          {/* Modal Content */}
+          <div className="p-4">{children}</div>
+        </Dialog.Panel>
+      </div>
+    </Dialog>
+  );
+};
+const UploadModal = ({ isOpen, onClose, children }) => {
+  const { isDarkMode } = useDarkMode(); // Access the current theme state
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleFileUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+  
+    const formData = new FormData();
+    formData.append('file', file); // Ensure the field name is 'file'
+  
+    try {
+      setIsLoading(true);
+      const response = await fetch('http://localhost:5000/api/TakeInfo', {
+        method: 'POST',
+        body: formData,
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+  
+      if (!response.ok) {
+        throw new Error('Failed to upload file');
+      }
+  
+      // Redirect to /history after successful upload
+      window.location.href = '/history';
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      alert('Failed to upload file. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <Dialog
+      open={isOpen}
+      onClose={onClose}
+      className="relative z-50"
+    >
+      {/* Backdrop */}
+      <div
+        className={`fixed inset-0  ${
+          isDarkMode ? "bg-black/80" : "bg-black/50"
+        } backdrop-blur-sm transition-all duration-300`}
+        aria-hidden="true"
+      />
+      <div className="fixed inset-0 flex items-center justify-center ">
+        {/* Modal Panel */}
+        <Dialog.Panel
+          className={`w-full max-w-lg p-6 rounded-lg border-2 border-dashed ${
+            isDarkMode
+              ? " bg-zinc-900 backdrop-blur-sm  text-gray-100 border-zinc-500"
+              : " bg-zinc-300 text-zinc-900 border-zinc-500"
+          } shadow-xl transition-all duration-300`}
+        >
+          {/* Close Button */}
+          <div className="flex justify-end">
+            <button
+              onClick={onClose}
+              className={`p-2 rounded-lg ${
+                isDarkMode
+                  ? "hover:bg-zinc-800 text-gray-400"
+                  : "hover:bg-gray-100 text-gray-500"
+              } transition-all duration-300`}
+              aria-label="Close modal"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          {/* Modal Content */}
+          <div className="p-4">
+            {children || (
+              <div className="relative">
+                <input
+                  type="file"
+                  accept=".pdf"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                  id="cv-upload"
+                  required
+                />
+                <label
+                  htmlFor="cv-upload"
+                  className={`flex items-center justify-center w-full p-4 border-2 border-dashed ${
+                    isDarkMode
+                      ? "border-zinc-700 hover:border-blue-500 text-gray-100"
+                      : "border-gray-300 hover:border-blue-500 text-gray-900"
+                  } rounded-lg transition-colors cursor-pointer group`}
+                >
+                  <div className="text-center">
+                    <Upload
+                      className={`mx-auto h-12 w-12 ${
+                        isDarkMode
+                          ? "text-gray-100 group-hover:text-blue-500"
+                          : "text-gray-900 group-hover:text-blue-500"
+                      }`}
+                    />
+                    <span
+                      className={`mt-2 block text-sm font-medium ${
+                        isDarkMode ? "text-gray-100" : "text-gray-900"
+                      }`}
+                    >
+                      {isLoading ? 'Uploading...' : 'Drop your PDF here, or click to browse'}
+                    </span>
+                  </div>
+                </label>
+              </div>
+            )}
           </div>
         </Dialog.Panel>
       </div>
-
     </Dialog>
   );
 };
 const SidebarLayout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isModalTwoOpen, setIsModalTwoOpen] = useState(false);
+
  
 
   const navigation_menu = [
@@ -225,6 +361,7 @@ const SidebarLayout = () => {
   ];
 
   const { isDarkMode, toggleTheme } = useDarkMode();
+  const [file, setFile] = useState(null);
 
 
   return (
@@ -356,7 +493,7 @@ const SidebarLayout = () => {
               className="group flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-3 rounded-full hover:bg-gradient-to-r hover:from-blue-700 hover:to-purple-700 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900 animate-slide-up"
               onClick={() => setIsModalOpen(true)}
             >
-            Create New CV
+            Add New CV
             <svg
                 xmlns="http://www.w3.org/2000/svg"
                 className="h-5 w-5 ml-2 transition-transform transform group-hover:translate-x-1"
@@ -372,7 +509,25 @@ const SidebarLayout = () => {
                 />
               </svg>
           </button>
-
+          <div className="mt-4">
+              <button
+               
+               onClick={() => setIsModalTwoOpen(true)}
+                className="text-sm text-zinc-700 dark:text-zinc-300 hover:underline"
+              >
+                
+                You don't have one ? Click here.
+              </button>
+            </div>
+           
+                    
+                      <UploadModal
+            isOpen={isModalTwoOpen}
+            onClose={() => setIsModalTwoOpen(false)}
+           
+          >
+           
+          </UploadModal>
           <Modal
             isOpen={isModalOpen}
             onClose={() => setIsModalOpen(false)}

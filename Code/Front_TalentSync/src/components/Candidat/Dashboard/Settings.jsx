@@ -22,6 +22,7 @@ import Card from "./Desactivate";
 import styled from "styled-components";
 import { useDarkMode } from "../../DarkModeProvider";
 import { Link } from 'react-router-dom';
+import axios from "axios"; // Import axios for API calls
 
 const NavLink = ({ href, icon: Icon, children, isActive }) => (
   <Link
@@ -164,6 +165,10 @@ const UserMenu = () => {
 const SettingsComp = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const { isDarkMode } = useDarkMode();
+  const [profilePic, setProfilePic] = useState(""); // Default to an empty string
+  const [firstName, setFirstName] = useState(""); // Default to an empty string
+  const [lastName, setLastName] = useState(""); // Default to an empty string
+  const [email, setEmail] = useState(""); // Default to an empty string
 
   useEffect(() => {
     // Ensure the dark class is applied globally
@@ -172,7 +177,33 @@ const SettingsComp = () => {
     } else {
       document.documentElement.classList.remove("dark");
     }
+
+    // Fetch user data from the backend
+    const fetchUserData = async () => {
+      try {
+        const token = localStorage.getItem("token"); // Get the token from localStorage
+        const response = await axios.get("http://localhost:5000/api/candidates/profile", {
+          headers: {
+            Authorization: `Bearer ${token}`, // Pass the token in the Authorization header
+          },
+        });
+
+        // Assuming the backend returns { profilePic: "url", firstName: "John", lastName: "Doe", email: "john.doe@example.com" }
+        const { profilePic, firstName, lastName, email } = response.data;
+        setProfilePic(profilePic || ""); // Ensure fallback to an empty string
+        setFirstName(firstName || ""); // Ensure fallback to an empty string
+        setLastName(lastName || ""); // Ensure fallback to an empty string
+        setEmail(email || ""); // Ensure fallback to an empty string
+        console.log( email);
+
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+      }
+    };
+
+    fetchUserData();
   }, [isDarkMode]);
+
   const navigation_menu = [
     { name: "Dashboard", href: "/dashboard", icon: Menu, current: false },
     {
@@ -206,7 +237,7 @@ const SettingsComp = () => {
     }, 100);
     alert("Account deleted");
   };
-
+console.log( email);
   return (
     <div className={`min-h-screen ${isDarkMode ? "dark" : ""} transition-all duration-300 ease-in-out`}>
       <div className="flex h-screen bg-white dark:bg-black transition-all duration-300 ease-in-out z-30">
@@ -359,6 +390,8 @@ const SettingsComp = () => {
                       <input
                         id="firstName"
                         type="text"
+                        value={firstName} // Bind the state to the input
+                        onChange={(e) => setFirstName(e.target.value)} // Update state on change
                         placeholder="Enter your first name"
                         className="w-full px-3 py-2 border rounded-lg focus:ring-2 dark:bg-black text-black bg-gray-200 transition-all duration-300 ease-in-out z-30"
                         aria-required="true"
@@ -374,6 +407,8 @@ const SettingsComp = () => {
                       <input
                         id="lastName"
                         type="text"
+                        value={lastName} // Bind the state to the input
+                        onChange={(e) => setLastName(e.target.value)} // Update state on change
                         placeholder="Enter your last name"
                         className="w-full px-3 py-2 border rounded-lg focus:ring-2 dark:bg-black text-black bg-gray-200 transition-all duration-300 ease-in-out z-30"
                         aria-required="true"
@@ -397,6 +432,8 @@ const SettingsComp = () => {
                     <input
                       id="email"
                       type="email"
+                      value={email} // Bind the state to the input
+                      onChange={(e) => setEmail(e.target.value)} // Update state on change
                       placeholder="your.email@domain.com"
                       className="w-full px-3 py-2 border rounded-lg focus:ring-2 dark:bg-black text-black bg-gray-200 transition-all duration-300 ease-in-out z-30"
                       aria-required="true"
@@ -411,7 +448,15 @@ const SettingsComp = () => {
                   </h2>
                   <div className="border-2 border-dashed rounded-lg p-6 text-center space-y-4 border-gray-400 dark:border-gray-200">
                     <div className="mx-auto w-24 h-24 rounded-full bg-gray-50 flex items-center justify-center border-2 dark:border-gray-200">
-                      <Upload className="h-8 w-8 text-gray-400" />
+                      {profilePic ? (
+                        <img
+                          src={profilePic}
+                          alt="Profile"
+                          className="w-full h-full rounded-full object-cover"
+                        />
+                      ) : (
+                        <Upload className="h-8 w-8 text-gray-400" />
+                      )}
                     </div>
                     <div className="space-y-2">
                       <p className="text-sm dark:text-gray-400 text-gray-600">

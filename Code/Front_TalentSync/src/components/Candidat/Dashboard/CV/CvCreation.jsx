@@ -8,36 +8,48 @@ import {
   Plus,
   Trash2
 } from 'lucide-react';
+import { useDarkMode } from '../../../DarkModeProvider';
 
 const Input = (props) => (
   <input
-    className="border p-1 rounded w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+    className={`border p-1 rounded w-full focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+      props.isDarkMode
+        ? 'bg-zinc-900 text-gray-100 border-zinc-700'
+        : 'bg-white text-gray-900 border-gray-300'
+    }`}
     {...props}
   />
 );
 
 const Textarea = (props) => (
   <textarea
-    className="border p-2 rounded w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+    className={`border p-2 rounded w-full focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+      props.isDarkMode
+        ? 'bg-zinc-900 text-gray-100 border-zinc-700'
+        : 'bg-white text-gray-900 border-gray-300'
+    }`}
     {...props}
   />
 );
 
-const Button = ({ variant, size, disabled, children, ...rest }) => {
-  let baseClass = "px-4 py-2 rounded font-medium transition-colors";
+const Button = ({ variant, size, disabled, isDarkMode, children, ...rest }) => {
+  let baseClass = 'px-4 py-2 rounded font-medium transition-colors';
   if (variant === 'outline') {
-    baseClass += " border border-blue-500 text-blue-500 hover:bg-blue-50";
+    baseClass += ` border ${
+      isDarkMode
+        ? 'border-blue-400 text-blue-400 hover:bg-zinc-800'
+        : 'border-blue-500 text-blue-500 hover:bg-blue-50'
+    }`;
   } else if (variant === 'destructive') {
-    baseClass += " bg-red-500 text-white hover:bg-red-600";
+    baseClass += ' bg-red-500 text-white hover:bg-red-600';
   } else {
-    // default variant
-    baseClass += " bg-blue-500 text-white hover:bg-blue-600";
+    baseClass += ' bg-blue-500 text-white hover:bg-blue-600';
   }
   if (size === 'sm') {
-    baseClass += " text-sm";
+    baseClass += ' text-sm';
   }
   if (disabled) {
-    baseClass += " opacity-50 cursor-not-allowed";
+    baseClass += ' opacity-50 cursor-not-allowed';
   }
   return (
     <button className={baseClass} disabled={disabled} {...rest}>
@@ -46,14 +58,20 @@ const Button = ({ variant, size, disabled, children, ...rest }) => {
   );
 };
 
-const Card = ({ children }) => (
-  <div className="border rounded shadow p-5 bg-white dark:bg-black">
+const Card = ({ children, isDarkMode }) => (
+  <div
+    className={`border rounded shadow p-5 ${
+      isDarkMode
+        ? 'bg-zinc-900 text-gray-100 border-zinc-700'
+        : 'bg-white text-gray-900 border-gray-300'
+    }`}
+  >
     {children}
   </div>
 );
 
-const CardHeader = ({ children }) => (
-  <div className="border-b pb-2 mb-4">
+const CardHeader = ({ children, isDarkMode }) => (
+  <div className={`border-b pb-2 mb-4 ${isDarkMode ? 'border-zinc-700' : 'border-gray-300'}`}>
     {children}
   </div>
 );
@@ -62,58 +80,59 @@ const CardContent = ({ children }) => <div>{children}</div>;
 
 /* CV Component */
 const CV = () => {
+  const { isDarkMode, toggleTheme } = useDarkMode(); // Access the theme state
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState({
     personalInfo: {
-      name: "",
-      email: "",
-      phone: "",
-      location: "",
-      summary: ""
+      name: '',
+      email: '',
+      phone: '',
+      location: '',
+      summary: ''
     },
     experience: [
       {
-        title: "",
-        company: "",
-        location: "",
-        period: "",
-        responsibilities: [""]
+        title: '',
+        company: '',
+        location: '',
+        period: '',
+        responsibilities: ['']
       }
     ],
     education: [
       {
-        degree: "",
-        institution: "",
-        location: "",
-        period: ""
+        degree: '',
+        institution: '',
+        location: '',
+        period: ''
       }
     ],
-    skills: [""],
-    certifications: [""]
+    skills: [''],
+    certifications: ['']
   });
 
   const steps = [
     {
-      title: "Personal Information",
+      title: 'Personal Information',
       icon: <User className="w-6 h-6" />
     },
     {
-      title: "Professional Experience",
+      title: 'Professional Experience',
       icon: <Briefcase className="w-6 h-6" />
     },
     {
-      title: "Education",
+      title: 'Education',
       icon: <GraduationCap className="w-6 h-6" />
     },
     {
-      title: "Skills & Certifications",
+      title: 'Skills & Certifications',
       icon: <Award className="w-6 h-6" />
     }
   ];
 
   const handlePersonalInfoChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       personalInfo: {
         ...prev.personalInfo,
@@ -160,24 +179,24 @@ const CV = () => {
           ? [
               ...prev.experience,
               {
-                title: "",
-                company: "",
-                location: "",
-                period: "",
-                responsibilities: [""]
+                title: '',
+                company: '',
+                location: '',
+                period: '',
+                responsibilities: ['']
               }
             ]
           : field === 'education'
           ? [
               ...prev.education,
               {
-                degree: "",
-                institution: "",
-                location: "",
-                period: ""
+                degree: '',
+                institution: '',
+                location: '',
+                period: ''
               }
             ]
-          : [...prev[field], ""]
+          : [...prev[field], '']
     }));
   };
 
@@ -198,6 +217,7 @@ const CV = () => {
               name="name"
               value={formData.personalInfo.name}
               onChange={handlePersonalInfoChange}
+              isDarkMode={isDarkMode}
             />
             <Input
               placeholder="Email"
@@ -205,24 +225,28 @@ const CV = () => {
               type="email"
               value={formData.personalInfo.email}
               onChange={handlePersonalInfoChange}
+              isDarkMode={isDarkMode}
             />
             <Input
               placeholder="Phone"
               name="phone"
               value={formData.personalInfo.phone}
               onChange={handlePersonalInfoChange}
+              isDarkMode={isDarkMode}
             />
             <Input
               placeholder="Location"
               name="location"
               value={formData.personalInfo.location}
               onChange={handlePersonalInfoChange}
+              isDarkMode={isDarkMode}
             />
             <Textarea
               placeholder="Professional Summary"
               name="summary"
               value={formData.personalInfo.summary}
               onChange={handlePersonalInfoChange}
+              isDarkMode={isDarkMode}
             />
           </div>
         );
@@ -231,12 +255,13 @@ const CV = () => {
         return (
           <div className="space-y-9">
             {formData.experience.map((exp, index) => (
-              <div key={index} className="space-y-6 border-b pb-6 last:border-b-0">
+              <div key={index} className="space-y-6 border-b pb-6 last:border-b-0 dark:border-zinc-700">
                 <div className="flex justify-end">
                   <Button
                     variant="destructive"
                     size="sm"
                     onClick={() => removeArrayItem('experience', index)}
+                    isDarkMode={isDarkMode}
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>
@@ -245,27 +270,32 @@ const CV = () => {
                   placeholder="Job Title"
                   value={exp.title}
                   onChange={(e) => handleExperienceChange(index, 'title', e.target.value)}
+                  isDarkMode={isDarkMode}
                 />
                 <Input
                   placeholder="Company"
                   value={exp.company}
                   onChange={(e) => handleExperienceChange(index, 'company', e.target.value)}
+                  isDarkMode={isDarkMode}
                 />
                 <Input
                   placeholder="Location"
                   value={exp.location}
                   onChange={(e) => handleExperienceChange(index, 'location', e.target.value)}
+                  isDarkMode={isDarkMode}
                 />
                 <Input
                   placeholder="Period (e.g., 2020 - Present)"
                   value={exp.period}
                   onChange={(e) => handleExperienceChange(index, 'period', e.target.value)}
+                  isDarkMode={isDarkMode}
                 />
               </div>
             ))}
             <Button
               variant="outline"
               onClick={() => addArrayItem('experience')}
+              isDarkMode={isDarkMode}
             >
               <Plus className="w-4 h-4 mr-2" /> Add Experience
             </Button>
@@ -276,12 +306,13 @@ const CV = () => {
         return (
           <div className="space-y-6">
             {formData.education.map((edu, index) => (
-              <div key={index} className="space-y-4 border-b pb-6 last:border-b-0">
+              <div key={index} className="space-y-4 border-b pb-6 last:border-b-0 dark:border-zinc-700">
                 <div className="flex justify-end">
                   <Button
                     variant="destructive"
                     size="sm"
                     onClick={() => removeArrayItem('education', index)}
+                    isDarkMode={isDarkMode}
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>
@@ -290,27 +321,32 @@ const CV = () => {
                   placeholder="Degree"
                   value={edu.degree}
                   onChange={(e) => handleEducationChange(index, 'degree', e.target.value)}
+                  isDarkMode={isDarkMode}
                 />
                 <Input
                   placeholder="Institution"
                   value={edu.institution}
                   onChange={(e) => handleEducationChange(index, 'institution', e.target.value)}
+                  isDarkMode={isDarkMode}
                 />
                 <Input
                   placeholder="Location"
                   value={edu.location}
                   onChange={(e) => handleEducationChange(index, 'location', e.target.value)}
+                  isDarkMode={isDarkMode}
                 />
                 <Input
                   placeholder="Period (e.g., 2016 - 2020)"
                   value={edu.period}
                   onChange={(e) => handleEducationChange(index, 'period', e.target.value)}
+                  isDarkMode={isDarkMode}
                 />
               </div>
             ))}
             <Button
               variant="outline"
               onClick={() => addArrayItem('education')}
+              isDarkMode={isDarkMode}
             >
               <Plus className="w-4 h-4 mr-2" /> Add Education
             </Button>
@@ -328,11 +364,13 @@ const CV = () => {
                     placeholder="Skill"
                     value={skill}
                     onChange={(e) => handleArrayChange('skills', index, e.target.value)}
+                    isDarkMode={isDarkMode}
                   />
                   <Button
                     variant="destructive"
                     size="sm"
                     onClick={() => removeArrayItem('skills', index)}
+                    isDarkMode={isDarkMode}
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>
@@ -341,6 +379,7 @@ const CV = () => {
               <Button
                 variant="outline"
                 onClick={() => addArrayItem('skills')}
+                isDarkMode={isDarkMode}
               >
                 <Plus className="w-4 h-4 mr-2" /> Add Skill
               </Button>
@@ -354,11 +393,13 @@ const CV = () => {
                     placeholder="Certification"
                     value={cert}
                     onChange={(e) => handleArrayChange('certifications', index, e.target.value)}
+                    isDarkMode={isDarkMode}
                   />
                   <Button
                     variant="destructive"
                     size="sm"
                     onClick={() => removeArrayItem('certifications', index)}
+                    isDarkMode={isDarkMode}
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>
@@ -367,6 +408,7 @@ const CV = () => {
               <Button
                 variant="outline"
                 onClick={() => addArrayItem('certifications')}
+                isDarkMode={isDarkMode}
               >
                 <Plus className="w-4 h-4 mr-2" /> Add Certification
               </Button>
@@ -428,20 +470,29 @@ const CV = () => {
         toast.error(error.message || 'Failed to upload CV');
     }
 };
+
   return (
-    <div className="max-w-2xl  p-auto">
+    <div
+      className={`max-w-2xl mx-auto p-4 rounded-lg shadow ${
+        isDarkMode ? 'bg-zinc-900 text-gray-100' : 'bg-white text-gray-900'
+      }`}
+    >
       {/* Progress Steps */}
       <div className="flex justify-between mb-8">
         {steps.map((step, index) => (
           <div
             key={index}
             className={`flex flex-col items-center ${
-              index <= currentStep ? 'text-blue-600' : 'text-gray-400'
+              index <= currentStep
+                ? 'text-blue-600 dark:text-blue-400'
+                : 'text-gray-400 dark:text-gray-500'
             }`}
           >
             <div
               className={`rounded-full p-2 mb-2 ${
-                index <= currentStep ? 'bg-blue-100' : 'bg-gray-100'
+                index <= currentStep
+                  ? 'bg-blue-100 dark:bg-blue-900'
+                  : 'bg-gray-100 dark:bg-zinc-800'
               }`}
             >
               {step.icon}
@@ -452,8 +503,8 @@ const CV = () => {
       </div>
 
       {/* Form Content */}
-      <Card>
-        <CardHeader>
+      <Card isDarkMode={isDarkMode}>
+        <CardHeader isDarkMode={isDarkMode}>
           <h2 className="text-2xl font-semibold flex items-center gap-2">
             {steps[currentStep].icon}
             {steps[currentStep].title}
@@ -468,13 +519,14 @@ const CV = () => {
           variant="outline"
           onClick={handlePrevious}
           disabled={currentStep === 0}
+          isDarkMode={isDarkMode}
         >
           Previous
         </Button>
         {currentStep === steps.length - 1 ? (
-          <Button onClick={handleSubmit}>Submit</Button>
+          <Button onClick={handleSubmit} isDarkMode={isDarkMode}>Submit</Button>
         ) : (
-          <Button onClick={handleNext}>Next</Button>
+          <Button onClick={handleNext} isDarkMode={isDarkMode}>Next</Button>
         )}
       </div>
     </div>

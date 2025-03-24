@@ -322,6 +322,21 @@ router.get(
   })
 );
 
+router.get("/profile", auth, checkRole(["candidate"]), async (req, res) => {
+  try {
+    const recruiter = await Recruiter.findOne({ userId: req.user._id })
+      .populate('userId', '-password')
+      .populate('jobPostings');
+    
+    if (!recruiter) 
+      return res.status(404).send({ message: "Recruiter profile not found" });
+    
+    res.status(200).send(recruiter);
+  } catch (error) {
+    console.error("Error fetching recruiter profile:", error);
+    res.status(500).send({ message: "Internal Server Error" });
+  }
+});
 // Get all CVs for the candidate
 router.get(
   "/cv-history",

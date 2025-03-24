@@ -281,6 +281,89 @@ app.use((err, req, res, next) => {
         message: err.message || "Internal Server Error",
     });
 });
+
+
+app.post('/api/TakeInfo', upload.single('cv'), async (req, res) => {
+  try {
+    console.log('Taking infos from PDF...');
+    if (!req.file) {
+      return res.status(400).json({ error: 'No CV file uploaded' });
+    }
+
+    const cvPath = req.file.path;
+    const pdfBuffer = fs.readFileSync(cvPath);
+    
+    // Extract text from PDF
+    pdfParse(pdfBuffer).then(data => {
+      const extractedText = data.text;
+      console.log('Extracted Text:', extractedText);
+
+      const pythonProcess = spawn('python', [
+        'python/Extract_support.py',
+        cvPath,
+        'Datasets/skills_and_experience.csv',
+        req.body.jobDescription,
+        extractedText // Pass extracted text as an additional argument
+      ]);
+
+      let analysisResult = '';
+      let errorOutput = '';
+
+      pythonProcess.stdout.on('data', (data) => {
+        analysisResult += data.toString();
+      });
+
+      pythonProcess.stderr.on('data', (data) => {
+        errorOutput += data.toString();
+        console.error(`Python script error: ${data.toString()}`);
+      });
+
+      pythonProcess.on('close', async (code) => {
+        if (code !== 0) {
+          console.error('Python process exited with code:', code);
+          console.error('Error output:', errorOutput);
+          return res.status(500).json({ 
+            error: 'Python script failed', 
+            details: errorOutput 
+          });
+        }
+
+        try {
+          let jsonMatch = analysisResult.match(/\{[\s\S]*\}/);
+          let cleanedResult = jsonMatch ? jsonMatch[0] : analysisResult;
+          cleanedResult = cleanedResult
+            .replace(/}\s*{/g, ',')
+            .replace(/\]\s*\[/g, ',')
+            .replace(/\]\s*\]/g, ']]')
+            .replace(/,,+/g, ',');
+          
+          console.log('Attempting to parse:', cleanedResult);
+          let result = JSON.parse(cleanedResult);
+          result.suggestions = generateSuggestions(result);
+
+          res.json({ 
+            message: 'Analysis completed successfully', 
+            result 
+          });
+        } catch (error) {
+          console.error('Failed to parse analysis results. Error:', error.message);
+          console.error('Raw output:', analysisResult);
+          res.status(500).json({ 
+            error: 'Failed to parse analysis results', 
+            details: error.message 
+          });
+        }
+      });
+    }).catch(err => {
+      console.error('Error reading PDF:', err);
+      res.status(500).json({ error: 'Failed to extract text from PDF' });
+    });
+  } catch (error) {
+    console.error('Error in API endpoint:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.post('/api/analyze', upload.single('cv'), async (req, res) => {
   try {
     console.log('Analyzing CV...');

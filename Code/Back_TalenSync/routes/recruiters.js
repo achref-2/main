@@ -61,27 +61,22 @@ router.post("/signup", async (req, res) => {
 // Login for recruiters
 router.post("/login", async (req, res) => {
   try {
-    // Validate login credentials
     const { email, password } = req.body;
     if (!email || !password)
       return res.status(400).send({ message: "Email and password are required" });
-    
-    // Find user by email
+
     const user = await User.findOne({ email, role: "recruiter" });
     if (!user)
       return res.status(401).send({ message: "Invalid email or password" });
-    
-    // Check if password is correct
+
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword)
       return res.status(401).send({ message: "Invalid email or password" });
-    
-    // Check if there's a corresponding recruiter profile
+
     const recruiter = await Recruiter.findOne({ userId: user._id });
     if (!recruiter)
       return res.status(404).send({ message: "Recruiter profile not found" });
-    
-    // Generate JWT token
+
     const token = jwt.sign(
       { 
         _id: user._id, 
@@ -91,8 +86,7 @@ router.post("/login", async (req, res) => {
       process.env.JWTPRIVATEKEY,
       { expiresIn: "7d" }
     );
-    
-    // Send response with token and user info
+
     res.status(200).send({
       message: "Logged in successfully",
       token: token,
@@ -100,7 +94,8 @@ router.post("/login", async (req, res) => {
         id: user._id,
         email: user.email,
         firstName: user.firstName,
-        
+        lastName: user.lastName,
+        profilePicture: user.profilePicture || null, // Include profile picture
         role: user.role
       },
       recruiterId: recruiter._id,
@@ -114,61 +109,63 @@ router.post("/login", async (req, res) => {
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 router.post("/auth/google", async (req, res) => {
-    try {
-        const { token } = req.body;
+  try {
+    const { token } = req.body;
 
-        if (!token) {
-            return res.status(400).json({ error: "Google token is required" });
-        }
-
-        const ticket = await client.verifyIdToken({
-            idToken: token,
-            audience: process.env.GOOGLE_CLIENT_ID,
-        });
-
-        const { email, given_name, family_name, sub } = ticket.getPayload();
-        let user = await User.findOne({ email });
-
-        if (!user) {
-            user = new User({
-                firstName: given_name,
-                lastName: family_name,
-                email,
-                password: Math.random().toString(36).slice(-10),
-                role: "recruiter",
-                googleId: sub,
-            });
-            await user.save();
-
-            const recruiter = new Recruiter({ userId: user._id });
-            await recruiter.save();
-        } else if (user.role !== "recruiter") {
-            return res.status(403).json({ error: "Only recruiters can log in here." });
-        }
-
-        const jwtToken = jwt.sign(
-            { _id: user._id, role: user.role, email: user.email },
-            process.env.JWTPRIVATEKEY,
-            { expiresIn: "7d" }
-        );
-
-        const recruiterData = await Recruiter.findOne({ userId: user._id });
-
-        res.json({
-            token: jwtToken,
-            user: {
-                _id: user._id,
-                email: user.email,
-                firstName: user.firstName,
-                lastName: user.lastName,
-                role: user.role,
-            },
-            recruiterData,
-        });
-    } catch (error) {
-        console.error("Google authentication error:", error);
-        res.status(400).json({ error: "Invalid Google token" });
+    if (!token) {
+      return res.status(400).json({ error: "Google token is required" });
     }
+
+    const ticket = await client.verifyIdToken({
+      idToken: token,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+
+    const { email, given_name, family_name, picture, sub } = ticket.getPayload();
+    let user = await User.findOne({ email });
+
+    if (!user) {
+      user = new User({
+        firstName: given_name,
+        lastName: family_name,
+        email,
+        profilePicture: picture, // Save profile picture
+        password: Math.random().toString(36).slice(-10),
+        role: "recruiter",
+        googleId: sub,
+      });
+      await user.save();
+
+      const recruiter = new Recruiter({ userId: user._id });
+      await recruiter.save();
+    } else if (user.role !== "recruiter") {
+      return res.status(403).json({ error: "Only recruiters can log in here." });
+    }
+
+    const jwtToken = jwt.sign(
+      { _id: user._id, role: user.role, email: user.email },
+      process.env.JWTPRIVATEKEY,
+      { expiresIn: "7d" }
+    );
+
+    const recruiterData = await Recruiter.findOne({ userId: user._id });
+
+    res.json({
+      token: jwtToken,
+      user: {
+        _id: user._id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        profilePicture: user.profilePicture || picture, // Include profile picture
+        role: user.role,
+      },
+      recruiterData,
+    });
+  } catch (error) {
+    console.error("Google authentication error:", error);
+    res.status(400).json({ error: "Invalid Google token" });
+  }
 });
 
 // Get recruiter profile
