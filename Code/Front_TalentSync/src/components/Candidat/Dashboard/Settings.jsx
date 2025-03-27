@@ -13,6 +13,7 @@ import {
   Upload,
   AlertTriangle,
   X,
+   FlaskConical, Wrench
 } from "lucide-react";
 import { Dialog } from "@headlessui/react";
 import { Menu as HeadlessMenu } from "@headlessui/react";
@@ -212,12 +213,13 @@ const SettingsComp = () => {
       icon: History,
       current: false,
     },
-    { name: "Job List", href: "/JobList", icon: Menu, current: false },
+    { name: "Job List", href: "/Jobcandidate", icon: Menu, current: false },
     { name: "Billing", href: "/Pricing", icon: PlusSquare, current: false },
   ];
   const navigation_option = [
-    { name: "Settings", href: "/Settings", icon: Settings, current: true },
-    { name: "Support", href: "/cv", icon: Settings, current: false },
+    { name: "Settings", href: "/Settings", icon: Settings, current: false },
+    { name: "Support", href: "/cv", icon: Wrench, current: true },
+    { name: "cv testing", href: "/Testing", icon: FlaskConical, current: false },
   ];
 
   const [showDesactivate, setShowDesactivate] = useState(false);

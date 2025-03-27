@@ -1,182 +1,199 @@
-import os
 import re
-import spacy
-import pytesseract
-from PIL import Image
-import numpy as np
-import pandas as pd
+import logging
 import pdfplumber
-from langdetect import detect_langs
+import pytesseract
+from pdf2image import convert_from_path
 
-class MultilingualCVExtractor:
-    def __init__(self):
-        # Load multilingual NLP models with more robust settings
-        self.nlp_models = {
-            'en': spacy.load('en_core_web_lg'),
-            'fr': spacy.load('fr_core_news_lg')
-        }
+class ResumeParser:
+    def __init__(self, languages=['en', 'fr']):
+        """
+        Initialize the Resume Parser with language support
         
-        # Refined language-specific keyword dictionaries
-        self.language_keywords = {
+        Args:
+            languages (list): Supported languages for parsing
+        """
+        self.languages = languages
+        
+        # Comprehensive section keywords for multiple languages
+        self.section_keywords = {
             'en': {
-                'contact': ['contact', 'email', 'phone', 'address', 'linkedin', 'tel'],
-                'education': ['education', 'degree', 'university', 'school', 'diploma', 'graduation', 'academic'],
-                'work': ['experience', 'job', 'position', 'company', 'career', 'role', 'workplace'],
-                'skills': ['skills', 'expertise', 'competencies', 'abilities', 'technologies', 'programming']
+                'contact': ['contact', 'contact information', 'details', 'personal info'],
+                'experience': ['experience', 'work experience', 'professional experience', 'career'],
+                'education': ['education', 'academic background', 'degrees', 'qualifications'],
+                'skills': ['skills', 'technical skills', 'competencies', 'abilities'],
+                'languages': ['languages', 'language skills', 'spoken languages'],
+                'projects': ['projects', 'personal projects', 'academic projects'],
+                'certifications': ['certifications', 'professional certifications', 'credentials'],
+                'summary': ['summary', 'professional summary', 'profile', 'objective']
             },
             'fr': {
-                'contact': ['contact', 'email', 'téléphone', 'adresse', 'linkedin', 'tél'],
-                'education': ['éducation', 'diplôme', 'université', 'école', 'formation', 'diplômé', 'académique'],
-                'work': ['expérience', 'travail', 'poste', 'entreprise', 'carrière', 'rôle', 'lieu de travail'],
-                'skills': ['compétences', 'expertise', 'capacités', 'talents', 'technologies', 'programmation']
+                'contact': ['contact', 'coordonnées', 'informations personnelles'],
+                'experience': ['expérience', 'expérience professionnelle', 'carrière'],
+                'education': ['éducation', 'formation', 'diplômes', 'qualifications'],
+                'skills': ['compétences', 'compétences techniques', 'capacités'],
+                'languages': ['langues', 'compétences linguistiques'],
+                'projects': ['projets', 'projets personnels', 'projets académiques'],
+                'certifications': ['certifications', 'certifications professionnelles'],
+                'summary': ['résumé', 'profil professionnel', 'objectif']
             }
         }
-
-    def detect_languages(self, text):
-        """
-        More robust language detection with confidence thresholds
-        """
-        try:
-            # Get language detection results with confidence
-            language_results = detect_langs(text)
-            
-            # More sophisticated language filtering
-            detected_languages = []
-            for lang in language_results:
-                if lang.prob > 0.3:
-                    language_code = lang.lang
-                    if language_code in ['en', 'fr']:
-                        detected_languages.append(language_code)
-            
-            # Fallback to most probable language
-            return detected_languages if detected_languages else ['en']
         
-        except Exception as e:
-            print(f"Language detection error: {e}")
-            return ['en']
+        # Logging setup
+        logging.basicConfig(level=logging.INFO, 
+                            format='%(asctime)s - %(levelname)s: %(message)s')
+        self.logger = logging.getLogger(__name__)
 
     def extract_text_from_pdf(self, pdf_path):
-        """Enhanced text extraction from PDF"""
-        extracted_text = ""
+        """
+        Extract text from PDF using multiple strategies
         
+        Args:
+            pdf_path (str): Path to the PDF file
+        
+        Returns:
+            str: Extracted text from the PDF
+        """
+        text = ""
         try:
-            # Primary extraction with pdfplumber
+            # Primary text extraction using pdfplumber
             with pdfplumber.open(pdf_path) as pdf:
                 for page in pdf.pages:
                     page_text = page.extract_text()
                     if page_text:
-                        extracted_text += page_text + "\n"
+                        text += page_text + "\n"
             
-            # Fallback to OCR if text extraction fails
-            if not extracted_text.strip():
-                from pdf2image import convert_from_path
-                images = convert_from_path(pdf_path)
-                for image in images:
-                    ocr_text = pytesseract.image_to_string(image)
-                    extracted_text += ocr_text + "\n"
+            if text.strip():
+                self.logger.info("Text extracted successfully using pdfplumber")
+                return text.strip()
         
         except Exception as e:
-            print(f"PDF text extraction error: {e}")
-        
-        return extracted_text
+            self.logger.warning(f"Direct text extraction failed: {e}")
 
-    def extract_section_info(self, text, language):
-        """
-        More sophisticated information extraction
-        """
-        # Use spaCy for named entity recognition with more precise processing
-        doc = self.nlp_models[language](text)
+        # Fallback to OCR for image-based PDFs
+        try:
+            self.logger.info("Falling back to OCR for image-based PDF")
+            images = convert_from_path(pdf_path)
+            for image in images:
+                page_text = pytesseract.image_to_string(image)
+                text += page_text + "\n"
         
-        # More comprehensive entity extraction
-        section_info = {
-            'entities': {
-                'persons': [],
-                'organizations': [],
-                'locations': [],
-                'miscellaneous': []
-            },
-            'keywords': []
+        except Exception as e:
+            self.logger.error(f"OCR extraction failed: {e}")
+            return ""
+
+        return text.strip()
+
+    def extract_sections(self, text):
+        """
+        Extract sections from resume text
+        
+        Args:
+            text (str): Full resume text
+        
+        Returns:
+            dict: Extracted resume sections
+        """
+        # Normalize text
+        text = text.lower()
+        
+        # Initialize sections dictionary
+        sections = {
+            'contact': '',
+            'summary': '',
+            'experience': '',
+            'education': '',
+            'skills': '',
+            'languages': '',
+            'projects': '',
+            'certifications': ''
         }
         
-        # Collect named entities with better categorization
-        for ent in doc.ents:
-            if ent.label_ == 'PERSON' and len(ent.text.split()) > 1:
-                section_info['entities']['persons'].append(ent.text)
-            elif ent.label_ == 'ORG':
-                section_info['entities']['organizations'].append(ent.text)
-            elif ent.label_ in ['GPE', 'LOC']:
-                section_info['entities']['locations'].append(ent.text)
-            else:
-                section_info['entities']['miscellaneous'].append(ent.text)
+        # Find section boundaries using regex
+        def find_section_boundaries(text, section_keywords):
+            # Create a regex pattern to match section headers
+            pattern = r'^(\s*(?:' + '|'.join(section_keywords) + r')[\s:]*\n)'
+            return re.finditer(pattern, text, re.MULTILINE | re.IGNORECASE)
         
-        # More intelligent keyword extraction
-        section_info['keywords'] = [
-            token.lemma_.lower() for token in doc 
-            if not token.is_stop and token.is_alpha and len(token.lemma_) > 2
-        ]
+        # Detect sections for different languages
+        detected_section_keywords = []
+        for lang in self.languages:
+            detected_section_keywords.extend(
+                [kw.lower() for keywords in self.section_keywords[lang].values() for kw in keywords]
+            )
         
-        return section_info
-
-    def analyze_multilingual_cv(self, cv_path):
-        """
-        More comprehensive CV analysis
-        """
-        # Extract text from PDF
-        full_text = self.extract_text_from_pdf(cv_path)
+        # Find all section matches
+        section_matches = list(find_section_boundaries(text, detected_section_keywords))
         
-        # Detect languages
-        detected_languages = self.detect_languages(full_text)
-        
-        # Analyze each language section with more robust processing
-        cv_analysis = {
-            'full_text': full_text,
-            'detected_languages': detected_languages,
-            'language_sections': {}
-        }
-        
-        # Process text for each detected language
-        for lang in detected_languages:
-            # Use spaCy model for language-specific processing
-            doc = self.nlp_models[lang](full_text)
-            section_text = doc.text
+        # Extract section contents
+        for i, match in enumerate(section_matches):
+            start = match.end()
+            # Find next section or end of text
+            end = section_matches[i+1].start() if i+1 < len(section_matches) else len(text)
             
-            if section_text.strip():
-                cv_analysis['language_sections'][lang] = {
-                    'raw_text': section_text,
-                    'extracted_info': self.extract_section_info(section_text, lang)
-                }
+            # Determine section type
+            section_header = match.group(1).strip().lower()
+            current_section = None
+            
+            # Map header to section
+            for section, keywords in self.section_keywords['en'].items():
+                if any(kw in section_header for kw in keywords):
+                    current_section = section
+                    break
+            
+            # Extract section content if a valid section is found
+            if current_section:
+                section_content = text[start:end].strip()
+                sections[current_section] = section_content
         
-        return cv_analysis
+        return sections
+
+    def parse_resume(self, pdf_path):
+        """
+        Main method to parse entire resume
+        
+        Args:
+            pdf_path (str): Path to resume PDF
+        
+        Returns:
+            dict: Parsed resume sections
+        """
+        try:
+            # Extract full text
+            full_text = self.extract_text_from_pdf(pdf_path)
+            
+            if not full_text:
+                self.logger.error("No text extracted from PDF")
+                return {}
+            
+            # Extract sections
+            parsed_sections = self.extract_sections(full_text)
+            
+            return {
+                'full_text': full_text,
+                'sections': parsed_sections
+            }
+        
+        except Exception as e:
+            self.logger.error(f"Resume parsing failed: {e}")
+            return {}
 
 def main():
-    # Initialize multilingual CV extractor
-    cv_extractor = MultilingualCVExtractor()
+    # PDF path
+    pdf_path = "aziz.pdf"
     
-    # Test CV path 
-    cv_path = 'C:/Users/aroua/OneDrive/Bureau/aziz.pdf'
+    # Initialize parser
+    parser = ResumeParser()
     
-    try:
-        # Analyze multilingual CV
-        cv_analysis = cv_extractor.analyze_multilingual_cv(cv_path)
-        
-        # Print detailed analysis
-        print("Multilingual CV Analysis:")
-        print(f"Detected Languages: {cv_analysis['detected_languages']}")
-        
-        # Process each language section
-        for lang, section_data in cv_analysis['language_sections'].items():
-            print(f"\n--- {lang.upper()} Section ---")
-            print("Extracted Entities:")
-            for entity_type, entities in section_data['extracted_info']['entities'].items():
-                # Only print if entities exist
-                if entities:
-                    print(f"{entity_type.capitalize()}: {list(set(entities))}")
-            
-            print("\nImportant Keywords:")
-            #print(list(set(section_data['extracted_info']['keywords'])))
+    # Parse resume
+    parsed_resume = parser.parse_resume(pdf_path)
     
-    except Exception as e:
-        print(f"CV Analysis Error: {e}")
+    # Print extracted sections
+    print("\n--- Resume Sections ---")
+    for section, content in parsed_resume['sections'].items():
+        if content:
+            print(f"\n{section.upper()}:")
+            print(content)
+            print("-" * 50)
 
 if __name__ == "__main__":
     main()

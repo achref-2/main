@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Menu, History, PlusSquare, Settings, CreditCard, PenTool, Moon, Sun, 
-  ChevronLeft, ChevronRight, Search, FileText, Download, Loader2, Calendar } from 'lucide-react';
+  ChevronLeft, ChevronRight, Search, FileText, Download, Loader2, Calendar,Wrench , FlaskConical} from 'lucide-react';
 import { Menu as HeadlessMenu } from '@headlessui/react';
 import { BellIcon } from '@heroicons/react/24/outline';
 import { MenuButton, MenuItem, MenuItems } from '@headlessui/react';
@@ -279,18 +279,23 @@ const UserMenu = () => {
 const SidebarLayout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const { isDarkMode, toggleTheme } = useDarkMode(); // Use the hook
-
   const navigation_menu = [
-    { name: 'Dashboard', href: '/dashboard', icon: Menu, current: false},
-    { name: 'History', href: '/dashboard/history', icon: History, current: true },
-    { name: "Job List", href: "/JobList", icon: Menu, current:false },
-    { name: 'Billing', href: '/Pricing', icon: PlusSquare, current: false }
+    { name: "Dashboard", href: "/dashboard", icon: Menu, current: false },
+    {
+      name: "History",
+      href: "/dashboard/history",
+      icon: History,
+      current: true,
+    },
+    { name: "Job List", href: "/Jobcandidate", icon: Menu, current: false },
+    { name: "Billing", href: "/Pricing", icon: PlusSquare, current: false },
   ];
-  
   const navigation_option = [
-    { name: 'Settings', href: '/Settings', icon: Settings, current: false },
-    { name: 'Support', href: '#', icon: Settings, current: false }
+    { name: "Settings", href: "/Settings", icon: Settings, current: false },
+    { name: "Support", href: "/cv", icon: Wrench, current: false },
+    { name: "cv testing", href: "/Testing", icon: FlaskConical, current: false },
   ];
+
 
   useEffect(() => {
     // Ensure the dark class is applied globally

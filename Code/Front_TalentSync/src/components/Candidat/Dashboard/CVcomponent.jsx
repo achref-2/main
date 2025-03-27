@@ -10,6 +10,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Search,
+  FlaskConical, Wrench
 } from "lucide-react";
 import { Upload, FileText, AlertCircle } from "lucide-react";
 import axios from "axios";
@@ -158,12 +159,13 @@ const CVUpload = () => {
       icon: History,
       current: false,
     },
-    { name: "Job List", href: "/JobList", icon: Menu, current: false },
+    { name: "Job List", href: "/Jobcandidate", icon: Menu, current: false },
     { name: "Billing", href: "/Pricing", icon: PlusSquare, current: false },
   ];
   const navigation_option = [
     { name: "Settings", href: "/Settings", icon: Settings, current: false },
-    { name: "Support", href: "/cv", icon: Settings, current: true },
+    { name: "Support", href: "/cv", icon: Wrench, current: true },
+    { name: "cv testing", href: "/Testing", icon: FlaskConical, current: false },
   ];
 
   // Handle system theme changes

@@ -26,7 +26,7 @@ import RecruiterHistory from "./components/Recruiter/Dashboard/History";
 import RecruiterJobList from "./components/Recruiter/JOB_LIST/Job";
 import RecruiterSettings from "./components/Recruiter/Dashboard/Settings";
 import JOBBuilder from "./components/Recruiter/JOB_LIST/JobBuilder";
-
+import TestingPage from "./components/Candidat/Dashboard/Testing";
 export const scroll = new SmoothScroll('a[href*="#"]', {
   speed: 1000,
   speedAsDuration: true,
@@ -41,6 +41,7 @@ const App = () => {
         <Router>
         <AuthWrapper>
           <Routes>
+            <Route path="/Testing" element={<TestingPage />} />
             <Route path="/Pricing" element={<Pricing />} />
             <Route path="/JobList" element={<JobList />} />
             <Route path="/Jobcandidate" element={<Jobcandidate />} />

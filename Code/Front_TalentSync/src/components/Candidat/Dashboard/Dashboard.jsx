@@ -12,16 +12,18 @@ import {
   ChevronRight,
   Search,
   X,
-  Upload, FileText,
+  Upload,
+  FileText,
+  Wrench
 } from "lucide-react";
 import { Dialog } from "@headlessui/react";
 import { Menu as HeadlessMenu } from "@headlessui/react";
 import { BellIcon } from "@heroicons/react/24/outline";
 import { MenuButton, MenuItem, MenuItems } from "@headlessui/react";
 import CV from "./CV/CvCreation";
-import { Link } from 'react-router-dom';
+import { Link } from "react-router-dom";
 
-import { useDarkMode } from '../../DarkModeProvider';
+import { useDarkMode } from "../../DarkModeProvider";
 const NavLink = ({ href, icon: Icon, children, isActive }) => (
   <Link
     to={href}
@@ -39,8 +41,6 @@ const NavLink = ({ href, icon: Icon, children, isActive }) => (
   </Link>
 );
 
-
-
 // Reuse your existing components
 const SearchBar = () => (
   <div className="relative max-w-md w-full transition-all duration-300 ease-in-out z-30">
@@ -55,33 +55,26 @@ const SearchBar = () => (
   </div>
 );
 
-
-
 const UserMenu = () => {
- 
-
   const handleSignout = () => {
-    localStorage.removeItem('token');
-        fetch('http://localhost:5000/api/auth/logout', {
-      method: 'POST',
+    localStorage.removeItem("token");
+    fetch("http://localhost:5000/api/auth/logout", {
+      method: "POST",
       headers: {
-        'Authorization': 'Bearer ' + localStorage.getItem('token')
-      }
-    })
-    .then(() => {
-      window.location.href = '/';
+        Authorization: "Bearer " + localStorage.getItem("token"),
+      },
+    }).then(() => {
+      window.location.href = "/";
     });
   };
 
   const menuItems = [
     { label: "Your History", href: "#profile" },
     { label: "Settings", href: "/Settings" },
-    
   ];
   const { isDarkMode, toggleTheme } = useDarkMode();
 
   return (
-    
     <HeadlessMenu as="div" className="relative">
       <MenuButton className="flex rounded-full ring-offset-gray-800 focus-visible:ring-2">
         <span className="sr-only">Open user menu</span>
@@ -91,87 +84,81 @@ const UserMenu = () => {
           alt="User avatar"
         />
       </MenuButton>
-    
 
-<MenuItems 
-  className={`absolute right-0 z-50 mt-2 w-48 rounded-md py-1 border-2 border-dashed  shadow-xl  focus:outline-none 
-    ${isDarkMode ? "bg-zinc-900 text-white bg-opacity-100 border-zinc-400" : "bg-zinc-200 text-black bg-opacity-5  border-zinc-700"} backdrop-blur-sm`}
->
-  {menuItems.map(({ label, href }) => (
-    <MenuItem key={label}>
-      {({ active }) => (
-     <a
-     href={href}
-     className={`block px-4 py-2 text-sm  border-b-2 border-dashed ${
-       active 
-         ? isDarkMode 
-           ? "bg-zinc-900 text-white "  // Dark mode: Different active bg color
-           : "bg-zinc-300 text-black"  // Light mode: Default active color
-         : isDarkMode 
-           ? "bg-zinc-950 text-zinc-100 border-zinc-400"  // Dark mode: Normal state
-           : "text-black"  // Light mode: Normal state
-     }`}
-   >
-     {label}
-   </a>
-   
-     
-      )}
-    </MenuItem>
-  ))}
-
-  <MenuItem>
-    {({ active }) => (
-      <button 
-        onClick={handleSignout} 
-        className={`block w-full text-left px-4 py-2 text-sm border-b-2 border-dashed ${
-          active 
-          ? isDarkMode 
-            ? "bg-zinc-900 text-white "  // Dark mode: Different active bg color
-            : "bg-zinc-300 text-black"  // Light mode: Default active color
-          : isDarkMode 
-            ? "bg-zinc-950 text-zinc-100 border-zinc-400"  // Dark mode: Normal state
-            : "text-black"  // Light mode: Normal state
-      }`}
+      <MenuItems
+        className={`absolute right-0 z-50 mt-2 w-48 rounded-md py-1 border-2 border-dashed  shadow-xl  focus:outline-none 
+    ${
+      isDarkMode
+        ? "bg-zinc-900 text-white bg-opacity-100 border-zinc-400"
+        : "bg-zinc-200 text-black bg-opacity-5  border-zinc-700"
+    } backdrop-blur-sm`}
       >
-        Sign out
-      </button>
-      
-    )}
+        {menuItems.map(({ label, href }) => (
+          <MenuItem key={label}>
+            {({ active }) => (
+              <a
+                href={href}
+                className={`block px-4 py-2 text-sm  border-b-2 border-dashed ${
+                  active
+                    ? isDarkMode
+                      ? "bg-zinc-900 text-white " // Dark mode: Different active bg color
+                      : "bg-zinc-300 text-black" // Light mode: Default active color
+                    : isDarkMode
+                    ? "bg-zinc-950 text-zinc-100 border-zinc-400" // Dark mode: Normal state
+                    : "text-black" // Light mode: Normal state
+                }`}
+              >
+                {label}
+              </a>
+            )}
+          </MenuItem>
+        ))}
 
-
-
-    
-  </MenuItem>
-  <MenuItem>
-  {({ active }) => (
-    <button
-      onClick={toggleTheme}
-      className={` w-full text-left px-4 py-2 text-sm flex items-center justify-between ${
-        active
-          ? isDarkMode
-            ? "bg-zinc-900 text-white"  // Dark mode: Active bg color
-            : "bg-zinc-300 text-black"  // Light mode: Active bg color
-          : isDarkMode
-          ? "bg-zinc-950 text-zinc-100 border-zinc-400"  // Dark mode: Normal state
-          : "text-black"  // Light mode: Normal state
-      }`}
-      aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
-    >
-      <span>Theme</span>
-      {isDarkMode ? (
-        <Sun className="w-5 h-5 text-gray-600 dark:text-zinc-100" />
-      ) : (
-        <Moon className="w-5 h-5 text-gray-900 dark:text-gray-400" />
-      )}
-    </button>
-  )}
-</MenuItem>
-
-</MenuItems>
-
-        
-      
+        <MenuItem>
+          {({ active }) => (
+            <button
+              onClick={handleSignout}
+              className={`block w-full text-left px-4 py-2 text-sm border-b-2 border-dashed ${
+                active
+                  ? isDarkMode
+                    ? "bg-zinc-900 text-white " // Dark mode: Different active bg color
+                    : "bg-zinc-300 text-black" // Light mode: Default active color
+                  : isDarkMode
+                  ? "bg-zinc-950 text-zinc-100 border-zinc-400" // Dark mode: Normal state
+                  : "text-black" // Light mode: Normal state
+              }`}
+            >
+              Sign out
+            </button>
+          )}
+        </MenuItem>
+        <MenuItem>
+          {({ active }) => (
+            <button
+              onClick={toggleTheme}
+              className={` w-full text-left px-4 py-2 text-sm flex items-center justify-between ${
+                active
+                  ? isDarkMode
+                    ? "bg-zinc-900 text-white" // Dark mode: Active bg color
+                    : "bg-zinc-300 text-black" // Light mode: Active bg color
+                  : isDarkMode
+                  ? "bg-zinc-950 text-zinc-100 border-zinc-400" // Dark mode: Normal state
+                  : "text-black" // Light mode: Normal state
+              }`}
+              aria-label={
+                isDarkMode ? "Switch to light mode" : "Switch to dark mode"
+              }
+            >
+              <span>Theme</span>
+              {isDarkMode ? (
+                <Sun className="w-5 h-5 text-gray-600 dark:text-zinc-100" />
+              ) : (
+                <Moon className="w-5 h-5 text-gray-900 dark:text-gray-400" />
+              )}
+            </button>
+          )}
+        </MenuItem>
+      </MenuItems>
     </HeadlessMenu>
   );
 };
@@ -179,11 +166,7 @@ const Modal = ({ isOpen, onClose, children }) => {
   const { isDarkMode } = useDarkMode(); // Access the current theme state
 
   return (
-    <Dialog
-      open={isOpen}
-      onClose={onClose}
-      className="relative z-50"
-    >
+    <Dialog open={isOpen} onClose={onClose} className="relative z-50">
       {/* Backdrop */}
       <div
         className={`fixed inset-0 ${
@@ -228,54 +211,53 @@ const UploadModal = ({ isOpen, onClose, children }) => {
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
-  
+
     const formData = new FormData();
-    formData.append('file', file); // Ensure the field name is 'file'
-  
+    formData.append("cv", file);
+
     try {
       setIsLoading(true);
-      const response = await fetch('http://localhost:5000/api/TakeInfo', {
-        method: 'POST',
+      const response = await fetch("http://localhost:5000/api/TakeInfo", {
+        method: "POST",
         body: formData,
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
       });
-  
+
       if (!response.ok) {
-        throw new Error('Failed to upload file');
+        throw new Error("Failed to upload file");
       }
-  
+
       // Redirect to /history after successful upload
-      window.location.href = '/history';
+      //window.location.href = "/history";
+      const jsonResponse = await response.json(); // Parse the JSON response
+    console.log("Analysis result:", jsonResponse); // Log the JSON response
+
     } catch (error) {
-      console.error('Error uploading file:', error);
-      alert('Failed to upload file. Please try again.');
+      console.error("Error uploading file:", error);
+      alert("Failed to upload file. Please try again.");
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <Dialog
-      open={isOpen}
-      onClose={onClose}
-      className="relative z-50"
-    >
+    <Dialog open={isOpen} onClose={onClose} className="relative z-50">
       {/* Backdrop */}
       <div
         className={`fixed inset-0  ${
-          isDarkMode ? "bg-black/80" : "bg-black/50"
+          isDarkMode ? "bg-black/10" : "bg-black/50"
         } backdrop-blur-sm transition-all duration-300`}
         aria-hidden="true"
       />
       <div className="fixed inset-0 flex items-center justify-center ">
         {/* Modal Panel */}
         <Dialog.Panel
-          className={`w-full max-w-lg p-6 rounded-lg border-2 border-dashed ${
+          className={`w-full max-w-lg p-6 rounded-lg ${
             isDarkMode
               ? " bg-zinc-900 backdrop-blur-sm  text-gray-100 border-zinc-500"
-              : " bg-zinc-300 text-zinc-900 border-zinc-500"
+              : " bg-zinc-300 text-zinc-900 border-zinc-500 backdrop-blur-sm"
           } shadow-xl transition-all duration-300`}
         >
           {/* Close Button */}
@@ -309,7 +291,7 @@ const UploadModal = ({ isOpen, onClose, children }) => {
                   className={`flex items-center justify-center w-full p-4 border-2 border-dashed ${
                     isDarkMode
                       ? "border-zinc-700 hover:border-blue-500 text-gray-100"
-                      : "border-gray-300 hover:border-blue-500 text-gray-900"
+                      : "border-gray-400 hover:border-blue-500 text-gray-900"
                   } rounded-lg transition-colors cursor-pointer group`}
                 >
                   <div className="text-center">
@@ -322,10 +304,12 @@ const UploadModal = ({ isOpen, onClose, children }) => {
                     />
                     <span
                       className={`mt-2 block text-sm font-medium ${
-                        isDarkMode ? "text-gray-100" : "text-gray-900"
+                        isDarkMode ? "text-gray-100 group-hover:text-blue-500" : "text-gray-900 group-hover:text-blue-500"
                       }`}
                     >
-                      {isLoading ? 'Uploading...' : 'Drop your PDF here, or click to browse'}
+                      {isLoading
+                        ? "Uploading..."
+                        : "Drop your PDF here, or click to browse"}
                     </span>
                   </div>
                 </label>
@@ -342,8 +326,6 @@ const SidebarLayout = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isModalTwoOpen, setIsModalTwoOpen] = useState(false);
 
- 
-
   const navigation_menu = [
     { name: "Dashboard", href: "/dashboard", icon: Menu, current: true },
     {
@@ -357,48 +339,49 @@ const SidebarLayout = () => {
   ];
   const navigation_option = [
     { name: "Settings", href: "/Settings", icon: Settings, current: false },
-    { name: "Support", href: "/cv", icon: Settings, current: false },
+    { name: "Support", href: "/cv", icon:  Wrench, current: false },
   ];
 
   const { isDarkMode, toggleTheme } = useDarkMode();
   const [file, setFile] = useState(null);
 
-
   return (
-    <div className={`min-h-screen ${isDarkMode ? "dark" : ""} transition-all duration-300 ease-in-out z-30 `}>
+    <div
+      className={`min-h-screen ${
+        isDarkMode ? "dark" : ""
+      } transition-all duration-300 ease-in-out z-30 `}
+    >
       <div className="flex h-screen bg-white dark:bg-black">
         {/* Sidebar */}
         <aside
-                  className={`fixed md:relative flex flex-col h-full bg-white dark:bg-black  border-gray-200 dark:border-gray-800
+          className={`fixed md:relative flex flex-col h-full bg-white dark:bg-black  border-gray-200 dark:border-gray-800
                     transition-all duration-300 ease-in-out z-30
                     ${isSidebarOpen ? "w-64" : "w-20"}`}
-                >
-                  {/* Rest of the sidebar content remains the same, but update classes to use dark: prefix */}
-                  <div className="flex items-center justify-between p-4  border-gray-200 dark:border-gray-800">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2  rounded-lg">
-                                       <Menu className="w-5 h-5 text-gray-600 dark:text-white transition-all duration-300 ease-in-out z-30 " />
-                       
-                      </div>
-                      {isSidebarOpen && (
-                        <span className="text-lg font-semibold text-gray-900 dark:text-white transition-all duration-300 ease-in-out z-30">
-                        TalentSync
-                      </span>
-                      )}
-                    </div>
-                    <button
-                      onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                      className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      aria-label={isSidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
-                    >
-                      {isSidebarOpen ? (
-                        <ChevronLeft className="w-5 h-5 text-gray-400" />
-                      ) : (
-                        <ChevronRight className="w-5 h-5 text-gray-400" />
-                      )}
-                    </button>
-                  </div>
-
+        >
+          {/* Rest of the sidebar content remains the same, but update classes to use dark: prefix */}
+          <div className="flex items-center justify-between p-4  border-gray-200 dark:border-gray-800">
+            <div className="flex items-center gap-3">
+              <div className="p-2  rounded-lg">
+                <Menu className="w-5 h-5 text-gray-600 dark:text-white transition-all duration-300 ease-in-out z-30 " />
+              </div>
+              {isSidebarOpen && (
+                <span className="text-lg font-semibold text-gray-900 dark:text-white transition-all duration-300 ease-in-out z-30">
+                  TalentSync
+                </span>
+              )}
+            </div>
+            <button
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              aria-label={isSidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+            >
+              {isSidebarOpen ? (
+                <ChevronLeft className="w-5 h-5 text-gray-400" />
+              ) : (
+                <ChevronRight className="w-5 h-5 text-gray-400" />
+              )}
+            </button>
+          </div>
 
           <nav className="flex-1 overflow-y-auto p-4  ">
             <div className="space-y-3">
@@ -429,27 +412,29 @@ const SidebarLayout = () => {
             </div>
           </nav>
 
-           {isSidebarOpen && (
-                      <div className="p-3  border-gray-200 dark:border-gray-900 transition-all duration-300 ease-in-out z-30">
-                        <div className="   rounded-lg p-4 space-y-4 transition-all duration-300 ease-in-out z-30 ">
-                          <div className="flex items-center gap-3">
-                            <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg">
-                              <CreditCard className="w-5 h-5 text-white " />
-                            </div>
-                            <div className="flex-1">
-                              <h3 className="font-medium  text-gray-900 dark:text-white  transition-all duration-300 ease-in-out z-30 ">Buy us a coffee</h3>
-                              <p className="text-sm text-gray-400 dark:text-gray-500  transition-all duration-300 ease-in-out z-30">
-                                TalentSync is free thanks to donations, please support us
-                                to keep the project running.
-                              </p>
-                            </div>
-                          </div>
-                          <button className="w-full dark:bg-zinc-900 dark:hover:bg-zinc-800 bg-zinc-200 hover:bg-gray-300 text-black dark:text-white py-2 px-4 rounded-lg  transition-colors">
-                            Donate
-                          </button>
-                        </div>
-                      </div>
-                    )}
+          {isSidebarOpen && (
+            <div className="p-3  border-gray-200 dark:border-gray-900 transition-all duration-300 ease-in-out z-30">
+              <div className="   rounded-lg p-4 space-y-4 transition-all duration-300 ease-in-out z-30 ">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg">
+                    <CreditCard className="w-5 h-5 text-white " />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-medium  text-gray-900 dark:text-white  transition-all duration-300 ease-in-out z-30 ">
+                      Buy us a coffee
+                    </h3>
+                    <p className="text-sm text-gray-400 dark:text-gray-500  transition-all duration-300 ease-in-out z-30">
+                      TalentSync is free thanks to donations, please support us
+                      to keep the project running.
+                    </p>
+                  </div>
+                </div>
+                <button className="w-full dark:bg-zinc-900 dark:hover:bg-zinc-800 bg-zinc-200 hover:bg-gray-300 text-black dark:text-white py-2 px-4 rounded-lg  transition-colors">
+                  Donate
+                </button>
+              </div>
+            </div>
+          )}
         </aside>
 
         <main className="flex-1 overflow-auto bg-white dark:bg-black transition-all duration-300 ease-in-out z-30">
@@ -467,75 +452,59 @@ const SidebarLayout = () => {
                   <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white dark:ring-gray-900" />
                 </button>
                 <UserMenu />
-
-
-                
-               
               </div>
             </div>
           </header>
 
           <div className="p-8 ">
-
-          <div className="flex flex-col items-center justify-center min-h-[60vh] border-2 border-dashed rounded-xl text-center border-gray-300 dark:border-gray-700 p-8 shadow-lg bg-white dark:bg-zinc-950 transition-all duration-300 transform hover:scale-60 hover:shadow-2xl">
-            <div className="p-4 bg-gradient-to-br from-blue-900 to-purple-900 rounded-full mb-6 animate-pulse">
-              <PenTool className="w-12 h-12 text-white" />
-            </div>
+            <div className="flex flex-col items-center justify-center min-h-[60vh] border-2 border-dashed rounded-xl text-center border-gray-300 dark:border-gray-700 p-8 shadow-lg bg-white dark:bg-zinc-950 transition-all duration-300 transform hover:scale-60 hover:shadow-2xl">
+              <div className="p-4 bg-gradient-to-br from-blue-900 to-purple-900 rounded-full mb-6 animate-pulse">
+                <PenTool className="w-12 h-12 text-white" />
+              </div>
               <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4 animate-fade-in">
-              Create Your Professional CV
-            </h1>
+                Create Your Professional CV
+              </h1>
               <p className="text-gray-600 dark:text-gray-400 mb-8 max-w-md text-lg">
                 Build a stunning CV that highlights your skills and experience
                 with our intuitive builder.
               </p>
 
               <button
-              className="group flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-3 rounded-full hover:bg-gradient-to-r hover:from-blue-700 hover:to-purple-700 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900 animate-slide-up"
-              onClick={() => setIsModalOpen(true)}
-            >
-            Add New CV
-            <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5 ml-2 transition-transform transform group-hover:translate-x-1"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
+                className="group flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-3 rounded-full hover:bg-gradient-to-r hover:from-blue-700 hover:to-purple-700 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900 animate-slide-up"
+                onClick={() => setIsModalOpen(true)}
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M17 8l4 4m0 0l-4 4m4-4H3"
-                />
-              </svg>
-          </button>
-          <div className="mt-4">
-              <button
-               
-               onClick={() => setIsModalTwoOpen(true)}
-                className="text-sm text-zinc-700 dark:text-zinc-300 hover:underline"
-              >
-                
-                You don't have one ? Click here.
+                Add New CV
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5 ml-2 transition-transform transform group-hover:translate-x-1"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M17 8l4 4m0 0l-4 4m4-4H3"
+                  />
+                </svg>
               </button>
-            </div>
-           
-                    
-                      <UploadModal
-            isOpen={isModalTwoOpen}
-            onClose={() => setIsModalTwoOpen(false)}
-           
-          >
-           
-          </UploadModal>
-          <Modal
-            isOpen={isModalOpen}
-            onClose={() => setIsModalOpen(false)}
-           
-          >
-            <CV />
-          </Modal>
+              <div className="mt-4">
+                <button
+                  onClick={() => setIsModalTwoOpen(true)}
+                  className="text-sm text-zinc-700 dark:text-zinc-300 hover:underline"
+                >
+                  You don't have one ? Click here.
+                </button>
+              </div>
 
+              <UploadModal
+                isOpen={isModalTwoOpen}
+                onClose={() => setIsModalTwoOpen(false)}
+              ></UploadModal>
+              <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
+                <CV />
+              </Modal>
             </div>
           </div>
         </main>

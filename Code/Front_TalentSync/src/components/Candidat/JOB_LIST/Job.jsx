@@ -17,6 +17,7 @@ import {
   Calendar,
   ArrowLeft,
   Share2,
+  FlaskConical, Wrench
 } from "lucide-react";
 import { Menu as HeadlessMenu } from "@headlessui/react";
 import { BellIcon } from "@heroicons/react/24/outline";
@@ -166,21 +167,22 @@ const SidebarLayout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const { isDarkMode } = useDarkMode();
  
-   const navigation_menu = [
-     { name: "Dashboard", href: "/dashboard", icon: Menu, current: false },
-     {
-       name: "History",
-       href: "/dashboard/history",
-       icon: History,
-       current: false,
-     },
-     { name: "Job List", href: "/Jobcandidate", icon: Menu, current: true },
-     { name: "Billing", href: "/Pricing", icon: PlusSquare, current: false },
-   ];
-   const navigation_option = [
-     { name: "Settings", href: "/Settings", icon: Settings, current: false },
-     { name: "Support", href: "/cv", icon: Settings, current: false },
-   ];
+  const navigation_menu = [
+    { name: "Dashboard", href: "/dashboard", icon: Menu, current: false },
+    {
+      name: "History",
+      href: "/dashboard/history",
+      icon: History,
+      current: false,
+    },
+    { name: "Job List", href: "/Jobcandidate", icon: Menu, current: true },
+    { name: "Billing", href: "/Pricing", icon: PlusSquare, current: false },
+  ];
+  const navigation_option = [
+    { name: "Settings", href: "/Settings", icon: Settings, current: false },
+    { name: "Support", href: "/cv", icon: Wrench, current: false },
+    { name: "cv testing", href: "/Testing", icon: FlaskConical, current: false },
+  ];
 
   const [selectedJob, setSelectedJob] = useState(null);
   const [filters, setFilters] = useState({
