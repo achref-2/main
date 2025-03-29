@@ -5,6 +5,7 @@ const cors = require("cors");
 const rateLimit = require("express-rate-limit");
 const multer = require('multer');
 const connection = require("./db");
+const cvRoutes = require("./routes/cv");
 const userRoutes = require("./routes/users");
 const authRoutes = require("./routes/auth");
 const candidateRoutes = require("./routes/candidates");
@@ -14,7 +15,7 @@ const Joi = require("joi");
 const { User } = require("./models/user"); // Fixed import for User model
 const { Candidate, validateAnalysis, validateCV } = require("./models/candidate"); // Proper import with named exports
 const Recruiter = require("./models/Recruiter");
-const cvRoutes = require('./routes/cv');
+
 const adminRoutes = require("./routes/admins");
 const auth = require("./middleware/auth");
 const pdfParse = require('pdf-parse');
@@ -77,59 +78,14 @@ app.use(rateLimit({
 // Auth & User Routes
 app.use("/api/users", userRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/cvs", cvRoutes);
 app.use("/api/candidates", candidateRoutes);
 app.use("/api/recruiters", recruitersRoutes);
 app.use("/api/admin", adminRoutes);  
 app.use("/api/jobs", jobsRouter);
 
 
-app.use('/api', cvRoutes);
-app.post('/api/upload-cv', auth, upload.single('cv'), async (req, res) => {
-    try {
-        if (!req.file) {
-            return res.status(400).json({ error: 'No CV file uploaded' });
-        }
 
-        // Validate the file
-        const fileData = {
-            fileName: req.file.originalname,
-            fileSize: req.file.size,
-            fileType: req.file.mimetype
-        };
-        
-        const { error } = validateCV(fileData);
-        if (error) {
-            return res.status(400).json({ error: error.details[0].message });
-        }
-
-        const candidateId = req.user._id; // Authenticated user ID
-        
-        // Find or create candidate profile
-        let candidate = await Candidate.findOne({ userId: candidateId });
-        if (!candidate) {
-            candidate = new Candidate({ userId: candidateId });
-        }
-        
-        // Add CV to history using the method from the schema
-        const cvData = {
-            fileData: fs.readFileSync(req.file.path),
-            fileName: req.file.originalname,
-            fileType: req.file.mimetype,
-            fileSize: req.file.size,
-        };
-        
-        await candidate.addCVToHistory(cvData);
-
-        res.status(200).json({
-            message: 'CV uploaded successfully',
-            cvInfo: candidate.getLatestCVWithAnalysis()
-        });
-
-    } catch (error) {
-        console.error('Error uploading CV:', error);
-        res.status(500).json({ error: 'Failed to upload CV' });
-    }
-});
 
 app.get('/api/cv-history', auth, async (req, res) => {
   try {
@@ -233,46 +189,6 @@ app.post("/api/auth/google", async (req, res) => {
 });
 
 
-app.post("/api/save-analysis", auth, async (req, res) => {
-    try {
-      const { similarity_score, skills, suggestions, cvIndex } = req.body;
-      
-      // Validate analysis data
-      const { error } = validateAnalysis({
-        similarity_score,
-        skills: skills || [],
-        suggestions: suggestions || []
-      });
-      
-      if (error) {
-        return res.status(400).json({ error: error.details[0].message });
-      }
-      
-      // Find candidate
-      const candidate = await Candidate.findOne({ userId: req.user._id });
-      if (!candidate) {
-        return res.status(404).json({ error: "Candidate not found" });
-      }
-      
-      // Determine which CV to update
-      const index = cvIndex !== undefined ? cvIndex : candidate.cvHistory.length - 1;
-      if (index < 0 || index >= candidate.cvHistory.length) {
-        return res.status(400).json({ error: "Invalid CV index" });
-      }
-      
-      // Add analysis to CV
-      await candidate.addAnalysis(index, {
-        similarity_score,
-        skills,
-        suggestions
-      });
-      
-      res.status(201).json({ message: "Analysis saved successfully!" });
-    } catch (error) {
-      console.error("Error saving analysis:", error);
-      res.status(500).json({ error: "Error saving analysis" });
-    }
-});
 
 // Global Error Handler
 app.use((err, req, res, next) => {

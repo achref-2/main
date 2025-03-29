@@ -13,7 +13,8 @@ import {
   Upload,
   AlertTriangle,
   X,
-   FlaskConical, Wrench
+  FlaskConical,
+  Wrench,
 } from "lucide-react";
 import { Dialog } from "@headlessui/react";
 import { Menu as HeadlessMenu } from "@headlessui/react";
@@ -22,7 +23,7 @@ import { MenuButton, MenuItem, MenuItems } from "@headlessui/react";
 import Card from "./Desactivate";
 import styled from "styled-components";
 import { useDarkMode } from "../../DarkModeProvider";
-import { Link } from 'react-router-dom';
+import { Link } from "react-router-dom";
 import axios from "axios"; // Import axios for API calls
 
 const NavLink = ({ href, icon: Icon, children, isActive }) => (
@@ -41,21 +42,99 @@ const NavLink = ({ href, icon: Icon, children, isActive }) => (
     <span className="truncate">{children}</span>
   </Link>
 );
+const SearchBar = ({ navigationMenu, navigationOption }) => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
+  const filteredMenu = navigationMenu.filter((item) =>
+    item.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+  const filteredOption = navigationOption.filter((item) =>
+    item.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
-const SearchBar = () => (
-  <div className="relative max-w-md w-full transition-all duration-300 ease-in-out z-30">
-    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-black dark:text-zinc-300 transition-all duration-300 ease-in-out z-30" />
-    <input
-      type="search"
-      placeholder="Search..."
-      className="w-80 pl-10 pr-4 py-2 transition-all duration-300 ease-in-out z-30 bg-zinc-200 text-black dark:bg-zinc-900 dark:text-black rounded-lg border border-zinc-100  dark:border-zinc-800
-        focus:outline-none focus:border-zinc-500  focus:ring-1 focus:ring-zinc-500 
-        placeholder-gray-900 dark:placeholder-gray-400"
-    />
-  </div>
-);
+  return (
+    <>
+      {/* Search Input */}
+      <div className="relative max-w-md w-full">
+        <Search className=" absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-black dark:text-zinc-300" />
+        <input
+          type="search"
+          placeholder="Search..."
+          className="w-80 pl-10 pr-4 py-2 transition-all duration-300 ease-in-out bg-zinc-200 text-black dark:bg-zinc-900 dark:text-white rounded-lg border border-zinc-100 dark:border-zinc-800 focus:outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500 placeholder-gray-900 dark:placeholder-gray-400"
+          onClick={() => setIsModalOpen(true)}
+          readOnly
+        />
+      </div>
 
+      {/* Modal */}
+      {isModalOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50"
+          onClick={() => setIsModalOpen(false)} // Close modal on background click
+        >
+          <div
+            className="bg-white  w-50%  dark:bg-zinc-900 p-6 rounded-lg shadow-lg w-full max-w-md relative"
+            onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside the modal
+          >
+            {/* Close Button - Fixed positioning */}
+            <button
+              className="absolute top-3 right-3  rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white transition-colors"
+              onClick={() => setIsModalOpen(false)}
+              aria-label="Close"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+              </svg>
+            </button>
+            
+            {/* Search Input Inside Modal */}
+            <div className="relative mb-4  mt-5">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-black dark:text-zinc-300" />
+              <input
+                type="search"
+                placeholder="Type a command or search..."
+                className="w-full pl-10 pr-4 py-2 bg-zinc-200 text-black dark:bg-zinc-800 dark:text-white rounded-lg border border-zinc-100 dark:border-zinc-700 focus:outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500 placeholder-gray-900 dark:placeholder-gray-400"
+                autoFocus
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+
+            {/* Dropdown Menu */}
+            <div>
+              <div className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
+                MENU
+              </div>
+              {filteredMenu.map((item) => (
+                <a
+                  key={item.name}
+                  href={item.href}
+                  className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-800 text-gray-700 dark:text-gray-300"
+                >
+                  <item.icon className="w-5 h-5" />
+                  {item.name}
+                </a>
+              ))}
+              <div className="text-sm font-medium text-gray-500 dark:text-gray-400 mt-4 mb-2">
+                OPTIONS
+              </div>
+              {filteredOption.map((item) => (
+                <a
+                  key={item.name}
+                  href={item.href}
+                  className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-800 text-gray-700 dark:text-gray-300"
+                >
+                  <item.icon className="w-5 h-5" />
+                  {item.name}
+                </a>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
 const UserMenu = () => {
   const handleSignout = () => {
     localStorage.removeItem("token");
@@ -183,11 +262,14 @@ const SettingsComp = () => {
     const fetchUserData = async () => {
       try {
         const token = localStorage.getItem("token"); // Get the token from localStorage
-        const response = await axios.get("http://localhost:5000/api/candidates/profile", {
-          headers: {
-            Authorization: `Bearer ${token}`, // Pass the token in the Authorization header
-          },
-        });
+        const response = await axios.get(
+          "http://localhost:5000/api/candidates/profile",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`, // Pass the token in the Authorization header
+            },
+          }
+        );
 
         // Assuming the backend returns { profilePic: "url", firstName: "John", lastName: "Doe", email: "john.doe@example.com" }
         const { profilePic, firstName, lastName, email } = response.data;
@@ -195,8 +277,7 @@ const SettingsComp = () => {
         setFirstName(firstName || ""); // Ensure fallback to an empty string
         setLastName(lastName || ""); // Ensure fallback to an empty string
         setEmail(email || ""); // Ensure fallback to an empty string
-        console.log( email);
-
+        console.log(email);
       } catch (error) {
         console.error("Error fetching user data:", error);
       }
@@ -239,9 +320,13 @@ const SettingsComp = () => {
     }, 100);
     alert("Account deleted");
   };
-console.log( email);
+  console.log(email);
   return (
-    <div className={`min-h-screen ${isDarkMode ? "dark" : ""} transition-all duration-300 ease-in-out`}>
+    <div
+      className={`min-h-screen ${
+        isDarkMode ? "dark" : ""
+      } transition-all duration-300 ease-in-out`}
+    >
       <div className="flex h-screen bg-white dark:bg-black transition-all duration-300 ease-in-out z-30">
         {/* Sidebar */}
         <aside
@@ -332,7 +417,19 @@ console.log( email);
           {/* Header */}
           <header className="bg-white dark:bg-black  border-gray-200 dark:border-gray-800 sticky top-0 transition-all duration-300 ease-in-out z-30">
             <div className="flex items-center justify-between px-6 py-4">
-              <SearchBar />
+              <SearchBar
+                navigationMenu={[
+                  { name: "Dashboard", href: "/dashboard", icon: Menu },
+                  { name: "History", href: "/dashboard/history", icon: History },
+                  { name: "Job List", href: "/Jobcandidate", icon: Menu },
+                  { name: "Billing", href: "/Pricing", icon: PlusSquare },
+                ]}
+                navigationOption={[
+                  { name: "Settings", href: "/Settings", icon: Settings },
+                  { name: "Support", href: "/cv", icon: Wrench },
+                  { name: "cv testing", href: "/Testing", icon: FlaskConical },
+                ]}
+              />
               <div className="flex items-center gap-4">
                 <button
                   type="button"
