@@ -17,6 +17,7 @@ router.get("/", async (req, res) => {
     res.status(500).send({ message: "Internal Server Error" });
   }
 });
+
 router.post("/add-default-job", async (req, res) => {
   try {
     const existingJob = await Job.findOne({ title: "Default Job" });
@@ -30,7 +31,7 @@ router.post("/add-default-job", async (req, res) => {
       requirements: "Basic programming skills",
       location: "Remote",
       salary: "50,000 USD",
-      jobType: "Full-time",
+      jobType: "Full Time",
       skills: ["JavaScript", "Node.js", "React"],
       recruiter: "64b7f9e2f2a4e2a4b7f9e2f2", // Replace with a valid recruiter ID from your database
       companyName: "Default Company",

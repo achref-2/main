@@ -14,7 +14,7 @@ import {
   X,
   Upload,
   FileText,
-  Wrench
+  Wrench,
 } from "lucide-react";
 import { Dialog } from "@headlessui/react";
 import { Menu as HeadlessMenu } from "@headlessui/react";
@@ -83,11 +83,20 @@ const SearchBar = ({ navigationMenu, navigationOption }) => {
               onClick={() => setIsModalOpen(false)}
               aria-label="Close"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-4 w-4"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                  clipRule="evenodd"
+                />
               </svg>
             </button>
-            
+
             {/* Search Input Inside Modal */}
             <div className="relative mb-4  mt-5">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-black dark:text-zinc-300" />
@@ -225,7 +234,9 @@ const UserMenu = () => {
                   ? "bg-zinc-950 text-zinc-100 border-zinc-400" // Dark mode: Normal state
                   : "text-black" // Light mode: Normal state
               }`}
-              aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
+              aria-label={
+                isDarkMode ? "Switch to light mode" : "Switch to dark mode"
+              }
             >
               <span>Theme</span>
               {isDarkMode ? (
@@ -293,7 +304,7 @@ const UploadModal = ({ isOpen, onClose, children }) => {
   const handleDrag = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     if (e.type === "dragenter" || e.type === "dragover") {
       setDragActive(true);
     } else if (e.type === "dragleave") {
@@ -305,7 +316,7 @@ const UploadModal = ({ isOpen, onClose, children }) => {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-    
+
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       handleFileUpload(e.dataTransfer.files[0]);
     }
@@ -321,61 +332,61 @@ const UploadModal = ({ isOpen, onClose, children }) => {
       console.error("No file provided to handleFileUpload");
       return;
     }
-  
+
     console.log("CV file to upload:", file.name, file.type, file.size);
-  
+
     if (file.type !== "application/pdf") {
       setUploadStatus("error");
       alert("Only PDF files are accepted");
       return;
     }
-  
+
     const maxSize = 10 * 1024 * 1024; // 10MB
     if (file.size > maxSize) {
       setUploadStatus("error");
       alert("File size exceeds the 10MB limit");
       return;
     }
-  
+
     const formData = new FormData();
     formData.append("cv", file);
-  
+
     console.log("FormData contents:");
     for (let pair of formData.entries()) {
       console.log(`${pair[0]}: ${pair[1]} (${typeof pair[1]})`);
     }
-  
+
     try {
       setIsLoading(true);
       setUploadStatus("uploading");
       setUploadProgress(25);
-  
+
       const token = localStorage.getItem("token");
       if (!token) {
         throw new Error("Authentication token not found. Please log in again.");
       }
-  
+
       // First fetch request to upload the CV
       const response = await fetch("http://localhost:5000/api/cvs/AddCv", {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
         body: formData,
       });
-  
+
       setUploadProgress(90);
-  
+
       const responseText = await response.text();
       console.log("Response text:", responseText);
-  
+
       const jsonData = JSON.parse(responseText);
-  
+
       if (response.ok) {
         console.log("Upload successful:", jsonData);
         setUploadProgress(100);
         setUploadStatus("success");
-  
+
         // Background axios request to /api/TakeInfo
         axios
           .post("http://localhost:5000/api/TakeInfo", formData, {
@@ -389,9 +400,8 @@ const UploadModal = ({ isOpen, onClose, children }) => {
           .catch((axiosError) => {
             console.error("Error in TakeInfo request:", axiosError);
           });
-  
+
         // Redirect to /dashboard/history
-       
       } else {
         throw new Error(jsonData.message || "Failed to upload file");
       }
@@ -407,14 +417,34 @@ const UploadModal = ({ isOpen, onClose, children }) => {
 
   // Add imports for the CheckCircle and XCircle components
   const CheckCircle = () => (
-    <svg className="w-12 h-12 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+    <svg
+      className="w-12 h-12 text-green-500"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+      />
     </svg>
   );
-  
+
   const XCircle = () => (
-    <svg className="w-12 h-12 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+    <svg
+      className="w-12 h-12 text-red-500"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+      />
     </svg>
   );
 
@@ -453,7 +483,7 @@ const UploadModal = ({ isOpen, onClose, children }) => {
               <X className="w-5 h-5" />
             </button>
           </div>
-          
+
           {/* Modal Content */}
           <div className="p-6">
             {children || (
@@ -489,7 +519,10 @@ const UploadModal = ({ isOpen, onClose, children }) => {
                           <XCircle />
                         ) : (
                           <div className="relative w-12 h-12">
-                            <svg className="w-12 h-12 animate-spin" viewBox="0 0 24 24">
+                            <svg
+                              className="w-12 h-12 animate-spin"
+                              viewBox="0 0 24 24"
+                            >
                               <circle
                                 className="opacity-25"
                                 cx="12"
@@ -508,20 +541,20 @@ const UploadModal = ({ isOpen, onClose, children }) => {
                           </div>
                         )}
                       </div>
-                      
+
                       <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 mb-2">
-                        <div 
+                        <div
                           className={`h-2.5 rounded-full ${
-                            uploadStatus === "success" 
-                              ? "bg-green-500" 
+                            uploadStatus === "success"
+                              ? "bg-green-500"
                               : uploadStatus === "error"
                               ? "bg-red-500"
                               : "bg-blue-500"
-                          }`} 
+                          }`}
                           style={{ width: `${uploadProgress}%` }}
                         ></div>
                       </div>
-                      
+
                       <p className="text-center text-sm font-medium">
                         {uploadStatus === "success"
                           ? "Upload complete! Redirecting to history..."
@@ -532,25 +565,29 @@ const UploadModal = ({ isOpen, onClose, children }) => {
                     </div>
                   ) : (
                     <>
-                      <div className={`p-4 mb-2 rounded-full ${
-                        isDarkMode ? "bg-zinc-800" : "bg-gray-100"
-                      }`}>
+                      <div
+                        className={`p-4 mb-2 rounded-full ${
+                          isDarkMode ? "bg-zinc-800" : "bg-gray-100"
+                        }`}
+                      >
                         <Upload
                           className={`h-8 w-8 ${
-                            isDarkMode
-                              ? "text-blue-400"
-                              : "text-blue-500"
+                            isDarkMode ? "text-blue-400" : "text-blue-500"
                           }`}
                         />
                       </div>
-                      <p className={`mb-2 text-sm font-semibold ${
-                        isDarkMode ? "text-gray-200" : "text-gray-700"
-                      }`}>
+                      <p
+                        className={`mb-2 text-sm font-semibold ${
+                          isDarkMode ? "text-gray-200" : "text-gray-700"
+                        }`}
+                      >
                         Click to upload or drag and drop
                       </p>
-                      <p className={`text-xs ${
-                        isDarkMode ? "text-gray-400" : "text-gray-500"
-                      }`}>
+                      <p
+                        className={`text-xs ${
+                          isDarkMode ? "text-gray-400" : "text-gray-500"
+                        }`}
+                      >
                         PDF only (MAX. 10MB)
                       </p>
                     </>
@@ -559,12 +596,14 @@ const UploadModal = ({ isOpen, onClose, children }) => {
               </div>
             )}
           </div>
-          
+
           {/* Footer with buttons (only shown when not uploading) */}
           {!isLoading && (
-            <div className={`px-6 py-4 flex justify-end gap-2 border-t ${
-              isDarkMode ? "border-zinc-800" : "border-zinc-200"
-            }`}>
+            <div
+              className={`px-6 py-4 flex justify-end gap-2 border-t ${
+                isDarkMode ? "border-zinc-800" : "border-zinc-200"
+              }`}
+            >
               <button
                 onClick={onClose}
                 className={`px-4 py-2 rounded-lg text-sm font-medium ${
@@ -610,7 +649,7 @@ const SidebarLayout = () => {
   ];
   const navigation_option = [
     { name: "Settings", href: "/Settings", icon: Settings, current: false },
-    { name: "Support", href: "/cv", icon:  Wrench, current: false },
+    { name: "Support", href: "/cv", icon: Wrench, current: false },
   ];
 
   const { isDarkMode, toggleTheme } = useDarkMode();
@@ -711,7 +750,10 @@ const SidebarLayout = () => {
         <main className="flex-1 overflow-auto bg-white dark:bg-black transition-all duration-300 ease-in-out z-30">
           <header className="bg-white dark:bg-black  border-gray-200 dark:border-gray-800 sticky top-0 transition-all duration-300 ease-in-out z-30">
             <div className="flex items-center justify-between px-6 py-4">
-              <SearchBar navigationMenu={navigation_menu} navigationOption={navigation_option} />
+              <SearchBar
+                navigationMenu={navigation_menu}
+                navigationOption={navigation_option}
+              />
               <div className="flex items-center gap-4">
                 <button
                   type="button"
@@ -741,32 +783,32 @@ const SidebarLayout = () => {
               </p>
 
               <button
-  className="group flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-3 rounded-full transition-all duration-300 ease-in-out hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900 animate-slide-up"
-  onClick={() => setIsModalOpen(true)}
->
-  Create New CV
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    className="h-5 w-5 ml-2 transition-transform duration-300 transform group-hover:translate-x-1"
-    fill="none"
-    viewBox="0 0 24 24"
-    stroke="currentColor"
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={2}
-      d="M17 8l4 4m0 0l-4 4m4-4H3"
-    />
-  </svg>
-</button>
+                className="group flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-3 rounded-full transition-all duration-300 ease-in-out hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900 animate-slide-up"
+                onClick={() => setIsModalOpen(true)}
+              >
+                Create New CV
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5 ml-2 transition-transform duration-300 transform group-hover:translate-x-1"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M17 8l4 4m0 0l-4 4m4-4H3"
+                  />
+                </svg>
+              </button>
 
               <div className="mt-4">
                 <button
                   onClick={() => setIsModalTwoOpen(true)}
                   className="text-sm text-zinc-700 dark:text-zinc-300 hover:underline"
                 >
-                  You don't have one ? Click here.
+                  Do you have one ? Click here.
                 </button>
               </div>
 

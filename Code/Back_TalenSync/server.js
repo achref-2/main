@@ -10,6 +10,7 @@ const userRoutes = require("./routes/users");
 const authRoutes = require("./routes/auth");
 const candidateRoutes = require("./routes/candidates");
 const recruitersRoutes = require("./routes/recruiters");
+const applicationRoutes=require("./routes/applicationRoute");
 const jobsRouter = require("./routes/jobs");
 const Joi = require("joi");
 const { User } = require("./models/user"); // Fixed import for User model
@@ -84,7 +85,7 @@ app.use("/api/recruiters", recruitersRoutes);
 app.use("/api/admin", adminRoutes);  
 app.use("/api/jobs", jobsRouter);
 
-
+app.use("/api/applications", applicationRoutes);
 
 
 app.get('/api/cv-history', auth, async (req, res) => {
@@ -197,9 +198,77 @@ app.use((err, req, res, next) => {
         message: err.message || "Internal Server Error",
     });
 });
+app.post('/api/TakeData', upload.single('cv'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ 
+        error: 'No CV file uploaded', 
+        details: 'Ensure file is sent with key "cv"' 
+      });
+    }
 
+    console.log('File received:', req.file);
 
-app.post('/api/TakeInfo', upload.single('cv'), async (req, res) => {
+    const cvPath = req.file.path;
+    const pythonProcess = spawn('python', ['python/ExtractData.py', cvPath]);
+
+    let extractionResult = '';
+    let errorOutput = '';
+
+    pythonProcess.stdout.on('data', (data) => {
+      extractionResult += data.toString();
+    });
+
+    pythonProcess.stderr.on('data', (data) => {
+      errorOutput += data.toString();
+      console.error(`Python script error: ${data.toString()}`);
+    });
+
+    pythonProcess.on('close', async (code) => {
+      if (code !== 0) {
+        return res.status(500).json({ 
+          error: 'Python script failed', 
+          details: errorOutput.trim() 
+        });
+      }
+
+      try {
+        console.log('Raw Extraction Result:', extractionResult);
+
+        let jsonMatch = extractionResult.match(/\{[\s\S]*\}/);
+        let cleanedResult = jsonMatch ? jsonMatch[0] : '{}';
+
+        cleanedResult = cleanedResult
+          .replace(/}\s*{/g, ',')
+          .replace(/\]\s*\[/g, ',')
+          .replace(/,,+/g, ',');
+
+        let result = JSON.parse(cleanedResult);
+
+        console.log('Parsed Extraction Result:', result);
+
+        res.json({ 
+          message: 'Extraction completed successfully', 
+          result 
+        });
+      } catch (error) {
+        console.error('Failed to parse extraction results:', error.message);
+        res.status(500).json({ 
+          error: 'Failed to parse extraction results', 
+          details: error.message 
+        });
+      }
+    });
+  } catch (error) {
+    console.error('Server error:', error);
+    res.status(500).json({ 
+      error: 'Server processing error', 
+      details: error.message 
+    });
+  }
+});
+
+app.post('/api/AnalyseData', upload.single('cv'), async (req, res) => {
   try {
     // Check if a file was uploaded
     if (!req.file) {
@@ -221,7 +290,7 @@ app.post('/api/TakeInfo', upload.single('cv'), async (req, res) => {
       console.log('Extracted Text Preview:', extractedText.slice(0, 500)); // Limit log output
 
       const pythonProcess = spawn('python', [
-        'python/Extract.py',
+        'python/Extract._analyse.py',
         cvPath,
         'Datasets/skills_and_experience.csv',
         req.body.jobDescription || '',  // Ensure jobDescription is not undefined

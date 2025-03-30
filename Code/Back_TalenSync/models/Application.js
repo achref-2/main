@@ -54,6 +54,7 @@ const validateApplication = (application) => {
   return schema.validate(application);
 };
 
-const Application = mongoose.model('Application', applicationSchema);
+// Check if the model already exists before defining it
+const Application = mongoose.models.Application || mongoose.model('Application', applicationSchema);
 
 module.exports = { Application, validateApplication };

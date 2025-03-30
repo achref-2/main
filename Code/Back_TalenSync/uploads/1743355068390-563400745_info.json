@@ -1,0 +1,9 @@
+{
+  "contacts": {
+    "name": "Extracted name (if available)",
+    "email": "Extracted email (if available)",
+    "phone": "Extracted phone (if available)"
+  },
+  "experience": "Extracted experience from the response",
+  "skills": "Extracted skills from the response"
+}

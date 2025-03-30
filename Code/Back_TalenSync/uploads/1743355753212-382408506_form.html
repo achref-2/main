@@ -1,0 +1,444 @@
+
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Resume Editor</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                max-width: 800px;
+                margin: 0 auto;
+                padding: 20px;
+            }
+            h1, h2 {
+                color: #2c3e50;
+            }
+            .section {
+                margin-bottom: 30px;
+                padding: 15px;
+                background-color: #f9f9f9;
+                border-radius: 5px;
+            }
+            label {
+                font-weight: bold;
+                display: block;
+                margin-bottom: 5px;
+            }
+            input, textarea, select {
+                width: 100%;
+                padding: 8px;
+                margin-bottom: 15px;
+                border: 1px solid #ddd;
+                border-radius: 4px;
+                box-sizing: border-box;
+            }
+            textarea {
+                min-height: 80px;
+            }
+            button {
+                background-color: #3498db;
+                color: white;
+                border: none;
+                padding: 10px 15px;
+                cursor: pointer;
+                border-radius: 4px;
+            }
+            button:hover {
+                background-color: #2980b9;
+            }
+            .add-btn {
+                background-color: #2ecc71;
+                margin-bottom: 20px;
+            }
+            .delete-btn {
+                background-color: #e74c3c;
+                margin-top: 5px;
+                width: 100%;
+            }
+            .entry {
+                position: relative;
+                border: 1px solid #ddd;
+                padding: 15px;
+                margin-bottom: 15px;
+                border-radius: 4px;
+            }
+            .skill-tag {
+                display: inline-block;
+                background-color: #3498db;
+                color: white;
+                padding: 5px 10px;
+                margin: 5px;
+                border-radius: 4px;
+            }
+            .skill-input {
+                display: flex;
+                margin-bottom: 10px;
+            }
+            .skill-input input {
+                flex-grow: 1;
+                margin-right: 10px;
+                margin-bottom: 0;
+            }
+            .skill-input button {
+                width: auto;
+            }
+            #skills-container {
+                margin-bottom: 15px;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Resume Editor</h1>
+        <form id="resumeForm" action="" method="post">
+            <!-- Contact Information -->
+            <div class="section">
+                <h2>Contact Information</h2>
+    
+                <label for="name">Name:</label>
+                <input type="text" id="name" name="name" value="MOHAMED AZIZ HAMMAMI">
+        
+                <label for="phone">Phone:</label>
+                <input type="text" id="phone" name="phone" value="+216 55559864">
+        
+                <label for="email">Email:</label>
+                <input type="text" id="email" name="email" value="">
+        
+                <label for="linkedin">Linkedin:</label>
+                <input type="text" id="linkedin" name="linkedin" value="">
+        
+                <label for="github">Github:</label>
+                <input type="text" id="github" name="github" value="">
+        
+            </div>
+            
+            <!-- Work Experience -->
+            <div class="section">
+                <h2>Work Experience</h2>
+                <div id="experience-container">
+    
+                    <div class="entry experience-entry">
+                        <label for="company_0">Company:</label>
+                        <input type="text" id="company_0" name="company_0" value="- MARRAKCHI">
+                        
+                        <label for="role_0">Role:</label>
+                        <input type="text" id="role_0" name="role_0" value="Stage de perfectionnement">
+                        
+                        <label for="dates_0">Dates:</label>
+                        <input type="text" id="dates_0" name="dates_0" value="Janvier 2024">
+                        
+                        <label for="description_0">Description:</label>
+                        <textarea id="description_0" name="description_0">Réalisation d&#x27;une étude de cas portant sur la conception d&#x27;une table de lavage des pièces mécaniques. Utilisation de SolidWorks pour la modélisation 3D et la simulation. Collaboration avec l&#x27;équipe de production pour optimiser la conception en fonction des contraintes industrielles.</textarea>
+                        
+                        <button type="button" class="delete-btn" onclick="removeEntry(this, 'experience')">Remove</button>
+                    </div>
+        
+                    <div class="entry experience-entry">
+                        <label for="company_1">Company:</label>
+                        <input type="text" id="company_1" name="company_1" value="COFAT">
+                        
+                        <label for="role_1">Role:</label>
+                        <input type="text" id="role_1" name="role_1" value="Stage d’initiation">
+                        
+                        <label for="dates_1">Dates:</label>
+                        <input type="text" id="dates_1" name="dates_1" value="Janvier 2023">
+                        
+                        <label for="description_1">Description:</label>
+                        <textarea id="description_1" name="description_1">Stage d’initiation au sein du service de maintenance. Observation et assistance dans la maintenance des équipements industriels. Participation à des interventions de maintenance préventive et corrective.</textarea>
+                        
+                        <button type="button" class="delete-btn" onclick="removeEntry(this, 'experience')">Remove</button>
+                    </div>
+        
+                    <div class="entry experience-entry">
+                        <label for="company_2">Company:</label>
+                        <input type="text" id="company_2" name="company_2" value="">
+                        
+                        <label for="role_2">Role:</label>
+                        <input type="text" id="role_2" name="role_2" value="Assistant Mécanicien Agricole">
+                        
+                        <label for="dates_2">Dates:</label>
+                        <input type="text" id="dates_2" name="dates_2" value="Juin - aout 2023/Juin - aout 2024">
+                        
+                        <label for="description_2">Description:</label>
+                        <textarea id="description_2" name="description_2">Assistance dans la réparation et l&#x27;entretien de machines agricoles. Aide à la gestion des pannes et à la recherche de solutions techniques adaptées.</textarea>
+                        
+                        <button type="button" class="delete-btn" onclick="removeEntry(this, 'experience')">Remove</button>
+                    </div>
+        
+                </div>
+                <button type="button" class="add-btn" onclick="addExperienceEntry()">Add Experience</button>
+            </div>
+            
+            <!-- Education -->
+            <div class="section">
+                <h2>Education</h2>
+                <div id="education-container">
+    
+                    <div class="entry education-entry">
+                        <label for="degree_0">Degree:</label>
+                        <input type="text" id="degree_0" name="degree_0" value="- 3EME ANNÉE LICENCE EN « Conception et fabrication mécanique »">
+                        
+                        <label for="institution_0">Institution:</label>
+                        <input type="text" id="institution_0" name="institution_0" value="Institut Supérieur des Etudes Technologiques de Bizerte">
+                        
+                        <label for="graduation_date_0">Graduation Date:</label>
+                        <input type="text" id="graduation_date_0" name="graduation_date_0" value="2022 –2025">
+                        
+                        <label for="gpa_0">GPA:</label>
+                        <input type="text" id="gpa_0" name="gpa_0" value="GPA not available">
+                        
+                        <button type="button" class="delete-btn" onclick="removeEntry(this, 'education')">Remove</button>
+                    </div>
+        
+                    <div class="entry education-entry">
+                        <label for="degree_1">Degree:</label>
+                        <input type="text" id="degree_1" name="degree_1" value="BACCALAURÉAT TECHNIQUE">
+                        
+                        <label for="institution_1">Institution:</label>
+                        <input type="text" id="institution_1" name="institution_1" value="LYCÉE MATEUR">
+                        
+                        <label for="graduation_date_1">Graduation Date:</label>
+                        <input type="text" id="graduation_date_1" name="graduation_date_1" value="2021 –2022">
+                        
+                        <label for="gpa_1">GPA:</label>
+                        <input type="text" id="gpa_1" name="gpa_1" value="GPA not available">
+                        
+                        <button type="button" class="delete-btn" onclick="removeEntry(this, 'education')">Remove</button>
+                    </div>
+        
+                </div>
+                <button type="button" class="add-btn" onclick="addEducationEntry()">Add Education</button>
+            </div>
+            
+            <!-- Skills -->
+            <div class="section">
+                <h2>Skills</h2>
+                <div id="skills-container">
+    
+                    <span class="skill-tag">SolidWorks (certifications A <span onclick="removeSkill(this)" style="cursor:pointer;margin-left:5px;">×</span></span>
+        
+                    <span class="skill-tag">P <span onclick="removeSkill(this)" style="cursor:pointer;margin-left:5px;">×</span></span>
+        
+                    <span class="skill-tag">Drawing Tools et Weldments) <span onclick="removeSkill(this)" style="cursor:pointer;margin-left:5px;">×</span></span>
+        
+                    <span class="skill-tag">CAO/DAO <span onclick="removeSkill(this)" style="cursor:pointer;margin-left:5px;">×</span></span>
+        
+                    <span class="skill-tag">Calcul de résistance des matériaux <span onclick="removeSkill(this)" style="cursor:pointer;margin-left:5px;">×</span></span>
+        
+                    <span class="skill-tag">Analyse des contraintes <span onclick="removeSkill(this)" style="cursor:pointer;margin-left:5px;">×</span></span>
+        
+                    <span class="skill-tag">Programmation FANUC <span onclick="removeSkill(this)" style="cursor:pointer;margin-left:5px;">×</span></span>
+        
+                    <span class="skill-tag">FAO <span onclick="removeSkill(this)" style="cursor:pointer;margin-left:5px;">×</span></span>
+        
+                    <span class="skill-tag">Usinage <span onclick="removeSkill(this)" style="cursor:pointer;margin-left:5px;">×</span></span>
+        
+                    <span class="skill-tag">soudure <span onclick="removeSkill(this)" style="cursor:pointer;margin-left:5px;">×</span></span>
+        
+                    <span class="skill-tag">moulage par injection <span onclick="removeSkill(this)" style="cursor:pointer;margin-left:5px;">×</span></span>
+        
+                    <span class="skill-tag">Fraiseuses <span onclick="removeSkill(this)" style="cursor:pointer;margin-left:5px;">×</span></span>
+        
+                    <span class="skill-tag">tours CNC et conventionnels <span onclick="removeSkill(this)" style="cursor:pointer;margin-left:5px;">×</span></span>
+        
+                    <span class="skill-tag">Gestion de projet <span onclick="removeSkill(this)" style="cursor:pointer;margin-left:5px;">×</span></span>
+        
+                    <span class="skill-tag">Travail d&#x27;équipe <span onclick="removeSkill(this)" style="cursor:pointer;margin-left:5px;">×</span></span>
+        
+                    <span class="skill-tag">Leadership <span onclick="removeSkill(this)" style="cursor:pointer;margin-left:5px;">×</span></span>
+        
+                    <span class="skill-tag">Maintenance Mécanique (entretien préventif et correctif) <span onclick="removeSkill(this)" style="cursor:pointer;margin-left:5px;">×</span></span>
+        
+                    <span class="skill-tag">Gestion de Production et de Stock <span onclick="removeSkill(this)" style="cursor:pointer;margin-left:5px;">×</span></span>
+        
+                    <span class="skill-tag">Arabe (Langue maternelle) <span onclick="removeSkill(this)" style="cursor:pointer;margin-left:5px;">×</span></span>
+        
+                    <span class="skill-tag">Français (niveau intermédiaire) <span onclick="removeSkill(this)" style="cursor:pointer;margin-left:5px;">×</span></span>
+        
+                    <span class="skill-tag">Anglais (Débutant) <span onclick="removeSkill(this)" style="cursor:pointer;margin-left:5px;">×</span></span>
+        
+                </div>
+                <div class="skill-input">
+                    <input type="text" id="new-skill" placeholder="Add a skill">
+                    <button type="button" onclick="addSkill()">Add</button>
+                </div>
+                <input type="hidden" id="skills-data" name="skills">
+            </div>
+            
+            <!-- Projects -->
+            <div class="section">
+                <h2>Projects</h2>
+                <div id="projects-container">
+    
+                    <div class="entry project-entry">
+                        <label for="project_name_0">Project Name:</label>
+                        <input type="text" id="project_name_0" name="project_name_0" value="-">
+                        
+                        <label for="project_technologies_0">Technologies:</label>
+                        <input type="text" id="project_technologies_0" name="project_technologies_0" value="SolidWorks">
+                        
+                        <label for="project_description_0">Description:</label>
+                        <textarea id="project_description_0" name="project_description_0">Réalisation d&#x27;une étude de cas portant sur la conception d&#x27;une table de lavage des pièces mécaniques.</textarea>
+                        
+                        <button type="button" class="delete-btn" onclick="removeEntry(this, 'project')">Remove</button>
+                    </div>
+        
+                </div>
+                <button type="button" class="add-btn" onclick="addProjectEntry()">Add Project</button>
+            </div>
+            
+            <button type="submit">Save Resume</button>
+        </form>
+
+        <script>
+            // Add experience entry
+            function addExperienceEntry() {
+                const container = document.getElementById('experience-container');
+                const entries = container.getElementsByClassName('experience-entry');
+                const index = entries.length;
+                
+                const newEntry = document.createElement('div');
+                newEntry.className = 'entry experience-entry';
+                newEntry.innerHTML = `
+                    <label for="company_${index}">Company:</label>
+                    <input type="text" id="company_${index}" name="company_${index}" value="">
+                    
+                    <label for="role_${index}">Role:</label>
+                    <input type="text" id="role_${index}" name="role_${index}" value="">
+                    
+                    <label for="dates_${index}">Dates:</label>
+                    <input type="text" id="dates_${index}" name="dates_${index}" value="">
+                    
+                    <label for="description_${index}">Description:</label>
+                    <textarea id="description_${index}" name="description_${index}"></textarea>
+                    
+                    <button type="button" class="delete-btn" onclick="removeEntry(this, 'experience')">Remove</button>
+                `;
+                
+                container.appendChild(newEntry);
+            }
+            
+            // Add education entry
+            function addEducationEntry() {
+                const container = document.getElementById('education-container');
+                const entries = container.getElementsByClassName('education-entry');
+                const index = entries.length;
+                
+                const newEntry = document.createElement('div');
+                newEntry.className = 'entry education-entry';
+                newEntry.innerHTML = `
+                    <label for="degree_${index}">Degree:</label>
+                    <input type="text" id="degree_${index}" name="degree_${index}" value="">
+                    
+                    <label for="institution_${index}">Institution:</label>
+                    <input type="text" id="institution_${index}" name="institution_${index}" value="">
+                    
+                    <label for="graduation_date_${index}">Graduation Date:</label>
+                    <input type="text" id="graduation_date_${index}" name="graduation_date_${index}" value="">
+                    
+                    <label for="gpa_${index}">GPA:</label>
+                    <input type="text" id="gpa_${index}" name="gpa_${index}" value="">
+                    
+                    <button type="button" class="delete-btn" onclick="removeEntry(this, 'education')">Remove</button>
+                `;
+                
+                container.appendChild(newEntry);
+            }
+            
+            // Add project entry
+            function addProjectEntry() {
+                const container = document.getElementById('projects-container');
+                const entries = container.getElementsByClassName('project-entry');
+                const index = entries.length;
+                
+                const newEntry = document.createElement('div');
+                newEntry.className = 'entry project-entry';
+                newEntry.innerHTML = `
+                    <label for="project_name_${index}">Project Name:</label>
+                    <input type="text" id="project_name_${index}" name="project_name_${index}" value="">
+                    
+                    <label for="project_technologies_${index}">Technologies:</label>
+                    <input type="text" id="project_technologies_${index}" name="project_technologies_${index}" value="">
+                    
+                    <label for="project_description_${index}">Description:</label>
+                    <textarea id="project_description_${index}" name="project_description_${index}"></textarea>
+                    
+                    <button type="button" class="delete-btn" onclick="removeEntry(this, 'project')">Remove</button>
+                `;
+                
+                container.appendChild(newEntry);
+            }
+            
+            // Remove entry
+            function removeEntry(button, type) {
+                const entry = button.parentNode;
+                const container = entry.parentNode;
+                
+                // Don't remove if it's the last entry
+                if (container.getElementsByClassName(`${type}-entry`).length > 1) {
+                    container.removeChild(entry);
+                } else {
+                    alert(`You must have at least one ${type} entry.`);
+                }
+            }
+            
+            // Add skill
+            function addSkill() {
+                const skillInput = document.getElementById('new-skill');
+                const skillValue = skillInput.value.trim();
+                
+                if (skillValue) {
+                    const container = document.getElementById('skills-container');
+                    
+                    const skillTag = document.createElement('span');
+                    skillTag.className = 'skill-tag';
+                    skillTag.innerHTML = `${skillValue} <span onclick="removeSkill(this)" style="cursor:pointer;margin-left:5px;">×</span>`;
+                    
+                    container.appendChild(skillTag);
+                    skillInput.value = '';
+                    updateSkillsData();
+                }
+            }
+            
+            // Remove skill
+            function removeSkill(span) {
+                const skillTag = span.parentNode;
+                const container = skillTag.parentNode;
+                container.removeChild(skillTag);
+                updateSkillsData();
+            }
+            
+            // Update skills hidden input
+            function updateSkillsData() {
+                const skillTags = document.getElementsByClassName('skill-tag');
+                const skills = [];
+                
+                for (let i = 0; i < skillTags.length; i++) {
+                    const skillText = skillTags[i].childNodes[0].nodeValue.trim();
+                    skills.push(skillText);
+                }
+                
+                document.getElementById('skills-data').value = JSON.stringify(skills);
+            }
+            
+            // Initialize skills data on page load
+            document.addEventListener('DOMContentLoaded', updateSkillsData);
+            
+            // Submit form handler
+            document.getElementById('resumeForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Ensure skills are updated before submission
+                updateSkillsData();
+                
+                // Here you would normally send the form data to your backend
+                alert('Resume data ready for submission!');
+                console.log(new FormData(this));
+                
+                // You can implement AJAX submission here or customize as needed
+            });
+        </script>
+    </body>
+    </html>
+    

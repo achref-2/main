@@ -109,21 +109,21 @@ const CVUploadForm = () => {
   };
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!file) {
       setError("Please select a file");
       return;
     }
-    
+
     const formData = new FormData();
     formData.append("cv", file);
-    
+
     setIsLoading(true);
     setError(null);
-    
+
     try {
       const response = await axios.post(
-        "http://localhost:5000/api/TakeInfo",
+        "http://localhost:5000/api/TakeData",
         formData,
         {
           headers: {
@@ -131,9 +131,11 @@ const CVUploadForm = () => {
           },
         }
       );
-      
+
       console.log("Full API Response:", response.data);
-      setAnalysis(response.data);
+
+      const { result } = response.data;
+      setAnalysis(result);
     } catch (err) {
       console.error("API Error:", err);
       setError(err.response?.data?.message || "An error occurred");
@@ -141,7 +143,6 @@ const CVUploadForm = () => {
       setIsLoading(false);
     }
   };
-  
   // Convert JSON to readable text
   const convertToReadableText = (data) => {
     if (!data) return "No analysis available";
@@ -413,60 +414,250 @@ const CVUploadForm = () => {
               {/* Analysis Results */}
               {analysis && (
                 <div className="mt-6 bg-gray-50 p-4 rounded-lg">
-                  <h2 className="text-xl font-semibold mb-4">
-                    Analysis Results
-                  </h2>
+                  <h2 className="text-xl font-semibold mb-4">Resume Editor</h2>
 
-                  {/* Debug View */}
-                  {renderDebugView()}
-
-                  {/* Candidate Information */}
-                  <div className="mt-4">
-                    <h3 className="font-bold">
-                      Candidate Name: {analysis?.metadata?.candidate_name || "Unknown"}
-                    </h3>
-                    <p className="text-sm text-gray-600">
-                      Analyzed on:{" "}
-                      {analysis?.metadata?.analysis_date
-                        ? new Date(
-                            analysis.metadata.analysis_date
-                          ).toLocaleString()
-                        : "N/A"}
-                    </p>
+                  {/* Contact Information Section */}
+                  <div className="mb-6">
+                    <h3 className="text-lg font-bold mb-4">Contact Information</h3>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block font-medium">Name</label>
+                        <input
+                          type="text"
+                          value={analysis.contacts.name}
+                          onChange={(e) =>
+                            setAnalysis((prev) => ({
+                              ...prev,
+                              contacts: { ...prev.contacts, name: e.target.value },
+                            }))
+                          }
+                          className="w-full border rounded p-2"
+                        />
+                      </div>
+                      <div>
+                        <label className="block font-medium">Phone</label>
+                        <input
+                          type="text"
+                          value={analysis.contacts.phone}
+                          onChange={(e) =>
+                            setAnalysis((prev) => ({
+                              ...prev,
+                              contacts: { ...prev.contacts, phone: e.target.value },
+                            }))
+                          }
+                          className="w-full border rounded p-2"
+                        />
+                      </div>
+                      <div>
+                        <label className="block font-medium">Email</label>
+                        <input
+                          type="email"
+                          value={analysis.contacts.email}
+                          onChange={(e) =>
+                            setAnalysis((prev) => ({
+                              ...prev,
+                              contacts: { ...prev.contacts, email: e.target.value },
+                            }))
+                          }
+                          className="w-full border rounded p-2"
+                        />
+                      </div>
+                    </div>
                   </div>
 
-                  {/* Recommendations */}
-                  <div className="mb-4">
-                    <h3 className="font-bold">Recommendations</h3>
-                    <p>{analysis.recommendations || "No recommendations available."}</p>
-                  </div>
-
-                  {/* Professional Assessment */}
-                  {analysis?.professional_assessment && (
-                    <div className="mt-4">
-                      <h4 className="font-semibold text-lg">Professional Assessment</h4>
-                      {Object.entries(analysis.professional_assessment).map(([key, value]) => (
-                        <div key={key} className="mb-3">
-                          <h5 className="font-medium capitalize">{key.replace(/_/g, " ")}</h5>
-                          <p className="text-gray-700">{value}</p>
+                  {/* Work Experience Section */}
+                  <div className="mb-6">
+                    <h3 className="text-lg font-bold mb-4">Work Experience</h3>
+                    {typeof analysis.experience === "string" ? (
+                      <p className="text-gray-700">{analysis.experience}</p>
+                    ) : (
+                      Array.isArray(analysis.experience) &&
+                      analysis.experience.map((exp, index) => (
+                        <div key={index} className="mb-4 border p-4 rounded-lg bg-white shadow">
+                          <div className="mb-2">
+                            <label className="block font-medium">Company</label>
+                            <input
+                              type="text"
+                              value={exp.company || ""}
+                              onChange={(e) => {
+                                const updatedExperience = [...analysis.experience];
+                                updatedExperience[index].company = e.target.value;
+                                setAnalysis((prev) => ({
+                                  ...prev,
+                                  experience: updatedExperience,
+                                }));
+                              }}
+                              className="w-full border rounded p-2"
+                            />
+                          </div>
+                          <div className="mb-2">
+                            <label className="block font-medium">Role</label>
+                            <input
+                              type="text"
+                              value={exp.role || ""}
+                              onChange={(e) => {
+                                const updatedExperience = [...analysis.experience];
+                                updatedExperience[index].role = e.target.value;
+                                setAnalysis((prev) => ({
+                                  ...prev,
+                                  experience: updatedExperience,
+                                }));
+                              }}
+                              className="w-full border rounded p-2"
+                            />
+                          </div>
+                          <div className="mb-2">
+                            <label className="block font-medium">Date</label>
+                            <input
+                              type="text"
+                              value={exp.date || ""}
+                              onChange={(e) => {
+                                const updatedExperience = [...analysis.experience];
+                                updatedExperience[index].date = e.target.value;
+                                setAnalysis((prev) => ({
+                                  ...prev,
+                                  experience: updatedExperience,
+                                }));
+                              }}
+                              className="w-full border rounded p-2"
+                            />
+                          </div>
+                          <div>
+                            <label className="block font-medium">Description</label>
+                            <textarea
+                              value={exp.description || ""}
+                              onChange={(e) => {
+                                const updatedExperience = [...analysis.experience];
+                                updatedExperience[index].description = e.target.value;
+                                setAnalysis((prev) => ({
+                                  ...prev,
+                                  experience: updatedExperience,
+                                }));
+                              }}
+                              className="w-full border rounded p-2"
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const updatedExperience = analysis.experience.filter(
+                                (_, i) => i !== index
+                              );
+                              setAnalysis((prev) => ({
+                                ...prev,
+                                experience: updatedExperience,
+                              }));
+                            }}
+                            className="mt-2 bg-red-500 text-white py-1 px-4 rounded hover:bg-red-600"
+                          >
+                            Remove
+                          </button>
                         </div>
-                      ))}
-                    </div>
-                  )}
+                      ))
+                    )}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setAnalysis((prev) => ({
+                          ...prev,
+                          experience: [
+                            ...prev.experience,
+                            { company: "", role: "", date: "", description: "" },
+                          ],
+                        }))
+                      }
+                      className="bg-green-500 text-white py-1 px-4 rounded hover:bg-green-600"
+                    >
+                      Add Experience
+                    </button>
+                  </div>
 
-                  {/* Actionable Recommendations */}
-                  {analysis?.actionable_recommendations && (
-                    <div className="mt-4">
-                      <h4 className="font-semibold text-lg">Actionable Recommendations</h4>
-                      <ul className="list-disc list-inside">
-                        {analysis.actionable_recommendations.map((rec, index) => (
-                          <li key={index} className="text-gray-700">
-                            {rec}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
+                  {/* Education Section */}
+                  <div className="mb-6">
+                    <h3 className="text-lg font-bold mb-4">Education</h3>
+                    {analysis.education?.map((edu, index) => (
+                      <div key={index} className="mb-4 border p-4 rounded-lg bg-white shadow">
+                        <div className="mb-2">
+                          <label className="block font-medium">Degree</label>
+                          <input
+                            type="text"
+                            value={edu.degree || ""}
+                            onChange={(e) => {
+                              const updatedEducation = [...analysis.education];
+                              updatedEducation[index].degree = e.target.value;
+                              setAnalysis((prev) => ({
+                                ...prev,
+                                education: updatedEducation,
+                              }));
+                            }}
+                            className="w-full border rounded p-2"
+                          />
+                        </div>
+                        <div className="mb-2">
+                          <label className="block font-medium">Institution</label>
+                          <input
+                            type="text"
+                            value={edu.institution || ""}
+                            onChange={(e) => {
+                              const updatedEducation = [...analysis.education];
+                              updatedEducation[index].institution = e.target.value;
+                              setAnalysis((prev) => ({
+                                ...prev,
+                                education: updatedEducation,
+                              }));
+                            }}
+                            className="w-full border rounded p-2"
+                          />
+                        </div>
+                        <div className="mb-2">
+                          <label className="block font-medium">Graduation Date</label>
+                          <input
+                            type="text"
+                            value={edu.graduation_date || ""}
+                            onChange={(e) => {
+                              const updatedEducation = [...analysis.education];
+                              updatedEducation[index].graduation_date = e.target.value;
+                              setAnalysis((prev) => ({
+                                ...prev,
+                                education: updatedEducation,
+                              }));
+                            }}
+                            className="w-full border rounded p-2"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const updatedEducation = analysis.education.filter(
+                              (_, i) => i !== index
+                            );
+                            setAnalysis((prev) => ({
+                              ...prev,
+                              education: updatedEducation,
+                            }));
+                          }}
+                          className="mt-2 bg-red-500 text-white py-1 px-4 rounded hover:bg-red-600"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setAnalysis((prev) => ({
+                          ...prev,
+                          education: [
+                            ...prev.education,
+                            { degree: "", institution: "", graduation_date: "" },
+                          ],
+                        }))
+                      }
+                      className="bg-green-500 text-white py-1 px-4 rounded hover:bg-green-600"
+                    >
+                      Add Education
+                    </button>
+                  </div>
                 </div>
               )}
             </div>

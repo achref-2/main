@@ -1,0 +1,73 @@
+{
+  "contact_info": {
+    "name": "MOHAMED AZIZ HAMMAMI",
+    "phone": "+216 55559864",
+    "email": "",
+    "linkedin": "",
+    "github": ""
+  },
+  "work_experience": [
+    {
+      "company": "- MARRAKCHI",
+      "role": "Stage de perfectionnement",
+      "dates": "Janvier 2024",
+      "description": "R\u00e9alisation d'une \u00e9tude de cas portant sur la conception d'une table de lavage des pi\u00e8ces m\u00e9caniques. Utilisation de SolidWorks pour la mod\u00e9lisation 3D et la simulation. Collaboration avec l'\u00e9quipe de production pour optimiser la conception en fonction des contraintes industrielles."
+    },
+    {
+      "company": "COFAT",
+      "role": "Stage d\u2019initiation",
+      "dates": "Janvier 2023",
+      "description": "Stage d\u2019initiation au sein du service de maintenance. Observation et assistance dans la maintenance des \u00e9quipements industriels. Participation \u00e0 des interventions de maintenance pr\u00e9ventive et corrective."
+    },
+    {
+      "company": "",
+      "role": "Assistant M\u00e9canicien Agricole",
+      "dates": "Juin - aout 2023/Juin - aout 2024",
+      "description": "Assistance dans la r\u00e9paration et l'entretien de machines agricoles. Aide \u00e0 la gestion des pannes et \u00e0 la recherche de solutions techniques adapt\u00e9es."
+    }
+  ],
+  "education": [
+    {
+      "degree": "- 3EME ANN\u00c9E LICENCE EN \u00ab Conception et fabrication m\u00e9canique \u00bb",
+      "institution": "Institut Sup\u00e9rieur des Etudes Technologiques de Bizerte",
+      "graduation_date": "2022 \u20132025",
+      "gpa": "GPA not available"
+    },
+    {
+      "degree": "BACCALAUR\u00c9AT TECHNIQUE",
+      "institution": "LYC\u00c9E MATEUR",
+      "graduation_date": "2021 \u20132022",
+      "gpa": "GPA not available"
+    }
+  ],
+  "skills": [
+    "SolidWorks (certifications A",
+    "P",
+    "Drawing Tools et Weldments)",
+    "CAO/DAO",
+    "Calcul de r\u00e9sistance des mat\u00e9riaux",
+    "Analyse des contraintes",
+    "Programmation FANUC",
+    "FAO",
+    "Usinage",
+    "soudure",
+    "moulage par injection",
+    "Fraiseuses",
+    "tours CNC et conventionnels",
+    "Gestion de projet",
+    "Travail d'\u00e9quipe",
+    "Leadership",
+    "Maintenance M\u00e9canique (entretien pr\u00e9ventif et correctif)",
+    "Gestion de Production et de Stock",
+    "Arabe (Langue maternelle)",
+    "Fran\u00e7ais (niveau interm\u00e9diaire)",
+    "Anglais (D\u00e9butant)"
+  ],
+  "projects": [
+    {
+      "name": "-",
+      "technologies": "SolidWorks",
+      "description": "R\u00e9alisation d'une \u00e9tude de cas portant sur la conception d'une table de lavage des pi\u00e8ces m\u00e9caniques."
+    }
+  ]
+}
