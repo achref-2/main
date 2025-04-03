@@ -1,0 +1,11 @@
+{
+  "contacts": {
+    "name": "** achref aroua",
+    "email": "** arouaachref8@gmail.com",
+    "phone": "** +216 92448068"
+  },
+  "experience": "Extracted experience content",
+  "skills": "Extracted skills content",
+  "languages": "Extracted languages content",
+  "raw_analysis": "**1. Contact Information:**\n\n* **Name:** Achref AROUA\n* **Email:** arouaachref8@gmail.com\n* **Phone:** +216 92448068\n* **LinkedIn:** www.linkedin.com/in/achref-aroua\n* **GitHub:** https://github.com/achref-2\n\n\n**2. Work Experience Summary:**\n\nAchref AROUA has two internship experiences:\n\n* **Stagiaire en dev WEB app - Tunisair technics (June 2023):** Developed a dashboard for employees to manage airplane parts.  This involved web application development.\n\n* **Stagiaire en dev ERP ABAP - Groupe ASAP Siryos (June 2024):** Learned ABAP coding for ERP systems. Created dashboards and reports to provide key analyses.\n\n\n**3. Technical Skills:**\n\n* **Frontend:** React.js, Bootstrap, Tailwind, HTML, CSS, JavaScript\n* **Backend:** Spring Boot, Express.js, PHP, ABAP, Node.js (implied by mention of ipcRenderer)\n* **Databases:** MySQL, MongoDB, Oracle SGBD\n* **Machine Learning:** Basic projects (fire prediction, data analysis) using Python.\n* **Other:** UX/UI Design,  SOA, JEE, Big Data, Security (mentioned in education section),  IOT\n\n\n**4. Languages:**\n\n* Arabic\n* French\n* English\n* German (mentions having learned it, level of proficiency is unclear)"
+}

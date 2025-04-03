@@ -66,7 +66,7 @@ def analyze_resume(resume_text):
         return json.dumps({"error": "Google API Key is missing. Please check your .env file."})
     genai.configure(api_key=api_key)
     
-    # Construct prompt without job comparison or recommendations
+    # Construct prompt with updated criteria
     prompt = f"""
     Resume Analysis
     
@@ -77,11 +77,17 @@ def analyze_resume(resume_text):
     1. Extract and organize contact information (name, email, phone).
     2. Summarize work experience and highlight key projects.
     3. Identify technical skills mentioned in the resume.
+    4. Extract languages mentioned in the resume.
+    5. Provide feedback on the resume's strengths and areas for improvement.
+    6. Suggest improvements for the candidate's LinkedIn profile based on the resume content.
     
     Detailed Breakdown:
     - Extract contact information (name, email, phone).
     - Summarize the candidate's work experience, including key projects and roles.
     - List all technical skills mentioned in the resume.
+    - Identify languages the candidate is proficient in.
+    - Provide actionable feedback on the resume's structure, content, and clarity.
+    - Suggest LinkedIn profile improvements to align with the resume and enhance professional visibility.
     """
     
     # Generate analysis
@@ -102,6 +108,11 @@ def analyze_resume(resume_text):
                 },
                 "experience": extract_section(analysis_text, "experience"),
                 "skills": extract_section(analysis_text, "skills"),
+                "languages": extract_section(analysis_text, "languages"), 
+                 "feedback": {
+                    "resume": extract_section(analysis_text, "resume feedback"),  # Feedback for the resume
+                    "linkedin": extract_section(analysis_text, "linkedin feedback")  # Feedback for LinkedIn
+                }, 
                 "raw_analysis": analysis_text
             }, indent=4)
         else:
@@ -132,7 +143,12 @@ def extract_section(text, section_name):
     # In a real application, you'd want more sophisticated section extraction
     section_indicators = {
         "experience": ["experience", "work history", "employment"],
-        "skills": ["skills", "technical skills", "capabilities"]
+        "skills": ["skills", "technical skills", "capabilities"],
+        "languages": ["languages", "spoken languages", "proficient in"]  ,
+                "resume feedback": ["resume feedback", "feedback on resume", "resume improvement"],
+      "linkedin feedback": ["linkedin feedback", "linkedin improvement", "linkedin suggestions"]
+
+        # New indicator for languages
     }
     
     if section_name in section_indicators:

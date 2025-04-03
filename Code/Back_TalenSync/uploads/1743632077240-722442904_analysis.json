@@ -1,0 +1,10 @@
+{
+  "contacts": {
+    "name": "** achref aroua",
+    "email": "** arouaachref8@gmail.com",
+    "phone": "** +216 92448068"
+  },
+  "experience": "Extracted experience content",
+  "skills": "Extracted skills content",
+  "raw_analysis": "**1. Contact Information:**\n\n* **Name:** Achref AROUA\n* **Email:** arouaachref8@gmail.com\n* **Phone:** +216 92448068\n* **LinkedIn:** www.linkedin.com/in/achref-aroua\n* **GitHub:** https://github.com/achref-2\n\n\n**2. Work Experience Summary:**\n\nAchref AROUA has two internship experiences:\n\n* **Stagiaire en dev WEB app - Tunisair technics (June 2023):**  Developed a dashboard for employees to manage aircraft parts.  This involved web application development.\n\n* **Stagiaire en dev ERP ABAP - Groupe ASAP Siryos (June 2024):** Gained experience in ABAP coding for ERP systems. Created dashboards and reports to provide key analyses.\n\n\n**3. Technical Skills:**\n\n* **Programming Languages:**  C, Java, Python, JavaScript, PHP, ABAP\n* **Frameworks/Libraries:** React.js, Spring Boot, Express.js, Bootstrap, Tailwind CSS, jQuery (implied by projects)\n* **Databases:** MySQL, MongoDB, Oracle SGBD\n* **Tools/Technologies:**  HTML, CSS, Machine Learning, AI, Blockchain, IoT, UX/UI Design,  API integration (Google APIs), ipcRenderer (for screen sharing)\n* **Concepts:** Object-Oriented Programming (OOP), Service-Oriented Architecture (SOA), Big Data, Security (mentioned in education section),  Software Development Lifecycle (implied)\n\n\n**Key Projects:**\n\n* **Gym web (Full stack project):** React.js, Spring Boot, MySQL.\n* **Clothes website (TABDILA):** HTML, CSS, JavaScript, PHP, Database connection.\n* **Machine learning projects:** Fire prediction, data analysis.\n* **Search for hotels or Translaters in Tunisia:** Template, JavaScript, Google API.\n* **UX/UI design for apps:** Shopping store design.\n* **Screen share (between two pcs):** ipcRenderer, JavaScript.\n\n\n**Note:** The resume uses French and some abbreviation.  The skills and projects have been translated and summarized for clarity."
+}

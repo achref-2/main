@@ -1,0 +1,10 @@
+{
+  "contacts": {
+    "name": "** achref aroua",
+    "email": "** arouaachref8@gmail.com",
+    "phone": "** +216 92448068"
+  },
+  "experience": "Extracted experience content",
+  "skills": "Extracted skills content",
+  "raw_analysis": "**1. Contact Information:**\n\n* **Name:** Achref AROUA\n* **Email:** arouaachref8@gmail.com\n* **Phone:** +216 92448068\n* **LinkedIn:** www.linkedin.com/in/achref-aroua\n* **GitHub:** https://github.com/achref-2\n\n\n**2. Work Experience Summary:**\n\nAchref AROUA has two internships listed:\n\n* **Stagiaire en dev WEB app - Tunisair technics (June 2023):**  Developed a dashboard for employees to manage airplane parts.  This involved web application development.\n\n* **Stagiaire en dev ERP ABAP - Groupe ASAP Siryos (June 2024):**  Worked on ABAP development for ERP systems, creating dashboards and reports to provide key analysis.\n\n\n**3. Technical Skills:**\n\n**Programming Languages:** C, Java, Python, JavaScript, PHP, ABAP\n\n**Frameworks/Libraries:** React.js, Spring Boot, Express.js, Bootstrap, Tailwind CSS, Node.js (implied by projects)\n\n**Databases:** MySQL, MongoDB, Oracle SGBD\n\n**Tools/Technologies:**  Machine Learning, AI, Blockchain, IoT, UX/UI Design,  API integration (Google APIs), HTML, CSS\n\n\n**Other Skills:**  Software Development,  Software Design, System Design (SOA mentioned), Big Data (mentioned), Security (mentioned),  Web Development (Frontend and Backend),  Cloud Computing (mentioned)\n\n\n**Note:** The resume uses a mix of French and English.  Some skills are listed under headings such as \"Hard Skills\" and \"Soft Skills\" but many are embedded within project descriptions and educational experiences. The provided list compiles all technical skills mentioned throughout the resume.  The level of proficiency in each skill is not explicitly stated."
+}
