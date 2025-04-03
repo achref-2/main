@@ -68,7 +68,8 @@ app.use(helmet());
 app.use(cors({
     origin: 'http://localhost:3000',
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true
 }));
 app.use(rateLimit({
     windowMs: 15 * 60 * 1000,
@@ -201,9 +202,9 @@ app.use((err, req, res, next) => {
 app.post('/api/TakeData', upload.single('cv'), async (req, res) => {
   try {
     if (!req.file) {
-      return res.status(400).json({ 
-        error: 'No CV file uploaded', 
-        details: 'Ensure file is sent with key "cv"' 
+      return res.status(400).json({
+        error: 'No CV file uploaded',
+        details: 'Ensure file is sent with key "cv"',
       });
     }
 
@@ -226,9 +227,9 @@ app.post('/api/TakeData', upload.single('cv'), async (req, res) => {
 
     pythonProcess.on('close', async (code) => {
       if (code !== 0) {
-        return res.status(500).json({ 
-          error: 'Python script failed', 
-          details: errorOutput.trim() 
+        return res.status(500).json({
+          error: 'Python script failed',
+          details: errorOutput.trim(),
         });
       }
 
@@ -247,123 +248,120 @@ app.post('/api/TakeData', upload.single('cv'), async (req, res) => {
 
         console.log('Parsed Extraction Result:', result);
 
-        res.json({ 
-          message: 'Extraction completed successfully', 
-          result 
+        // Store extracted data temporarily (e.g., in memory or a database)
+        req.session = req.session || {}; // Ensure session exists
+        req.session.extractedData = result; // Save extracted data for later use
+
+        res.json({
+          message: 'Extraction completed successfully',
+          result,
         });
       } catch (error) {
         console.error('Failed to parse extraction results:', error.message);
-        res.status(500).json({ 
-          error: 'Failed to parse extraction results', 
-          details: error.message 
+        res.status(500).json({
+          error: 'Failed to parse extraction results',
+          details: error.message,
         });
       }
     });
   } catch (error) {
     console.error('Server error:', error);
-    res.status(500).json({ 
-      error: 'Server processing error', 
-      details: error.message 
+    res.status(500).json({
+      error: 'Server processing error',
+      details: error.message,
     });
   }
 });
 
-app.post('/api/AnalyseData', upload.single('cv'), async (req, res) => {
+app.post('/api/AnalyseData', async (req, res) => {
   try {
-    // Check if a file was uploaded
-    if (!req.file) {
-      return res.status(400).json({ 
-        error: 'No CV file uploaded', 
-        details: 'Ensure file is sent with key "cv"' 
+    const { cvData, jobTitle, company } = req.body;
+
+    if (!cvData) {
+      return res.status(400).json({
+        error: 'No CV data received',
+        details: 'Ensure you send CV data from /api/TakeData.',
       });
     }
 
-    console.log('File received:', req.file);
-
-    const cvPath = req.file.path;
-    const pdfBuffer = fs.readFileSync(cvPath);
-
-    try {
-      const data = await pdfParse(pdfBuffer);
-      const extractedText = data.text;
-
-      console.log('Extracted Text Preview:', extractedText.slice(0, 500)); // Limit log output
-
-      const pythonProcess = spawn('python', [
-        'python/Extract._analyse.py',
-        cvPath,
-        'Datasets/skills_and_experience.csv',
-        req.body.jobDescription || '',  // Ensure jobDescription is not undefined
-        extractedText
-      ]);
-
-      let analysisResult = '';
-      let errorOutput = '';
-
-      pythonProcess.stdout.on('data', (data) => {
-        analysisResult += data.toString();
+    if (!jobTitle || !company) {
+      return res.status(400).json({
+        error: 'Job details missing',
+        details: 'Ensure jobTitle and company are included in the request body.',
       });
+    }
 
-      pythonProcess.stderr.on('data', (data) => {
-        errorOutput += data.toString();
-        console.error(`Python script error: ${data.toString()}`);
-      });
+    console.log('Received CV Data:', cvData);
+    console.log('Job Title:', jobTitle);
+    console.log('Company:', company);
 
-      pythonProcess.on('close', async (code) => {
-        if (code !== 0) {
-            console.error('Python process exited with code:', code);
-            return res.status(500).json({ 
-                error: 'Python script failed', 
-                details: errorOutput.trim() 
-            });
-        }
-    
-        try {
-            console.log('Raw Analysis Result:', analysisResult);  // Debugging line
-    
-            let jsonMatch = analysisResult.match(/\{[\s\S]*\}/);
-            let cleanedResult = jsonMatch ? jsonMatch[0] : '{}';
-    
-            cleanedResult = cleanedResult
-                .replace(/}\s*{/g, ',')
-                .replace(/\]\s*\[/g, ',')
-                .replace(/,,+/g, ',');
-    
-            let result = JSON.parse(cleanedResult);
-    
-            console.log('Parsed Analysis Result:', result); // Debugging line
-    
-            res.json({ 
-                message: 'Analysis completed successfully', 
-                result 
-            });
-    
-        } catch (error) {
-            console.error('Failed to parse analysis results:', error.message);
-            res.status(500).json({ 
-                error: 'Failed to parse analysis results', 
-                details: error.message 
-            });
-        }
+    // Prepare job description (combine job title and company for better analysis)
+    const jobDescription = `${jobTitle} at ${company}`;
+
+    const pythonProcess = spawn('python', [
+      'python/Extract._analyse.py',
+     
+      jobDescription, // Send the job description
+      JSON.stringify(cvData), // Pass extracted CV data
+    ]);
+
+    let analysisResult = '';
+    let errorOutput = '';
+
+    pythonProcess.stdout.on('data', (data) => {
+      analysisResult += data.toString();
     });
-    
 
-    } catch (pdfError) {
-      console.error('Error extracting text from PDF:', pdfError);
-      return res.status(500).json({ 
-        error: 'Failed to extract text from PDF', 
-        details: pdfError.message 
-      });
-    }
+    pythonProcess.stderr.on('data', (data) => {
+      errorOutput += data.toString();
+      console.error(`Python script error: ${data.toString()}`);
+    });
 
+    pythonProcess.on('close', async (code) => {
+      if (code !== 0) {
+        console.error('Python process exited with code:', code);
+        return res.status(500).json({
+          error: 'Python script execution failed',
+          details: errorOutput.trim(),
+        });
+      }
+
+      try {
+        console.log('Raw Analysis Result:', analysisResult);
+
+        let jsonMatch = analysisResult.match(/\{[\s\S]*\}/);
+        let cleanedResult = jsonMatch ? jsonMatch[0] : '{}';
+
+        cleanedResult = cleanedResult
+          .replace(/}\s*{/g, ',')
+          .replace(/\]\s*\[/g, ',')
+          .replace(/,,+/g, ',');
+
+        let result = JSON.parse(cleanedResult);
+
+        console.log('Parsed Analysis Result:', result);
+
+        res.json({
+          message: 'Analysis completed successfully',
+          result,
+        });
+      } catch (error) {
+        console.error('Failed to parse analysis results:', error.message);
+        res.status(500).json({
+          error: 'Failed to parse analysis results',
+          details: error.message,
+        });
+      }
+    });
   } catch (error) {
     console.error('Server error:', error);
-    res.status(500).json({ 
-      error: 'Server processing error', 
-      details: error.message 
+    res.status(500).json({
+      error: 'Server processing error',
+      details: error.message,
     });
   }
 });
+
 app.post('/api/analyze', upload.single('cv'), async (req, res) => {
   try {
     console.log('Analyzing CV...');

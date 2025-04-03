@@ -75,19 +75,21 @@ def analyze_resume(resume_text):
     
     Analysis Criteria:
     1. Extract and organize contact information (name, email, phone).
-    2. Summarize work experience and highlight key projects.
+    2. Summarize work experience.
     3. Identify technical skills mentioned in the resume.
     4. Extract languages mentioned in the resume.
     5. Provide feedback on the resume's strengths and areas for improvement.
     6. Suggest improvements for the candidate's LinkedIn profile based on the resume content.
-    
+    7. Highlight key projects.
+
     Detailed Breakdown:
     - Extract contact information (name, email, phone).
-    - Summarize the candidate's work experience, including key projects and roles.
+    - Summarize the candidate's work experience, including roles.
     - List all technical skills mentioned in the resume.
     - Identify languages the candidate is proficient in.
     - Provide actionable feedback on the resume's structure, content, and clarity.
     - Suggest LinkedIn profile improvements to align with the resume and enhance professional visibility.
+    - Highlight key projects undertaken by the candidate.
     """
     
     # Generate analysis

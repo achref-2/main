@@ -26,8 +26,10 @@ import { MenuButton, MenuItem, MenuItems } from "@headlessui/react";
 import CV from "./CV/CvCreation";
 import { Link, useLocation } from "react-router-dom"; // Import useLocation
 import axios from "axios";
-
+import LoadingAnimation from './LoginAnimation'; // Adjust the path if needed
 import { useDarkMode } from "../../DarkModeProvider";
+import { useNavigate } from "react-router-dom"; // Import useNavigate
+
 const NavLink = ({ href, icon: Icon, children, isActive }) => (
   <Link
     to={href}
@@ -300,36 +302,7 @@ const SidebarLayout = () => {
   const { isDarkMode, toggleTheme } = useDarkMode();
   const [file, setFile] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [userData, setUserData] = useState({
-    personalInfo: {
-      name: "John Doe",
-      email: "john.doe@example.com",
-      phone: "(555) 123-4567",
-      location: "New York, NY",
-    },
-    experience: [
-      {
-        title: "Senior Developer",
-        company: "Tech Solutions Inc.",
-        duration: "2020 - Present",
-        description: "Full-stack development with React and Node.js",
-      },
-      {
-        title: "Web Developer",
-        company: "Digital Creations",
-        duration: "2017 - 2020",
-        description: "Frontend development with JavaScript and CSS",
-      },
-    ],
-    education: [
-      {
-        degree: "B.S. Computer Science",
-        institution: "Tech University",
-        year: "2017",
-      },
-    ],
-    skills: ["JavaScript", "React", "Node.js", "CSS", "HTML", "Git", "SQL"],
-  });
+  
 
   const handleNext = () => {
     setCurrentPage(currentPage + 1);
@@ -353,29 +326,28 @@ const SidebarLayout = () => {
     languages: "",
     linkedIn: "",
     github: "",
+    projects: "",
     feedback: {
       strengths: [],
       areasForImprovement: [],
       linkedinSuggestions: [],
     },
   });
-
   useEffect(() => {
     if (backendData?.result) {
       const links = parseLinksSection(backendData.result.raw_analysis);
       const feedback = parseFeedbackSection(backendData.result.raw_analysis);
 
       setFormData({
-        name: backendData.result.contacts?.name?.replace(/^\*\*\s*/, "") || "",
+        name: backendData.result.contacts?.name?.replace(/^\\*\s/, "") || "",
         email:
-          backendData.result.contacts?.email?.replace(/^\*\*\s*/, "") || "",
+          backendData.result.contacts?.email?.replace(/^\\*\s/, "") || "",
         phone:
-          backendData.result.contacts?.phone?.replace(/^\*\*\s*/, "") || "",
+          backendData.result.contacts?.phone?.replace(/^\\*\s/, "") || "",
         experience:
           parseExperienceSection(backendData.result.raw_analysis, true) || "",
         skills: parseSkillsSection(backendData.result.raw_analysis, true) || "",
-        additional:
-          parseAdditionalInfo(backendData.result.raw_analysis, true) || "",
+       
         languages:
           parseLanguagesSection(backendData.result.raw_analysis, true) || "",
         linkedIn: links.linkedIn,
@@ -386,6 +358,7 @@ const SidebarLayout = () => {
       });
     }
   }, [backendData]);
+  
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -405,7 +378,7 @@ const SidebarLayout = () => {
   const parseExperienceSection = (rawAnalysis, asPlainText = false) => {
     try {
       const experienceMatch = rawAnalysis.match(
-        /\*\*2\.\s*Work Experience Summary:\*\*([\s\S]*?)(?=\*\*3\.)/
+        /\*\*(?:\d+\.)?\s*Work Experience Summary:\*\*([\s\S]*?)(?=\*\*3\.)/
       );
 
       if (experienceMatch && experienceMatch[1]) {
@@ -444,26 +417,23 @@ const SidebarLayout = () => {
     }
   };
 
-  // Helper function to parse and display skills section
+  // Updated parseSkillsSection to ensure only skills are displayed
   const parseSkillsSection = (rawAnalysis, asPlainText = false) => {
     try {
-      // Match only the Technical Skills section, excluding any mention of languages
       const skillsMatch = rawAnalysis.match(
-        /\*\*3\.\s*Technical Skills:\*\*([\s\S]*?)(?=\*\*4\.\s*Languages:|$)/
+       /\*\*(?:\d+\.)?\s*Technical Skills:\*\*([\s\S]*?)(?=\*\*\d+\.\s|$)/ // Match only the Technical Skills section
       );
 
       if (skillsMatch && skillsMatch[1]) {
         const skillsText = skillsMatch[1].trim();
 
         if (asPlainText) {
-          // Return plain text for form inputs
           return skillsText
             .replace(/\*\*/g, "")
             .replace(/\n\n/g, "\n")
             .replace(/\* /g, "- ");
         }
 
-        // Return HTML for display
         return (
           <div
             dangerouslySetInnerHTML={{
@@ -477,62 +447,33 @@ const SidebarLayout = () => {
         );
       }
 
-      return asPlainText ? (
-        ""
-      ) : (
-        <p>No detailed skills information available.</p>
-      );
+      return asPlainText ? "" : <p>No skills data available.</p>;
     } catch (error) {
       console.error("Error parsing skills section:", error);
       return asPlainText ? "" : <p>Error displaying skills information.</p>;
     }
   };
 
-  // Helper function to parse and display additional information
-  const parseAdditionalInfo = (rawAnalysis, asPlainText = false) => {
-    try {
-      const additionalMatch = rawAnalysis.match(
-        /\*\*Additional Notes:\*\*([\s\S]*?)$/
-      );
-
-      if (additionalMatch && additionalMatch[1]) {
-        const additionalText = additionalMatch[1].trim();
-
-        if (asPlainText) {
-          // Return plain text for form inputs
-          return additionalText.replace(/\*\*/g, "").replace(/\n\n/g, "\n");
-        }
-
-        // Return HTML for display
-        return (
-          <div
-            dangerouslySetInnerHTML={{
-              __html: additionalText
-                .replace(/\*\*/g, "<strong>")
-                .replace(/\*\*/g, "</strong>")
-                .replace(/\n\n/g, "<br/><br/>"),
-            }}
-          />
-        );
-      }
-
-      return asPlainText ? "" : <p>No additional information available.</p>;
-    } catch (error) {
-      console.error("Error parsing additional information:", error);
-      return asPlainText ? "" : <p>Error displaying additional information.</p>;
-    }
-  };
+ 
 
   // Helper function to parse and display languages
   const parseLanguagesSection = (rawAnalysis, asPlainText = false) => {
     try {
+      // More flexible regex pattern to match Languages section regardless of numbering
       const languagesMatch = rawAnalysis.match(
-        /\*\*4\.\s*Languages:\*\*([\s\S]*?)(?=\*\*|$)/
+        /\*\*(?:\d+\.)?\s*Languages:\*\*([\s\S]*?)(?=\*\*\d+\.|$)/
       );
-
-      if (languagesMatch && languagesMatch[1]) {
-        const languagesText = languagesMatch[1].trim();
-
+  
+      // Alternative pattern to try if the first one fails
+      const alternateMatch = !languagesMatch && rawAnalysis.match(
+        /\*\*Languages:\*\*([\s\S]*?)(?=\*\*|$)/
+      );
+  
+      const matchResult = languagesMatch || alternateMatch;
+  
+      if (matchResult && matchResult[1]) {
+        const languagesText = matchResult[1].trim();
+  
         if (asPlainText) {
           // Return plain text for form inputs
           return languagesText
@@ -540,7 +481,7 @@ const SidebarLayout = () => {
             .replace(/\n\n/g, "\n")
             .replace(/\* /g, "- ");
         }
-
+  
         // Return HTML for display
         return (
           <div
@@ -554,14 +495,47 @@ const SidebarLayout = () => {
           />
         );
       }
-
+  
+      // Check if languages might be in technical skills section
+      const skillsMatch = rawAnalysis.match(
+        /\*\*(?:\d+\.)?\s*Technical Skills:\*\*([\s\S]*?)(?=\*\*\d+\.|$)/
+      );
+  
+      if (skillsMatch && skillsMatch[1] && skillsMatch[1].toLowerCase().includes("language")) {
+        // If we find languages mentioned in skills section, try to extract them
+        const skillsText = skillsMatch[1].trim();
+        const languagePortion = skillsText.split(/\n\n/).find(section => 
+          section.toLowerCase().includes("language")
+        );
+  
+        if (languagePortion) {
+          if (asPlainText) {
+            return languagePortion
+              .replace(/\*\*/g, "")
+              .replace(/\n\n/g, "\n")
+              .replace(/\* /g, "- ");
+          }
+  
+          return (
+            <div
+              dangerouslySetInnerHTML={{
+                __html: languagePortion
+                  .replace(/\*\*/g, "<strong>")
+                  .replace(/\*\*/g, "</strong>")
+                  .replace(/\n\n/g, "<br/><br/>")
+                  .replace(/\* /g, "• "),
+              }}
+            />
+          );
+        }
+      }
+  
       return asPlainText ? "" : <p>No language information available.</p>;
     } catch (error) {
       console.error("Error parsing languages section:", error);
       return asPlainText ? "" : <p>Error displaying language information.</p>;
     }
   };
-
   // Helper function to parse LinkedIn and GitHub links
   const parseLinksSection = (rawAnalysis) => {
     try {
@@ -585,22 +559,15 @@ const SidebarLayout = () => {
     }
   };
 
-  // Helper function to parse key projects
-  const parseProjectsSection = (rawAnalysis, asPlainText = false) => {
+  // Updated parseProjectsSection to fix Key Projects parsing
+  const parseProjectsSection = (rawAnalysis) => {
     try {
       const projectsMatch = rawAnalysis.match(
-        /\*\*3\.\s*Key Projects:\*\*([\s\S]*?)(?=\*\*4\.\s*Technical Skills:|$)/
+       /\*\*(?:\d+\.)?\s* Key Projects:\*\*([\s\S]*?)(?=\*\*\d+\.\s|$)/ // Match only the Key Projects section
       );
 
       if (projectsMatch && projectsMatch[1]) {
         const projectsText = projectsMatch[1].trim();
-
-        if (asPlainText) {
-          return projectsText
-            .replace(/\*\*/g, "")
-            .replace(/\n\n/g, "\n")
-            .replace(/\* /g, "- ");
-        }
 
         return (
           <div
@@ -615,89 +582,176 @@ const SidebarLayout = () => {
         );
       }
 
-      return asPlainText ? "" : <p>No project information available.</p>;
+      return <p>No key projects information available.</p>;
     } catch (error) {
-      console.error("Error parsing projects section:", error);
-      return asPlainText ? "" : <p>Error displaying project information.</p>;
+      console.error("Error parsing key projects section:", error);
+      return <p>Error displaying key projects information.</p>;
     }
   };
 
+  // Updated extractLinkedInSuggestions to display LinkedIn Profile Suggestions separately
+  const extractLinkedInSuggestions = (rawAnalysis) => {
+    try {
+      const linkedInMatch = rawAnalysis.match(
+        /\*\*(?:\d+\.)?\s*LinkedIn Profile Suggestions:\*\*([\s\S]*?)(?=\*\*\d+\.\s|$)/ // Match only the LinkedIn Profile Improvements section
+      );
+
+      if (linkedInMatch && linkedInMatch[1]) {
+        return linkedInMatch[1]
+          .split("*")
+          .map((item) => item.trim())
+          .filter((item) => item.length > 0);
+      }
+
+      return [];
+    } catch (error) {
+      console.error("Error extracting LinkedIn suggestions:", error);
+      return [];
+    }
+  };
+
+  // Function to extract resume strengths
+  const extractResumeStrengths = (rawAnalysis) => {
+    if (!rawAnalysis) return [];
+    
+    const strengthsSection = rawAnalysis.split("**Strengths:**")[1];
+    if (!strengthsSection) return [];
+    
+    const endIndex = strengthsSection.indexOf("**Areas for Improvement:**");
+    const relevantSection = endIndex !== -1 
+      ? strengthsSection.substring(0, endIndex) 
+      : strengthsSection;
+    
+    return relevantSection
+      .split("*")
+      .map(item => item.trim())
+      .filter(item => item.length > 0);
+  };
+  
+  // Function to extract areas for improvement
+  const extractAreasForImprovement = (rawAnalysis) => {
+    if (!rawAnalysis) return [];
+    
+    const sectionsArray = rawAnalysis.split("**Areas for Improvement:**");
+    if (sectionsArray.length < 2) return [];
+    
+    let areasSection = sectionsArray[1];
+    
+    // Remove content after "6. LinkedIn Profile Improvements:"
+    const endIndex = areasSection.indexOf("**6. LinkedIn Profile Suggestions:**");
+    if (endIndex !== -1) {
+      areasSection = areasSection.substring(0, endIndex);
+    }
+    
+    return areasSection
+      .split("*")
+      .map(item => item.trim())
+      .filter(item => item.length > 0);
+  };
+  // Now use these functions safely
+  const linkedinSuggestions = extractLinkedInSuggestions(backendData?.result?.raw_analysis || "");
+  const resumeStrengths = extractResumeStrengths(backendData?.result?.raw_analysis || "");
+  const areasForImprovement = extractAreasForImprovement(backendData?.result?.raw_analysis || "");
+
+  // Function to parse feedback section
   const parseFeedbackSection = (rawAnalysis) => {
     try {
-      const strengthsMatch = rawAnalysis.match(
-        /\*\*Strengths:\*\*([\s\S]*?)(?=\*\*Areas for Improvement:\*\*|$)/
-      );
-      const areasForImprovementMatch = rawAnalysis.match(
-        /\*\*Areas for Improvement:\*\*([\s\S]*?)(?=\*\*LinkedIn Profile Suggestions:\*\*|$)/
-      );
-      const linkedinSuggestionsMatch = rawAnalysis.match(
-        /\*\*LinkedIn Profile Suggestions:\*\*([\s\S]*?)(?=\*\*|$)/
+      const feedbackMatch = rawAnalysis.match(
+        /\*\*Feedback:\*\*([\s\S]*?)(?=\*\*\d+\.\s|$)/
       );
 
-      const strengths = strengthsMatch
-        ? strengthsMatch[1]
-            .trim()
-            .split("\n")
-            .filter((line) => line.trim().startsWith("*"))
-            .map((line) => line.replace("*", "").trim())
-        : [];
+      if (feedbackMatch && feedbackMatch[1]) {
+        return feedbackMatch[1]
+          .split("*")
+          .map((item) => item.trim())
+          .filter((item) => item.length > 0);
+      }
 
-      const areasForImprovement = areasForImprovementMatch
-        ? areasForImprovementMatch[1]
-            .trim()
-            .split("\n")
-            .filter((line) => line.trim().startsWith("*"))
-            .map((line) => line.replace("*", "").trim())
-        : [];
-
-      const linkedinSuggestions = linkedinSuggestionsMatch
-        ? linkedinSuggestionsMatch[1]
-            .trim()
-            .split("\n")
-            .filter((line) => line.trim().startsWith("*"))
-            .map((line) => line.replace("*", "").trim())
-        : [];
-
-      return {
-        strengths,
-        areasForImprovement,
-        linkedinSuggestions,
-      };
+      return [];
     } catch (error) {
       console.error("Error parsing feedback section:", error);
-      return {
-        strengths: [],
-        areasForImprovement: [],
-        linkedinSuggestions: [],
-      };
+      return [];
     }
   };
+  const navigate = useNavigate();
+  const handleSubmitApplication = async () => {
+    try {
+      if (!file) {
+        alert("Please upload your CV before submitting.");
+        return;
+      }
 
-  // Define the renderEditableField function
-  const renderEditableField = (label, name, value, isTextArea = false) => {
-    return (
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-          {label}
-        </label>
-        {isTextArea ? (
-          <textarea
-            name={name}
-            value={value}
-            onChange={handleInputChange}
-            className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-zinc-900 dark:text-white"
-          />
-        ) : (
-          <input
-            type="text"
-            name={name}
-            value={value}
-            onChange={handleInputChange}
-            className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-zinc-900 dark:text-white"
-          />
-        )}
-      </div>
-    );
+      if (!selectedJob) {
+        alert("Please select a job before submitting.");
+        return;
+      }
+
+      setIsUploading(true); // Start the loading state
+      setUploadError("");
+
+      const formData = new FormData();
+      formData.append("cv", file);
+
+      // Step 1: Extract Data from CV
+      const extractResponse = await axios.post(
+        "http://localhost:5000/api/TakeData",
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+          timeout: 30000,
+        }
+      );
+
+      console.log("Extracted Data Response:", extractResponse.data);
+
+      if (!extractResponse.data || !extractResponse.data.result) {
+        alert("Failed to extract data from the CV. Please try again.");
+        return;
+      }
+
+      // Step 2: Combine Extracted Data with Job Details
+      const analysisPayload = {
+        jobTitle: selectedJob.title || "Unknown Job Title",
+        company: selectedJob.company || "Unknown Company",
+        cvData: extractResponse.data.result, // Ensure extracted data is present
+      };
+
+      console.log("Payload for AnalyseData API:", analysisPayload);
+
+      // Step 3: Send Data to AnalyseData API
+      const analysisResponse = await axios.post(
+        "http://localhost:5000/api/AnalyseData",
+        analysisPayload,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          withCredentials: true,
+        }
+      );
+
+      if (analysisResponse.status === 200 && analysisResponse.data.result) {
+        console.log("Analysis Result:", analysisResponse.data.result);
+        alert("Application analyzed successfully!");
+
+        // Navigate to /history after successful submission
+        navigate("/dashboard/history");
+      } else {
+        alert("Failed to analyze the application. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error submitting application:", error);
+
+      if (error.response && error.response.data && error.response.data.error) {
+        alert(`Error: ${error.response.data.error}`);
+      } else {
+        alert("An error occurred while submitting your application. Please try again.");
+      }
+    } finally {
+      setIsUploading(false); // End the loading state
+    }
   };
 
   const renderPage = () => {
@@ -946,44 +1000,27 @@ const SidebarLayout = () => {
               
               {/* Languages */}
               <div className="bg-gray-50 dark:bg-zinc-900 rounded-lg p-6">
-                <h3 className="text-lg font-medium mb-4 text-gray-900 dark:text-white">
-                  Languages
-                </h3>
-                {editMode ? (
-                  renderEditableField(
-                    "Languages",
-                    "languages",
-                    formData.languages,
-                    true
-                  )
-                ) : (
-                  <p className="text-gray-700 dark:text-gray-300">
-                    {formData.languages || "No language information available"}
-                  </p>
-                )}
-              </div>
-              {/* Additional Information */}
-              <div className="bg-gray-50 dark:bg-zinc-900 rounded-lg p-6">
-                <h3 className="text-lg font-medium mb-4 text-gray-900 dark:text-white">
-                  Additional Information
-                </h3>
-                {editMode ? (
-                  renderEditableField(
-                    "Additional Information",
-                    "additional",
-                    formData.additional,
-                    true
-                  )
-                ) : backendData?.result?.raw_analysis ? (
-                  <div className="prose dark:prose-invert max-w-none text-sm">
-                    {parseAdditionalInfo(backendData.result.raw_analysis)}
-                  </div>
-                ) : (
-                  <p className="text-gray-500 dark:text-gray-400">
-                    No additional information available
-                  </p>
-                )}
-              </div>
+  <h3 className="text-lg font-medium mb-4 text-gray-900 dark:text-white">
+    Languages
+  </h3>
+  {editMode ? (
+    renderEditableField(
+      "Languages",
+      "languages",
+      formData.languages,
+      true
+    )
+  ) : backendData?.result?.raw_analysis ? (
+    <div className="prose dark:prose-invert max-w-none">
+      {parseLanguagesSection(backendData.result.raw_analysis)}
+    </div>
+  ) : (
+    <p className="text-gray-500 dark:text-gray-400">
+      No language information available
+    </p>
+  )}
+</div>
+            
             </div>
 
             {editMode && (
@@ -1030,11 +1067,7 @@ const SidebarLayout = () => {
                             backendData.result.raw_analysis,
                             true
                           ) || "",
-                        additional:
-                          parseAdditionalInfo(
-                            backendData.result.raw_analysis,
-                            true
-                          ) || "",
+                        
                         languages:
                           parseLanguagesSection(
                             backendData.result.raw_analysis,
@@ -1064,16 +1097,16 @@ const SidebarLayout = () => {
             <h1 className="text-2xl font-bold text-center mb-8 text-gray-900 dark:text-white">
               Application Session
             </h1>
-
+  
             <div className="mb-8">
               <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">
                 Step 3 of 4 (Recommendations)
               </div>
             </div>
-
+  
             <div className="space-y-6 mb-8">
               {/* Resume Feedback Section */}
-              {formData.feedback && (
+              {resumeStrengths.length > 0 && (
                 <div className="bg-gray-50 dark:bg-zinc-900 rounded-lg p-6">
                   <h3 className="text-lg font-medium mb-4 text-gray-900 dark:text-white">
                     Resume Feedback
@@ -1083,42 +1116,43 @@ const SidebarLayout = () => {
                       Strengths:
                     </h4>
                     <ul className="list-disc pl-5 text-gray-700 dark:text-gray-300">
-                      {formData.feedback.strengths.map((strength, index) => (
+                      {resumeStrengths.map((strength, index) => (
                         <li key={index}>{strength}</li>
                       ))}
                     </ul>
-                    <h4 className="font-medium text-gray-800 dark:text-gray-200 mt-4">
-                      Areas for Improvement:
-                    </h4>
-                    <ul className="list-disc pl-5 text-gray-700 dark:text-gray-300">
-                      {formData.feedback.areasForImprovement.map(
-                        (area, index) => (
-                          <li key={index}>{area}</li>
-                        )
-                      )}
-                    </ul>
+  
+                    {areasForImprovement.length > 0 && (
+                      <>
+                        <h4 className="font-medium text-gray-800 dark:text-gray-200 mt-4">
+                          Areas for Improvement:
+                        </h4>
+                        <ul className="list-disc pl-5 text-gray-700 dark:text-gray-300">
+                          {areasForImprovement.map((area, index) => (
+                            <li key={index}>{area}</li>
+                          ))}
+                        </ul>
+                      </>
+                    )}
                   </div>
                 </div>
               )}
-
+  
               {/* LinkedIn Profile Suggestions Section */}
-              {formData.feedback.linkedinSuggestions.length > 0 && (
+              {linkedinSuggestions.length > 0 && (
                 <div className="bg-gray-50 dark:bg-zinc-900 rounded-lg p-6">
                   <h3 className="text-lg font-medium mb-4 text-gray-900 dark:text-white">
                     LinkedIn Profile Suggestions
                   </h3>
                   <ul className="list-disc pl-5 text-gray-700 dark:text-gray-300">
-                    {formData.feedback.linkedinSuggestions.map(
-                      (suggestion, index) => (
-                        <li key={index}>{suggestion}</li>
-                      )
-                    )}
+                    {linkedinSuggestions.map((suggestion, index) => (
+                      <li key={index}>{suggestion}</li>
+                    ))}
                   </ul>
                 </div>
               )}
-
+  
               {/* Projects Section */}
-              {formData.projects && (
+              {backendData?.result?.raw_analysis && (
                 <div className="bg-gray-50 dark:bg-zinc-900 rounded-lg p-6">
                   <h3 className="text-lg font-medium mb-4 text-gray-900 dark:text-white">
                     Key Projects
@@ -1187,9 +1221,19 @@ const SidebarLayout = () => {
               </div>
 
               <div className="flex justify-center">
-                <button className="py-3 px-8 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium text-lg">
-                  Submit Application
-                </button>
+              {isUploading && <LoadingAnimation />}
+
+<button 
+  onClick={handleSubmitApplication}
+  disabled={isUploading}
+  className={`px-4 py-2 rounded-md ${
+    isUploading 
+      ? "bg-gray-400 cursor-not-allowed" 
+      : "bg-blue-500 hover:bg-blue-600 text-white"
+  }`}
+>
+  {isUploading ? "Processing..." : "Submit Application"}
+</button>
               </div>
             </div>
           </div>
@@ -1434,7 +1478,6 @@ const SidebarLayout = () => {
                     )}
                   </div>
 
-                  {/* Hidden file input */}
                   <input
                     id="cv-file-input"
                     type="file"

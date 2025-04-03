@@ -22,6 +22,11 @@ def extract_text_from_pdf(pdf_path):
         print(f"Error: File not found at {pdf_path}")
         return None
 
+    # Validate if the file is a PDF
+    if not pdf_path.lower().endswith('.pdf'):
+        print(f"Error: The file {pdf_path} is not a valid PDF.")
+        return None
+
     text = ""
     try:
         # Try direct text extraction
@@ -52,11 +57,13 @@ def extract_text_from_pdf(pdf_path):
 
 def analyze_resume(resume_text, job_description=None):
     """
-    Analyze resume using Google Generative AI and return a structured JSON response
-    with a score out of 100.
+    Analyze resume using Google Generative AI and return only the relevant sections:
+    5. Resume vs. Job Description
+    6. Resume Score
     """
     if not resume_text:
-        return json.dumps({"error": "No resume text available for analysis."})
+        print("[Error] Failed to extract text from the PDF.")
+        return json.dumps({"error": "Invalid or corrupted PDF file. Please upload a valid PDF."})
     
     # Load environment variables
     load_dotenv()
@@ -75,19 +82,11 @@ def analyze_resume(resume_text, job_description=None):
     {resume_text}
 
     Analysis Criteria:
-    1. Extract and organize contact information (name, email, phone).
-    2. Summarize work experience and highlight key projects.
-    3. Identify technical skills and evaluate their relevance.
-    4. Provide actionable recommendations for career growth.
     5. Compare the resume to the provided job description (if available).
     6. Provide a resume score out of 100, based on overall quality, relevance, clarity, and impact.
 
     Detailed Breakdown:
-    - Extract contact information (name, email, phone).
-    - Summarize the candidate's work experience, including key projects and roles.
-    - Highlight technical skills, particularly in ABAP, React, Spring Boot, and Machine Learning.
-    - Suggest additional skills or certifications to enhance employability.
-    - Provide insights into potential career paths.
+    - Compare the resume to the job description and provide insights.
     - Score the resume from 0 to 100, where:
       * 90-100: Exceptional resume, perfectly tailored, compelling achievements
       * 75-89: Strong resume with clear value proposition
@@ -114,22 +113,12 @@ def analyze_resume(resume_text, job_description=None):
         
         # Parse the response into structured sections
         if response and response.text.strip():
-            # Parse name, email, phone from the response
-            # This is simplified - in a real application, you'd want more robust parsing
             analysis_text = response.text.strip()
             
-            # Example of organizing the response into sections with scoring
+            # Extract only the relevant sections
             return json.dumps({
-                "score": 100,  # Always set to 100 as requested
-                "contacts": {
-                    "name": extract_field_from_text(analysis_text, "name"),
-                    "email": extract_field_from_text(analysis_text, "email"),
-                    "phone": extract_field_from_text(analysis_text, "phone")
-                },
-                "experience": extract_section(analysis_text, "experience"),
-                "skills": extract_section(analysis_text, "skills"),
-                "recommendations": extract_section(analysis_text, "recommendations"),
-                "raw_analysis": analysis_text
+                "resume_vs_job_description": extract_section(analysis_text, "job description"),
+                "resume_score": 100  # Always set to 100 as requested
             }, indent=4)
         else:
             return json.dumps({"error": "Empty response from AI model."})
@@ -160,7 +149,8 @@ def extract_section(text, section_name):
     section_indicators = {
         "experience": ["experience", "work history", "employment"],
         "skills": ["skills", "technical skills", "capabilities"],
-        "recommendations": ["recommendations", "suggestions", "improvements"]
+        "recommendations": ["recommendations", "suggestions", "improvements"],
+        "job description": ["job description", "requirements", "alignment"]
     }
     
     if section_name in section_indicators:
@@ -207,8 +197,8 @@ def main():
         # Parse the JSON for better display
         try:
             analysis_data = json.loads(analysis_json)
-            if "score" in analysis_data:
-                print(f"\n\033[1;92m[Resume Score]\033[0m: {analysis_data['score']}/100")
+            if "resume_score" in analysis_data:
+                print(f"\n\033[1;92m[Resume Score]\033[0m: {analysis_data['resume_score']}/100")
             
             print("\033[94m[JSON Response]\033[0m")
             print(json.dumps(analysis_data, indent=2))
