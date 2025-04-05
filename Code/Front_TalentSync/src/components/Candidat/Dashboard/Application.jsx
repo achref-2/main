@@ -312,9 +312,58 @@ const SidebarLayout = () => {
     setCurrentPage(currentPage - 1);
   };
 
-  const handleSelection = (useExisting) => {
+  const handleSelection = async (useExisting) => {
     setUseExistingData(useExisting);
+  
+    if (useExisting) {
+      try {
+        // Fetch candidate data from the backend
+        const response = await axios.get("http://localhost:5000/api/candidates/get-candidate-data", {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`, // Include the token for authentication
+          },
+        });
+  
+        if (response.status === 200 && response.data.candidate) {
+          const candidateData = response.data.candidate;
+  
+          // Map the fetched data to the form fields
+          const savedData = {
+            name: candidateData.personalInfo?.name || "",
+            email: candidateData.personalInfo?.email || "",
+            phone: candidateData.personalInfo?.phone || "",
+            experience: candidateData.experience || "",
+            skills: candidateData.skills || "",
+            languages: candidateData.personalInfo?.languages || "",
+            linkedIn: candidateData.personalInfo?.linkedIn || "",
+            github: candidateData.personalInfo?.github || "",
+          };
+  
+          setFormData(savedData); // Populate the form with fetched data
+          console.log("Fetched candidate data:", savedData);
+          setCurrentPage(5); // Navigate to Step 2
+        } else {
+          alert("Failed to retrieve candidate data. Please try again.");
+        }
+      } catch (error) {
+        console.error("Error fetching candidate data:", error);
+        alert("An error occurred while fetching candidate data. Please try again.");
+      }
+    } else {
+      // Reset the form data if not using existing data
+      setFormData({
+        name: "",
+        email: "",
+        phone: "",
+        experience: "",
+        skills: "",
+        languages: "",
+        linkedIn: "",
+        github: "",
+      });
+    }
   };
+  
   const [editMode, setEditMode] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -868,14 +917,8 @@ const SidebarLayout = () => {
               <p className="text-gray-700 dark:text-gray-300 mb-4">
                 {editMode
                   ? "Edit your information below. Click 'Save Changes' when you're done."
-                  : "Please review your CV information below. This data was extracted from your uploaded file."}
+                  : "Please review your CV information below. This data was extracted from your uploaded file or saved data."}
               </p>
-
-              {backendData?.message && !editMode && (
-                <div className="mt-2 p-3 bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400 text-sm rounded-lg">
-                  {backendData.message}
-                </div>
-              )}
             </div>
 
             <div className="space-y-6 mb-8">
@@ -906,25 +949,13 @@ const SidebarLayout = () => {
                   ) : (
                     <>
                       <p className="text-gray-700 dark:text-gray-300">
-                        <span className="font-medium">Name:</span>{" "}
-                        {backendData?.result?.contacts?.name?.replace(
-                          /^\*\*\s*/,
-                          ""
-                        ) || "Not available"}
+                        <span className="font-medium">Name:</span> {formData.name}
                       </p>
                       <p className="text-gray-700 dark:text-gray-300">
-                        <span className="font-medium">Email:</span>{" "}
-                        {backendData?.result?.contacts?.email?.replace(
-                          /^\*\*\s*/,
-                          ""
-                        ) || "Not available"}
+                        <span className="font-medium">Email:</span> {formData.email}
                       </p>
                       <p className="text-gray-700 dark:text-gray-300">
-                        <span className="font-medium">Phone:</span>{" "}
-                        {backendData?.result?.contacts?.phone?.replace(
-                          /^\*\*\s*/,
-                          ""
-                        ) || "Not available"}
+                        <span className="font-medium">Phone:</span> {formData.phone}
                       </p>
                       {formData.linkedIn && (
                         <p className="text-gray-700 dark:text-gray-300">
@@ -957,6 +988,24 @@ const SidebarLayout = () => {
                 </div>
               </div>
 
+              {/* Experience */}
+              <div className="bg-gray-50 dark:bg-zinc-900 rounded-lg p-6">
+                <h3 className="text-lg font-medium mb-4 text-gray-900 dark:text-white">
+                  Work Experience
+                </h3>
+                {editMode ? (
+                  renderEditableField(
+                    "Experience",
+                    "experience",
+                    formData.experience,
+                    true
+                  )
+                ) : (
+                  <p className="text-gray-700 dark:text-gray-300">{formData.experience}</p>
+                )}
+              </div>
+
+              {/* Skills */}
               {/* Experience */}
               <div className="bg-gray-50 dark:bg-zinc-900 rounded-lg p-6">
                 <h3 className="text-lg font-medium mb-4 text-gray-900 dark:text-white">
@@ -1238,7 +1287,251 @@ const SidebarLayout = () => {
             </div>
           </div>
         );
+        case 2:
+          return (
+            <div className="max-w-4xl mx-auto px-0 py-1">
+              <h1 className="text-2xl font-bold text-center mb-4 text-gray-900 dark:text-white">
+                Application Session
+              </h1>
+  
+              <div className="mb-8">
+                <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                  Step 2 of 4 (Data review)
+                </div>
+              </div>
+  
+              <div className="bg-gray-50 dark:bg-zinc-900 rounded-lg p-6 mb-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    Step 2: Review your data
+                  </h2>
+                  <button
+                    onClick={() => (editMode ? handleSave() : setEditMode(true))}
+                    className={`px-4 py-2 rounded-md ${
+                      editMode
+                        ? "bg-green-600 text-white hover:bg-green-700"
+                        : "bg-blue-600 text-white hover:bg-blue-700"
+                    } transition-colors duration-200`}
+                  >
+                    {editMode ? "Save Changes" : "Edit Data"}
+                  </button>
+                </div>
+                <p className="text-gray-700 dark:text-gray-300 mb-4">
+                  {editMode
+                    ? "Edit your information below. Click 'Save Changes' when you're done."
+                    : "Please review your CV information below. This data was extracted from your uploaded file or saved data."}
+                </p>
+              </div>
+  
+              <div className="space-y-6 mb-8">
+                {/* Personal Info */}
+                <div className="bg-gray-50 dark:bg-zinc-900 rounded-lg p-6">
+                  <h3 className="text-lg font-medium mb-4 text-gray-900 dark:text-white">
+                    Personal Information
+                  </h3>
+                  <div className={editMode ? "" : "space-y-2"}>
+                    {editMode ? (
+                      <>
+                        {renderEditableField("Name", "name", formData.name)}
+                        {renderEditableField("Email", "email", formData.email)}
+                        {renderEditableField("Phone", "phone", formData.phone)}
+                        {formData.linkedIn &&
+                          renderEditableField(
+                            "LinkedIn",
+                            "linkedIn",
+                            formData.linkedIn
+                          )}
+                        {formData.github &&
+                          renderEditableField(
+                            "GitHub",
+                            "github",
+                            formData.github
+                          )}
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-gray-700 dark:text-gray-300">
+                          <span className="font-medium">Name:</span> {formData.name}
+                        </p>
+                        <p className="text-gray-700 dark:text-gray-300">
+                          <span className="font-medium">Email:</span> {formData.email}
+                        </p>
+                        <p className="text-gray-700 dark:text-gray-300">
+                          <span className="font-medium">Phone:</span> {formData.phone}
+                        </p>
+                        {formData.linkedIn && (
+                          <p className="text-gray-700 dark:text-gray-300">
+                            <span className="font-medium">LinkedIn:</span>{" "}
+                            <a
+                              href={formData.linkedIn}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:underline"
+                            >
+                              {formData.linkedIn}
+                            </a>
+                          </p>
+                        )}
+                        {formData.github && (
+                          <p className="text-gray-700 dark:text-gray-300">
+                            <span className="font-medium">GitHub:</span>{" "}
+                            <a
+                              href={formData.github}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:underline"
+                            >
+                              {formData.github}
+                            </a>
+                          </p>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
+  
+                {/* Experience */}
+                <div className="bg-gray-50 dark:bg-zinc-900 rounded-lg p-6">
+  <h3 className="text-lg font-medium mb-4 text-gray-900 dark:text-white">
+    Work Experience
+  </h3>
+  {formData.experience && Array.isArray(formData.experience) ? (
+    <ul className="list-disc pl-5 text-gray-700 dark:text-gray-300">
+      {formData.experience.map((exp, index) => (
+        <li key={index}>
+          <p>
+            <strong>Title:</strong> {exp.title}
+          </p>
+          <p>
+            <strong>Company:</strong> {exp.company}
+          </p>
+          <p>
+            <strong>Location:</strong> {exp.location}
+          </p>
+          <p>
+            <strong>Period:</strong> {exp.period}
+          </p>
+          <p>
+            <strong>Responsibilities:</strong> {exp.responsibilities}
+          </p>
+        </li>
+      ))}
+    </ul>
+  ) : (
+    <p className="text-gray-500 dark:text-gray-400">No work experience data available</p>
+  )}
+</div>
 
+<div className="bg-gray-50 dark:bg-zinc-900 rounded-lg p-6">
+  <h3 className="text-lg font-medium mb-4 text-gray-900 dark:text-white">
+    Skills
+  </h3>
+  {formData.skills && Array.isArray(formData.skills) ? (
+    <ul className="list-disc pl-5 text-gray-700 dark:text-gray-300">
+      {formData.skills.map((skill, index) => (
+        <li key={index}>{skill}</li>
+      ))}
+    </ul>
+  ) : (
+    <p className="text-gray-500 dark:text-gray-400">No skills data available</p>
+  )}
+</div>
+  
+               
+                
+                {/* Languages */}
+                <div className="bg-gray-50 dark:bg-zinc-900 rounded-lg p-6">
+    <h3 className="text-lg font-medium mb-4 text-gray-900 dark:text-white">
+      Languages
+    </h3>
+    {editMode ? (
+      renderEditableField(
+        "Languages",
+        "languages",
+        formData.languages,
+        true
+      )
+    ) : backendData?.result?.raw_analysis ? (
+      <div className="prose dark:prose-invert max-w-none">
+        {parseLanguagesSection(backendData.result.raw_analysis)}
+      </div>
+    ) : (
+      <p className="text-gray-500 dark:text-gray-400">
+        No language information available
+      </p>
+    )}
+  </div>
+              
+              </div>
+  
+              {editMode && (
+                <div className="flex justify-end space-x-4 mb-6">
+                  <button
+                    onClick={() => {
+                      setEditMode(false);
+                      // Reset form data to original values
+                      if (backendData?.result) {
+                        setFormData({
+                          name:
+                            backendData.result.contacts?.name?.replace(
+                              /^\*\*\s*/,
+                              ""
+                            ) || "",
+                          email:
+                            backendData.result.contacts?.email?.replace(
+                              /^\*\*\s*/,
+                              ""
+                            ) || "",
+                          phone:
+                            backendData.result.contacts?.phone?.replace(
+                              /^\*\*\s*/,
+                              ""
+                            ) || "",
+                          linkedIn:
+                            backendData.result.contacts?.linkedIn?.replace(
+                              /^\*\*\s*/,
+                              ""
+                            ) || "",
+                          github:
+                            backendData.result.contacts?.github?.replace(
+                              /^\*\*\s*/,
+                              ""
+                            ) || "",
+  
+                          experience:
+                            parseExperienceSection(
+                              backendData.result.raw_analysis,
+                              true
+                            ) || "",
+                          skills:
+                            parseSkillsSection(
+                              backendData.result.raw_analysis,
+                              true
+                            ) || "",
+                          
+                          languages:
+                            parseLanguagesSection(
+                              backendData.result.raw_analysis,
+                              true
+                            ) || "",
+                        });
+                      }
+                    }}
+                    className="px-4 py-2 rounded-md bg-gray-200 dark:bg-zinc-700 text-gray-800 dark:text-white hover:bg-gray-300 dark:hover:bg-zinc-600 transition-colors duration-200"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSave}
+                    className="px-4 py-2 rounded-md bg-green-600 text-white hover:bg-green-700 transition-colors duration-200"
+                  >
+                    Save Changes
+                  </button>
+                </div>
+              )}
+            </div>
+          );
+  
       default:
         return null;
     }

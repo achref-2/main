@@ -251,43 +251,98 @@ const UserMenu = () => {
     </HeadlessMenu>
   );
 };
-const Modal = ({ isOpen, onClose, children }) => {
-  const { isDarkMode } = useDarkMode(); // Access the current theme state
+const Modal = ({ isOpen, onClose, children, title }) => {
+  const { isDarkMode } = useDarkMode();
+  const modalRef = React.useRef(null);
+
+  // Close modal when pressing Escape key
+  React.useEffect(() => {
+    const handleEscapeKey = (e) => {
+      if (e.key === "Escape" && isOpen) {
+        onClose();
+      }
+    };
+
+    document.addEventListener("keydown", handleEscapeKey);
+    return () => document.removeEventListener("keydown", handleEscapeKey);
+  }, [isOpen, onClose]);
+
+  // Trap focus inside modal when open
+  React.useEffect(() => {
+    if (isOpen && modalRef.current) {
+      modalRef.current.focus();
+    }
+  }, [isOpen]);
 
   return (
-    <Dialog open={isOpen} onClose={onClose} className="relative z-50">
+    <Dialog
+      open={isOpen}
+      onClose={onClose}
+      className="relative z-50"
+      initialFocus={modalRef}
+    >
       {/* Backdrop */}
       <div
         className={`fixed inset-0 ${
-          isDarkMode ? "bg-black/80" : "bg-black/50"
-        } backdrop-blur-sm transition-all duration-300`}
+          isDarkMode ? "bg-black/70" : "bg-black/30"
+        } backdrop-blur-sm transition-opacity duration-300 ease-in-out ${
+          isOpen ? "opacity-100" : "opacity-0"
+        }`}
         aria-hidden="true"
       />
-      <div className="fixed inset-0 flex items-center justify-center">
+
+      {/* Modal container */}
+      <div className="fixed inset-0 flex items-center justify-center p-0 overflow-y-auto">
         {/* Modal Panel */}
         <Dialog.Panel
-          className={`w-full max-w-2xl  rounded-lg ${
+          ref={modalRef}
+          className={`w-full max-w-2xl rounded-xl ${
             isDarkMode
               ? "bg-zinc-900 text-gray-100 border-zinc-700"
               : "bg-white text-gray-900 border-gray-200"
-          } border shadow-xl transition-all duration-300`}
+          }  shadow-2xl transition-transform duration-300 transform ${
+            isOpen ? "scale-100 opacity-100" : "scale-95 opacity-0"
+          } focus:outline-none`}
+          tabIndex={-1}
         >
-          {/* Close Button */}
-          <div className="flex justify-end p-2">
-            <button
-              onClick={onClose}
-              className={`p-2 rounded-lg ${
-                isDarkMode
-                  ? "hover:bg-zinc-800 text-gray-400"
-                  : "hover:bg-gray-100 text-gray-500"
-              } transition-all duration-300`}
-              aria-label="Close modal"
-            >
-              <X className="w-5 h-5" />
-            </button>
+          {/* Header */}
+          <div
+            className={`flex items-center justify-between px-0 py-0 $`}
+          >
+            {title && (
+              <Dialog.Title className="text-lg font-semibold">
+                {title}
+              </Dialog.Title>
+            )}
+            
           </div>
+
           {/* Modal Content */}
-          <div className="p-4">{children}</div>
+          <div className="p-6 overflow-y-auto max-h-[calc(100vh-12rem)]">
+            {children}
+          </div>
+
+          {/* Footer */}
+          <div
+            className={`px-4 py-2 ${
+              isDarkMode
+                ? "border-t border-zinc-700 bg-zinc-800/50"
+                : "border-t border-gray-100 bg-gray-50"
+            } rounded-b-xl`}
+          >
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={onClose}
+                className={`px-4 py-2 text-sm font-medium rounded-md ${
+                  isDarkMode
+                    ? "bg-zinc-800 hover:bg-zinc-700 text-gray-200"
+                    : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+                } transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500`}
+              >
+                Close
+              </button>
+            </div>
+          </div>
         </Dialog.Panel>
       </div>
     </Dialog>

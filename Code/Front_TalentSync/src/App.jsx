@@ -28,6 +28,7 @@ import RecruiterSettings from "./components/Recruiter/Dashboard/Settings";
 import JOBBuilder from "./components/Recruiter/JOB_LIST/JobBuilder";
 import TestingPage from "./components/Candidat/Dashboard/Testing";
 import Application from "./components/Candidat/Dashboard/Application";
+import NotFoundPage from "./components/404";
 export const scroll = new SmoothScroll('a[href*="#"]', {
   speed: 1000,
   speedAsDuration: true,
@@ -51,6 +52,7 @@ const App = () => {
             <Route path="/" element={<LandingPage />} />
             <Route path="/cv" element={<CVcomponent />} />
             <Route path="/admin" element={<Admin />} />
+            <Route path="*" element={<NotFoundPage />} />
             {!user ? <Route path="/" element={<Navigate to="/" />} /> : <Route path="/dashboard" element={<Dashboard />} />}
 
             <Route path="/candidate/signup" element={<Candidat_Signup />} />

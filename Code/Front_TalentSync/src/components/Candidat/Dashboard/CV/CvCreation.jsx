@@ -6,9 +6,13 @@ import {
   GraduationCap,
   Award,
   Plus,
-  Trash2
+  Trash2,
+  ChevronLeft,
+  ChevronRight,
+  CheckCircle
 } from 'lucide-react';
 import { useDarkMode } from '../../../DarkModeProvider';
+import { useNavigate } from 'react-router-dom'; // Import useNavigate
 
 const Input = (props) => (
   <input
@@ -432,53 +436,62 @@ const CV = () => {
       setCurrentStep(currentStep - 1);
     }
   };
+  const navigate = useNavigate(); // Initialize navigate
+  const [isLoading, setIsLoading] = useState(false); // State to manage loading
 
   const handleSubmit = async () => {
     try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-            toast.error('Please log in to upload your CV');
-            return;
-        }
-
-        const formDataToSend = new FormData();
-        formDataToSend.append('cv', formData.cv);
-
-        // Optional: Show loading state
-        toast.loading('Uploading CV...');
-
-        const response = await fetch('http://localhost:5000/api/upload-cv', {
-            method: 'POST',
-            body: formDataToSend,
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
-
-        if (!response.ok) {
-            throw new Error('Failed to upload CV');
-        }
-
-        const data = await response.json();
-        toast.success('CV uploaded successfully!');
-        console.log('Upload response:', data);
-        
-      
-        
+      const token = localStorage.getItem("token");
+      if (!token) {
+        toast.error("Please log in to save your data");
+        return;
+      }
+  
+      setIsLoading(true); // Start loading
+      toast.info("Your data is being processed...");
+  
+      const response = await fetch("http://localhost:5000/api/candidates/save-candidate-data", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(formData), // Send the formData as JSON
+      });
+  
+      if (!response.ok) {
+        throw new Error("Failed to save candidate data");
+      }
+  
+      const data = await response.json();
+      toast.success("Candidate data saved successfully!");
+      console.log("Response:", data);
+  
+      navigate("/Jobcandidate"); // Redirect to /job
     } catch (error) {
-        console.error('Error uploading CV:', error);
-        toast.error(error.message || 'Failed to upload CV');
+      console.error("Error saving candidate data:", error);
+      toast.error(error.message || "Failed to save candidate data");
+    } finally {
+      setIsLoading(false); // Stop loading
     }
-};
+  };
 
   return (
     <div
-      className={`max-w-2xl mx-auto p-4 rounded-lg shadow ${
+      className={`max-w-2xl mx-auto  transition-all ${
         isDarkMode ? 'bg-zinc-900 text-gray-100' : 'bg-white text-gray-900'
       }`}
     >
-      {/* Progress Steps */}
-      <div className="flex justify-between mb-8">
+      {/* Progress Bar */}
+      <div className="relative w-full h-2 bg-gray-200 dark:bg-zinc-700 rounded-full mb-8">
+        <div
+          className="absolute top-0 left-0 h-2 bg-blue-500 rounded-full transition-all"
+          style={{ width: `${((currentStep + 1) / steps.length) * 100}%` }}
+        ></div>
+      </div>
+
+      {/* Step Indicators */}
+      <div className="flex justify-between items-center mb-8">
         {steps.map((step, index) => (
           <div
             key={index}
@@ -489,15 +502,15 @@ const CV = () => {
             }`}
           >
             <div
-              className={`rounded-full p-2 mb-2 ${
+              className={`flex items-center justify-center w-8 h-8 rounded-full font-bold ${
                 index <= currentStep
-                  ? 'bg-blue-100 dark:bg-blue-900'
-                  : 'bg-gray-100 dark:bg-zinc-800'
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-gray-300 dark:bg-zinc-700'
               }`}
             >
-              {step.icon}
+              {index + 1}
             </div>
-            <span className="text-sm font-medium">{step.title}</span>
+            <span className="text-sm font-medium mt-2">{step.title}</span>
           </div>
         ))}
       </div>
@@ -514,21 +527,67 @@ const CV = () => {
       </Card>
 
       {/* Navigation Buttons */}
-      <div className="flex justify-between mt-8">
-        <Button
-          variant="outline"
-          onClick={handlePrevious}
-          disabled={currentStep === 0}
-          isDarkMode={isDarkMode}
-        >
-          Previous
-        </Button>
-        {currentStep === steps.length - 1 ? (
-          <Button onClick={handleSubmit} isDarkMode={isDarkMode}>Submit</Button>
-        ) : (
-          <Button onClick={handleNext} isDarkMode={isDarkMode}>Next</Button>
-        )}
-      </div>
+      <div className="flex justify-between items-center mt-8 pt-4  border-gray-200 dark:border-zinc-700">
+  <Button 
+    variant="outline"
+    onClick={handlePrevious}
+    disabled={currentStep === 0}
+    className={`
+      px-4 py-2 rounded-md text-sm font-medium flex items-center
+      ${currentStep === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100 dark:hover:bg-zinc-800'}
+      ${isDarkMode 
+        ? 'bg-zinc-900 text-gray-300 border-zinc-700' 
+        : 'bg-white text-gray-700 border-gray-300'}
+      transition-colors duration-200
+    `}
+    aria-label="Go to previous step"
+  >
+    <ChevronLeft className="w-4 h-4 mr-2" />
+    Previous
+  </Button>
+  
+  {currentStep === steps.length - 1 ? (
+    <Button 
+      onClick={handleSubmit}
+      disabled={isLoading} // Disable button while loading
+      className={`
+        px-5 py-2 rounded-md text-sm font-medium flex items-center
+        ${isDarkMode 
+          ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+          : 'bg-blue-600 hover:bg-blue-700 text-white'}
+        transition-colors duration-200 shadow-sm
+        ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}
+      `}
+      aria-label="Submit form"
+    >
+      {isLoading ? (
+        <>
+          <span className="loader mr-2"></span> Processing...
+        </>
+      ) : (
+        <>
+          Submit
+          <CheckCircle className="w-4 h-4 ml-2" />
+        </>
+      )}
+    </Button>
+  ) : (
+    <Button 
+      onClick={handleNext}
+      className={`
+        px-5 py-2 rounded-md text-sm font-medium flex items-center
+        ${isDarkMode 
+          ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+          : 'bg-blue-600 hover:bg-blue-700 text-white'}
+        transition-colors duration-200 shadow-sm
+      `}
+      aria-label="Go to next step"
+    >
+      Next
+      <ChevronRight className="w-4 h-4 ml-2" />
+    </Button>
+  )}
+</div>
     </div>
   );
 };

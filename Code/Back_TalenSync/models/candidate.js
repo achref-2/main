@@ -57,6 +57,32 @@ const candidateSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    personalInfo: {
+      name: { type: String, trim: true },
+      email: { type: String, trim: true },
+      phone: { type: String, trim: true },
+      location: { type: String, trim: true },
+      summary: { type: String, trim: true },
+    },
+    experience: [
+      {
+        title: { type: String, trim: true },
+        company: { type: String, trim: true },
+        location: { type: String, trim: true },
+        period: { type: String, trim: true },
+        responsibilities: [{ type: String, trim: true }],
+      },
+    ],
+    education: [
+      {
+        degree: { type: String, trim: true },
+        institution: { type: String, trim: true },
+        location: { type: String, trim: true },
+        period: { type: String, trim: true },
+      },
+    ],
+    skills: [{ type: String, trim: true }],
+    certifications: [{ type: String, trim: true }],
     cvHistory: [cvHistorySchema],
     latestAnalysis: {
       type: cvAnalysisSchema,

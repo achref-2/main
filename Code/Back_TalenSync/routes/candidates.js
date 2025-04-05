@@ -247,6 +247,53 @@ router.post(
   })
 );
 
+router.post(
+  "/save-candidate-data",
+  auth,
+  checkRole(["candidate"]),
+  asyncHandler(async (req, res) => {
+    try {
+      const { personalInfo, experience, education, skills, certifications } = req.body;
+
+      // Log the incoming request data
+      console.log("Incoming data:", { personalInfo, experience, education, skills, certifications });
+
+      // Validate the incoming data
+      if (!personalInfo || !experience || !education || !skills || !certifications) {
+        console.log("Validation failed: Missing required fields");
+        return res.status(400).json({ message: "All fields are required" });
+      }
+
+      // Find the candidate profile
+      const candidate = await Candidate.findOne({ userId: req.user._id });
+      if (!candidate) {
+        console.log("Candidate profile not found for userId:", req.user._id);
+        return res.status(404).json({ message: "Candidate profile not found" });
+      }
+
+      // Log the existing candidate data
+      console.log("Existing candidate data:", candidate);
+
+      // Update candidate data
+      const updatedData = { personalInfo, experience, education, skills, certifications };
+      Object.assign(candidate, updatedData);
+
+      // Save the updated candidate data
+      await candidate.save();
+
+      // Log the updated candidate data
+      console.log("Updated candidate data:", candidate);
+
+      res.status(200).json({
+        message: "Candidate data saved successfully",
+        candidate,
+      });
+    } catch (error) {
+      console.error("Error saving candidate data:", error);
+      res.status(500).json({ message: "Internal Server Error" });
+    }
+  })
+);
 // Submit analysis for a CV
 router.post(
   "/submit-analysis/:cvIndex",
@@ -299,7 +346,33 @@ router.get(
     res.status(200).json(candidate);
   })
 );
+router.get(
+  "/get-candidate-data",
+  auth,
+  checkRole(["candidate"]),
+  asyncHandler(async (req, res) => {
+    try {
+      // Fetch the candidate profile and populate related fields
+      const candidate = await Candidate.findOne({ userId: req.user._id }).populate("userId", "name email");
 
+      if (!candidate) {
+        console.log("Candidate profile not found for userId:", req.user._id);
+        return res.status(404).json({ message: "Candidate profile not found" });
+      }
+
+      // Log the fetched candidate data
+      console.log("Fetched candidate data:", candidate);
+
+      res.status(200).json({
+        message: "Candidate data retrieved successfully",
+        candidate,
+      });
+    } catch (error) {
+      console.error("Error fetching candidate data:", error);
+      res.status(500).json({ message: "Internal Server Error" });
+    }
+  })
+);
 // Get candidate's latest CV
 router.get(
   "/latest-cv",
@@ -360,8 +433,6 @@ router.get(
     res.status(200).json(history);
   })
 );
-
-
 
 // Analyze CV with job description
 router.post(
