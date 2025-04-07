@@ -246,22 +246,37 @@ router.post(
     });
   })
 );
-
 router.post(
   "/save-candidate-data",
   auth,
   checkRole(["candidate"]),
   asyncHandler(async (req, res) => {
     try {
-      const { personalInfo, experience, education, skills, certifications } = req.body;
+      const {
+        personalInfo,
+        experience,
+        education,
+        skills,
+        certifications = [], // Default to an empty array if not provided
+        languages = [], // Default to an empty array if not provided
+        activities = [], // Default to an empty array if not provided
+      } = req.body;
 
       // Log the incoming request data
-      console.log("Incoming data:", { personalInfo, experience, education, skills, certifications });
+      console.log("Incoming data:", {
+        personalInfo,
+        experience,
+        education,
+        skills,
+        certifications,
+        languages,
+        activities,
+      });
 
-      // Validate the incoming data
-      if (!personalInfo || !experience || !education || !skills || !certifications) {
+      // Validate the required fields
+      if (!personalInfo || !experience || !education || !skills) {
         console.log("Validation failed: Missing required fields");
-        return res.status(400).json({ message: "All fields are required" });
+        return res.status(400).json({ message: "Required fields are missing" });
       }
 
       // Find the candidate profile
@@ -275,7 +290,15 @@ router.post(
       console.log("Existing candidate data:", candidate);
 
       // Update candidate data
-      const updatedData = { personalInfo, experience, education, skills, certifications };
+      const updatedData = {
+        personalInfo,
+        experience,
+        education,
+        skills,
+        certifications,
+        languages,
+        activities,
+      };
       Object.assign(candidate, updatedData);
 
       // Save the updated candidate data
@@ -360,12 +383,40 @@ router.get(
         return res.status(404).json({ message: "Candidate profile not found" });
       }
 
-      // Log the fetched candidate data
-      console.log("Fetched candidate data:", candidate);
+      // Extract the required fields with default values
+      const {
+        personalInfo,
+        experience,
+        education,
+        skills,
+        certifications = [], // Default to an empty array if not present
+        languages = [], // Default to an empty array if not present
+        activities = [], // Default to an empty array if not present
+      } = candidate;
 
+      // Log the fetched candidate data
+      console.log("Fetched candidate data:", {
+        personalInfo,
+        experience,
+        education,
+        skills,
+        certifications,
+        languages,
+        activities,
+      });
+
+      // Respond with the candidate data
       res.status(200).json({
         message: "Candidate data retrieved successfully",
-        candidate,
+        candidate: {
+          personalInfo,
+          experience,
+          education,
+          skills,
+          certifications,
+          languages,
+          activities,
+        },
       });
     } catch (error) {
       console.error("Error fetching candidate data:", error);

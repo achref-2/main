@@ -17,52 +17,56 @@ const Login = ({ onGoogleSuccess, onGoogleError }) => {
     setData({ ...data, [input.name]: input.value });
   };
 
-const handleSubmit = async (credentials) => {
-  try {
-    const response = await axios.post("http://localhost:5000/api/auth/login", credentials);
-    const { user, token } = response.data;
-    
-    if (user.role === "recruiter" && user.status === "pending") {
-      setError("Your account is pending approval. Please check back later.");
-      return;
+  const handleSubmit = async (credentials) => {
+    try {
+      const response = await axios.post(
+        "http://localhost:5000/api/auth/login",
+        credentials
+      );
+      const { user, token } = response.data;
+
+      if (user.role === "recruiter" && user.status === "pending") {
+        setError("Your account is pending approval. Please check back later.");
+        return;
+      }
+
+      // Store token and redirect user
+      localStorage.setItem("token", token);
+      navigate("/dashboard");
+    } catch (error) {
+      setError(error.response?.data?.message || "Login failed");
     }
-    
-    // Store token and redirect user
-    localStorage.setItem("token", token);
-    navigate("/dashboard");
-  } catch (error) {
-    setError(error.response?.data?.message || "Login failed");
-  }
-};
+  };
   const navigation = [
     { name: "Pricing", href: "#" },
     { name: "Blog", href: "#" },
     { name: "About", href: "#" },
   ];
   const [landingPageData, setLandingPageData] = useState({});
-
-  const clientId =
-    "9748260171-v0tq98gnchgvvr9v6jvblpivlbina5q9.apps.googleusercontent.com"; // Replace with your actual Google Client ID
+  const clientId = "9748260171-v0tq98gnchgvvr9v6jvblpivlbina5q9.apps.googleusercontent.com";
 
   const navigate = useNavigate(); // Hook for navigation
 
-const handleLoginSuccess = async (response) => {
+  const handleLoginSuccess = async (response) => {
+    console.log("Google Login Response:", response);
     try {
-        const res = await axios.post("http://localhost:5000/api/recruiters/auth/google", {
-            token: response.credential // Only send the token
-        });
+      const res = await axios.post(
+        "http://localhost:5000/api/recruiters/auth/google",
+        {
+          token: response.credential,
+        }
+      );
 
-        localStorage.setItem("token", res.data.token);
+      localStorage.setItem("token", res.data.token);
 
-        // Redirect to /dashboard
-        navigate("/dashboard/recuiter");
+      navigate("/dashboard/recuiter");
     } catch (error) {
-        console.error("Google Auth Error:", error);
+      console.error("Google Auth Error:", error);
     }
-};
-const handleLoginError = () => {
-  console.error("Google Login Failed");
-};
+  };
+  const handleLoginError = () => {
+    console.error("Google Login Failed");
+  };
 
   const { isDarkMode } = useDarkMode();
 
@@ -88,7 +92,10 @@ const handleLoginError = () => {
           onSubmit={handleSubmit}
         >
           <div className="w-[80%] max-w-md">
-          <label htmlFor="email" className="block text-sm w-[90%] mx-auto font-medium">
+            <label
+              htmlFor="email"
+              className="block text-sm w-[90%] mx-auto font-medium"
+            >
               Email
             </label>
             <div className="mt-2">
@@ -106,7 +113,7 @@ const handleLoginError = () => {
 
           <div className="w-[80%] max-w-md">
             <div className="flex w-[90%] mx-auto items-center justify-between">
-            <label htmlFor="password" className="block text-sm font-medium">
+              <label htmlFor="password" className="block text-sm font-medium">
                 Password
               </label>
               <div className="text-sm">
@@ -143,7 +150,10 @@ const handleLoginError = () => {
             <p className="mt-1 text-center text-sm text-gray-500">
               Not a member?{" "}
               <Link to="/candidate/signup">
-                <button type="button"  className="text-blue-500 hover:text-blue-600">
+                <button
+                  type="button"
+                  className="text-blue-500 hover:text-blue-600"
+                >
                   Sign Up
                 </button>
               </Link>
@@ -154,10 +164,10 @@ const handleLoginError = () => {
         </form>
 
         <div className="flex items-center my-4 w-[71%] mx-14 ">
-              <div className="flex-1 border-t border-gray-300"></div>
-              <span className="mx-4 text-gray-500 text-sm">or</span>
-              <div className="flex-1 border-t border-gray-300"></div>
-            </div>
+          <div className="flex-1 border-t border-gray-300"></div>
+          <span className="mx-4 text-gray-500 text-sm">or</span>
+          <div className="flex-1 border-t border-gray-300"></div>
+        </div>
 
         <div className="flex flex-col gap-3 items-center w-[80%] mx-auto">
           {/* Divider with "OR CONTINUE WITH" text */}
@@ -169,14 +179,12 @@ const handleLoginError = () => {
                 onSuccess={handleLoginSuccess}
                 onError={handleLoginError}
                 theme="outline"
-                size="large" // Ensures proper size
+                size="large" 
                 text="signin_with"
                 shape="rectangular"
               />
             </GoogleOAuthProvider>
           </div>
-
-          
         </div>
       </div>
     </div>

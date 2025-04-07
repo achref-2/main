@@ -661,7 +661,7 @@ const SidebarLayout = () => {
 <div className="space-y-9">
   {loading ? (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-12 p-12">
-      {Array.from({ length: 4 }).map((_, index) => (
+      {allJobs.map((job, index) => (
         <div
           key={index}
           className="animate-pulse border dark:border-zinc-700 rounded-lg shadow-sm p-12 bg-white dark:bg-zinc-800"

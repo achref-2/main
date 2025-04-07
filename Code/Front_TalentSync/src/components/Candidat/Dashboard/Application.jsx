@@ -784,8 +784,6 @@ const SidebarLayout = () => {
       if (analysisResponse.status === 200 && analysisResponse.data.result) {
         console.log("Analysis Result:", analysisResponse.data.result);
         alert("Application analyzed successfully!");
-
-        // Navigate to /history after successful submission
         navigate("/dashboard/history");
       } else {
         alert("Failed to analyze the application. Please try again.");
@@ -799,7 +797,7 @@ const SidebarLayout = () => {
         alert("An error occurred while submitting your application. Please try again.");
       }
     } finally {
-      setIsUploading(false); // End the loading state
+      setIsUploading(false); 
     }
   };
 
@@ -1287,7 +1285,7 @@ const SidebarLayout = () => {
             </div>
           </div>
         );
-        case 2:
+        case 5:
           return (
             <div className="max-w-4xl mx-auto px-0 py-1">
               <h1 className="text-2xl font-bold text-center mb-4 text-gray-900 dark:text-white">

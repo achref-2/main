@@ -52,4 +52,13 @@ const validateApplication = (application) => {
 
 const Application = mongoose.model('Application', applicationSchema);
 
-module.exports = { Application, validateApplication };
+const recruiterSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  companyName: { type: String, default: '' },
+  jobPostings: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Job' }],
+  approved: { type: Boolean, default: false },
+}, { timestamps: true });
+
+const Recruiter = mongoose.model('Recruiter', recruiterSchema);
+
+module.exports = { Application, validateApplication, Recruiter };

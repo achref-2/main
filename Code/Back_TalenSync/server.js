@@ -15,8 +15,7 @@ const jobsRouter = require("./routes/jobs");
 const Joi = require("joi");
 const { User } = require("./models/user"); // Fixed import for User model
 const { Candidate, validateAnalysis, validateCV } = require("./models/candidate"); // Proper import with named exports
-const Recruiter = require("./models/Recruiter");
-
+const { Recruiter } = require("./models/Recruiter");
 const adminRoutes = require("./routes/admins");
 const auth = require("./middleware/auth");
 const pdfParse = require('pdf-parse');

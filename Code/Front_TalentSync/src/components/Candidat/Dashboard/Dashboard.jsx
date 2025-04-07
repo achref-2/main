@@ -296,7 +296,7 @@ const Modal = ({ isOpen, onClose, children, title }) => {
         {/* Modal Panel */}
         <Dialog.Panel
           ref={modalRef}
-          className={`w-full max-w-2xl rounded-xl ${
+          className={`w-full max-w-4xl rounded-xl ${
             isDarkMode
               ? "bg-zinc-900 text-gray-100 border-zinc-700"
               : "bg-white text-gray-900 border-gray-200"
