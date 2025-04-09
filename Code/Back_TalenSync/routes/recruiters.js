@@ -215,6 +215,7 @@ router.post("/jobs", auth, checkRole(["recruiter"]), async (req, res) => {
       salary, 
       jobType, 
       deadline,
+      category, // Include category here
       skills,
       experienceLevel,
       educationRequirements,
@@ -240,6 +241,7 @@ router.post("/jobs", auth, checkRole(["recruiter"]), async (req, res) => {
       salary,
       jobType,
       deadline: deadline ? new Date(deadline) : undefined,
+      category, // Save category in the Job model
       skills: skills || [],
       recruiter: recruiter._id,
       companyName: recruiter.companyName,
@@ -269,7 +271,6 @@ router.post("/jobs", auth, checkRole(["recruiter"]), async (req, res) => {
     res.status(500).send({ message: "Internal Server Error" });
   }
 });
-
 // Get all jobs posted by the recruiter
 router.get("/jobs", auth, checkRole(["recruiter"]), async (req, res) => {
   try {
@@ -278,13 +279,14 @@ router.get("/jobs", auth, checkRole(["recruiter"]), async (req, res) => {
       return res.status(404).send({ message: "Recruiter profile not found" });
     
     // Get query params for filtering
-    const { status, sort, jobType, experienceLevel } = req.query;
+    const { status, sort, jobType, experienceLevel, category } = req.query; // Add category here
     
     // Build query
     let query = { _id: { $in: recruiter.jobPostings } };
     if (status) query.status = status;
     if (jobType) query.jobType = jobType;
     if (experienceLevel) query.experienceLevel = experienceLevel;
+    if (category) query.category = category; // Add category filter
     
     // Build sort options
     let sortOption = {};

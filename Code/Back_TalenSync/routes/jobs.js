@@ -54,6 +54,7 @@ router.get("/jobs", auth, checkRole(["candidate"]), async (req, res) => {
       location,
       jobType,
       skills,
+      category,
       page = 1,
       limit = 10,
       sortBy = "createdAt",
@@ -82,6 +83,9 @@ router.get("/jobs", auth, checkRole(["candidate"]), async (req, res) => {
     if (skills) {
       const skillsArray = skills.split(",").map(skill => skill.trim());
       filter.skills = { $in: skillsArray };
+    }
+    if (category) {
+      filter.category = category;
     }
     
     // Calculate pagination
@@ -115,21 +119,7 @@ router.get("/jobs", auth, checkRole(["candidate"]), async (req, res) => {
   }
 });
 
-// Get job details by ID
-router.get("/jobs/:id", auth, checkRole(["candidate"]), async (req, res) => {
-  try {
-    const job = await Job.findOne({ _id: req.params.id, status: "active" })
-                         .select("-applicants"); // Don't send applicants list for privacy
-    
-    if (!job) 
-      return res.status(404).send({ message: "Job posting not found" });
-    
-    res.status(200).send(job);
-  } catch (error) {
-    console.error("Error fetching job details:", error);
-    res.status(500).send({ message: "Internal Server Error" });
-  }
-});
+
 
 // Apply for a job
 router.post("/jobs/:id/apply", auth, checkRole(["candidate"]), async (req, res) => {

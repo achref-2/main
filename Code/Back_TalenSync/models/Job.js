@@ -87,6 +87,22 @@ const jobSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
+  category: {
+    type: String,
+    required: true,
+    enum: [
+      "Engineering",
+      "Design",
+      "Marketing",
+      "Sales",
+      "Product",
+      "Support",
+      "Finance",
+      "HR",
+      "IT"
+    ],
+    trim: true
+  },
   createdAt: {
     type: Date,
     default: Date.now
@@ -143,7 +159,20 @@ const validateJob = (job) => {
     educationRequirements: Joi.string(),
     industry: Joi.string(),
     featured: Joi.boolean(),
-    companyName: Joi.string().required() // Add companyName to the schema
+    companyName: Joi.string().required(),
+    category: Joi.string()
+      .valid(
+        "Engineering",
+        "Design",
+        "Marketing",
+        "Sales",
+        "Product",
+        "Support",
+        "Finance",
+        "HR",
+        "IT"
+      )
+      .required()
   });
 
   return schema.validate(job);

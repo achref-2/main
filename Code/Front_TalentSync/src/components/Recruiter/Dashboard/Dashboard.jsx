@@ -15,7 +15,7 @@ import {
   Wrench,
   FlaskConical,
   Plus,
-  
+  Hammer, Palette, Megaphone, Briefcase, Package, Headset, Wallet, Users, Monitor
 } from "lucide-react";
 import { Dialog } from "@headlessui/react";
 import { Menu as HeadlessMenu } from "@headlessui/react";
@@ -362,7 +362,8 @@ const AddJobForm = ({ onClose }) => {
     description: "",
     requirements: "",
     skills: [],
-    deadline: ""
+    deadline: "",
+    category: "", 
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
@@ -400,7 +401,8 @@ const AddJobForm = ({ onClose }) => {
       !jobDetails.salary ||
       !jobDetails.type ||
       !jobDetails.description ||
-      !jobDetails.requirements
+      !jobDetails.requirements ||
+      !jobDetails.category 
     ) {
       setErrorMessage("All fields are required.");
       setIsSubmitting(false);
@@ -421,6 +423,7 @@ const AddJobForm = ({ onClose }) => {
         description: jobDetails.description,
         requirements: jobDetails.requirements,
         skills: jobDetails.skills,
+        category: jobDetails.category,
         deadline: jobDetails.deadline || undefined
       };
       
@@ -610,7 +613,35 @@ const AddJobForm = ({ onClose }) => {
                 <option value="Remote">Remote</option>
               </select>
             </div>
-            
+            {/* Job Category */}
+<div>
+  <label className="block text-sm font-medium mb-1">
+    Job Category <span className="text-red-500">*</span>
+  </label>
+  <div className="relative">
+    <select
+      name="category"
+      value={jobDetails.category}
+      onChange={handleChange}
+      className={`w-full px-4 py-2 border rounded-lg appearance-none ${
+        isDarkMode ? "bg-black/70 text-white border-zinc-700" : "bg-white text-black"
+      }`}
+      required
+    >
+      <option value="">Select Category</option>
+      <option value="Engineering">🛠️ Engineering</option>
+      <option value="Design">🎨 Design</option>
+      <option value="Marketing">📣 Marketing</option>
+      <option value="Sales">💼 Sales</option>
+      <option value="Product">📦 Product</option>
+      <option value="Support">🧑‍💻 Support</option>
+      <option value="Finance">💰 Finance</option>
+      <option value="HR">🧠 Human Resources</option>
+      <option value="IT">💻 IT</option>
+    </select>
+  </div>
+</div>
+
             {/* Skills */}
             <div>
               <label className="block text-sm font-medium  mb-1">
@@ -655,7 +686,7 @@ const AddJobForm = ({ onClose }) => {
                 className={`w-full px-4 py-2 border rounded-lg  ${
                   isDarkMode ? "bg-black/70 text-white border-zinc-700" : "bg-white text-black"
                 }`}
-                rows="5"
+                rows="4"
                 required
                 placeholder="Detailed job description and responsibilities"
               />

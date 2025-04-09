@@ -25,6 +25,7 @@ import { BellIcon } from "@heroicons/react/24/outline";
 import { MenuButton, MenuItem, MenuItems } from "@headlessui/react";
 import { Link } from "react-router-dom";
 import { useDarkMode } from "../../DarkModeProvider";
+import {JobCategoryIcon} from "../../Components/Joblogo";
 
 
 const NavLink = ({ href, icon: Icon, children, isActive }) => (
@@ -619,7 +620,8 @@ const SidebarLayout = () => {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between  ">
               <div>
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                  Find Your Dream Job
+                Find Your Next Opportunity
+
                 </h1>
                 <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400 mb-6">
                   Access thousands of job opportunities tailored to your skills
@@ -741,7 +743,7 @@ const SidebarLayout = () => {
       {filteredJobs.map((job) => (
         <div
           key={job.id}
-          className="group relative border dark:border-zinc-700 rounded-xl shadow-sm overflow-hidden transition-all duration-300 ease-in-out hover:shadow-md hover:-translate-y-1 bg-white dark:bg-zinc-800 cursor-pointer"
+          className="group relative border dark:border-zinc-700 rounded-xl shadow-sm overflow-hidden transition-all duration-300 ease-in-out hover:shadow-md hover:-translate-y-1 bg-white dark:bg-zinc-950 cursor-pointer"
           onClick={() => setSelectedJob(job)}
         >
           {/* New badge */}
@@ -754,33 +756,31 @@ const SidebarLayout = () => {
           <div className="p-4 sm:p-5">
             <div className="flex items-start gap-3 sm:gap-4">
               {/* Company logo */}
-              <div className="flex-shrink-0 h-12 w-12 bg-gray-100 dark:bg-gray-700 rounded-md flex items-center justify-center overflow-hidden">
-                {job.logo ? (
-                  <img
-                    src={job.logo}
-                    alt={`${job.company || "Company"} logo`}
-                    className="w-full h-full object-contain"
-                  />
-                ) : (
-                  <span className="text-gray-500 dark:text-gray-400 text-lg font-bold">
-                    {job.company ? job.company.charAt(0) : "J"}
-                  </span>
-                )}
-              </div>
+              <div className="flex-shrink-0   rounded-md flex items-center justify-center overflow-hidden">
+                 {job.category === "Engineering" ? (
+                          <JobCategoryIcon category="Engineering" size="md" />
+                        ) : job.logo ? (
+                          <div className="p-3 bg-gray-100 dark:bg-gray-800 rounded-lg w-full h-full flex items-center justify-center">
+                            {job.logo}
+                          </div>
+                        ) : (
+                          <JobCategoryIcon category={job.category || "Default"} size="md" />
+                        )}
+                      </div>
               
               {/* Job info */}
               <div className="flex-1 min-w-0">
                 <h3 className="font-medium text-gray-500 dark:text-gray-400 text-sm mb-1">
-                  {job.company || "Company"}
+                  {job.companyName || "Company"}
                 </h3>
                 <p className="text-lg font-semibold text-gray-800 dark:text-white truncate">
-                  {job.role || "Position"}
+                  {job.title || "Position"}
                 </p>
                 
                 {/* Tags */}
                 <div className="mt-3 flex flex-wrap gap-2">
                   {job.location && (
-                    <span className="inline-flex items-center bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                    <span className="inline-flex items-center  text-blue-700  dark:text-blue-300 text-xs font-medium px-2.5 py-0.5 rounded-full">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         className="h-3 w-3 mr-1"
@@ -806,7 +806,7 @@ const SidebarLayout = () => {
                   )}
                   
                   {job.salary && (
-                    <span className="inline-flex items-center bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                    <span className="inline-flex items-center  text-green-700  dark:text-green-300 text-xs font-medium px-2.5 py-0.5 rounded-full">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         className="h-3 w-3 mr-1"
@@ -825,8 +825,8 @@ const SidebarLayout = () => {
                     </span>
                   )}
                   
-                  {job.type && (
-                    <span className="inline-flex items-center bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                  {job.jobType && (
+                    <span className="inline-flex items-center  text-purple-700  dark:text-purple-300 text-xs font-medium px-2.5 py-0.5 rounded-full">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         className="h-3 w-3 mr-1"
@@ -841,18 +841,18 @@ const SidebarLayout = () => {
                           d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
                         />
                       </svg>
-                      {job.type}
+                      {job.jobType}
                     </span>
                   )}
                   
                   {job.skills && (
-                    <span className="inline-flex items-center bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                    <span className="inline-flex items-center  text-indigo-700  dark:text-indigo-300 text-xs font-medium px-2.5 py-0.5 rounded-full">
                       Skills: {job.skills.join(", ")}
                     </span>
                   )}
                   
                   {job.deadline && (
-                    <span className="inline-flex items-center bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                    <span className="inline-flex items-center  text-red-700  dark:text-red-300 text-xs font-medium px-2.5 py-0.5 rounded-full">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         className="h-3 w-3 mr-1"
@@ -878,7 +878,7 @@ const SidebarLayout = () => {
           {/* Action button */}
           <div className="px-4 sm:px-5 pb-4 sm:pb-5 pt-2 flex justify-between items-center">
             
-            <button className="w-full px-4 py-2.5 bg-zinc-600 hover:bg-blue-700 dark:bg-zinc-900 dark:hover:bg-blue-800 text-white rounded-lg font-medium transition-colors flex items-center justify-center group-hover:shadow-sm">
+            <button className="w-full px-4 py-2.5 bg-zinc-400 group-hover:bg-blue-700  dark:bg-zinc-900 dark:hover:bg-blue-800 text-white rounded-lg font-medium transition-colors flex items-center justify-center group-hover:shadow-sm">
               View Details
               <svg
                 xmlns="http://www.w3.org/2000/svg"

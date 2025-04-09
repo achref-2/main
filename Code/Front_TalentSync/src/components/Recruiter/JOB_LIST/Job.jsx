@@ -7,12 +7,17 @@ import {
   CreditCard,
   Moon,
   Sun,
+  ChevronDown,
   Edit,
   Trash2,
   MapPin,
+  ChevronUp,
+  Plus,
   ChevronLeft,
   ChevronRight,
   Search,
+  X,
+  Filter,
   Wrench,
   FlaskConical,
   DollarSign,
@@ -24,6 +29,10 @@ import {
   Send,
   Info,
   Briefcase,
+  MoreVertical,
+  Star,
+  CheckCircle,
+  Users
 } from "lucide-react";
 import { Menu as HeadlessMenu } from "@headlessui/react";
 import { BellIcon } from "@heroicons/react/24/outline";
@@ -31,7 +40,7 @@ import { MenuButton, MenuItem, MenuItems } from "@headlessui/react";
 import { ArrowLeft, Share2 } from "lucide-react";
 import { useDarkMode } from "../../DarkModeProvider";
 import { Link } from "react-router-dom";
-
+import {JobCategoryIcon} from "../../Components/Joblogo";
 const NavLink = ({ href, icon: Icon, children, isActive }) => (
   <Link
     to={href}
@@ -264,6 +273,20 @@ const UserMenu = () => {
 const SidebarLayout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const { isDarkMode } = useDarkMode();
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const clearFilters = () => {
+    setFilters({
+      fullTime: false,
+      partTime: false,
+      contract: false,
+      remote: false,
+      onsite: false,
+      hybrid: false,
+      salary50_100: false,
+      salary100_150: false,
+      salary150Plus: false,
+    });
+  };
   const navigation_menu = [
     {
       name: "Dashboard",
@@ -304,8 +327,13 @@ const SidebarLayout = () => {
   const [filters, setFilters] = useState({
     fullTime: false,
     partTime: false,
+    contract: false,
+    remote: false,
+    onsite: false,
+    hybrid: false,
     salary50_100: false,
     salary100_150: false,
+    salary150Plus: false,
   });
 
   const [allJobs, setAllJobs] = useState([]); // State for jobs
@@ -774,559 +802,336 @@ const SidebarLayout = () => {
           {/* Main Content Area */}
           <div className="p-6 bg-gray-50 dark:bg-black min-h-screen">
             <div className="max-w-6xl mx-auto">
-              <div className="mb-8">
-                <h1 className="text-2xl font-bold mb-2">
-                  Find Your Next Opportunity
-                </h1>
-                <div className="flex items-center bg-white dark:bg-zinc-950 rounded-lg shadow-sm p-2">
-                  <input
-                    type="text"
-                    placeholder="Search jobs, companies, or keywords..."
-                    className="flex-grow px-4 py-2 focus:outline-none bg-white dark:bg-zinc-950 dark:text-white"
-                  />
-                  <button className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-md ml-2 transition-colors">
-                    Search
+            <div className="mb-6">
+          <div className="flex justify-between items-center mb-4">
+            <h1 className="text-2xl font-bold">Manage Your Job Listings</h1>
+            <button className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 font-medium transition-colors">
+              <Plus size={18} /> Add New Job
+            </button>
+          </div>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
+            View, edit, or delete the jobs you've posted. Keep your listings
+            up-to-date to attract the best talent.
+          </p>
+
+          {/* Search and stats bar */}
+         <div className="flex flex-col sm:flex-row gap-4 mb-6">
+            <div className="relative flex-grow">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Search size={18} className="text-gray-400" />
+              </div>
+              <input 
+                type="text" 
+                placeholder="Search jobs by title, skills or location..." 
+                className="w-full pl-10 pr-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
+            </div>
+            <div className="flex gap-2">
+              <div className="hidden md:flex items-center gap-6">
+                <div className="text-sm">
+                  <span className="text-gray-500 dark:text-gray-400">Total:</span> 
+                  <span className="ml-1 font-semibold"> jobs</span>
+                </div>
+                <div className="text-sm">
+                  <span className="text-gray-500 dark:text-gray-400">Active:</span> 
+                  <span className="ml-1 font-semibold"> jobs</span>
+                </div>
+              </div>
+              {/* Filter button for mobile */}
+              <button 
+                onClick={() => setIsFilterOpen(!isFilterOpen)} 
+                className="md:hidden flex items-center gap-2 px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-zinc-900"
+              >
+                <Filter size={18} />
+                <span>Filters</span>
+                {isFilterOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+              </button>
+            </div>
+          </div>
+        </div>
+        <div className="flex flex-col md:flex-row gap-6">
+          {/* Filters panel - hidden on mobile unless toggled */}
+          <div className={`w-full md:w-1/4 order-2 md:order-2 ${isFilterOpen ? 'block' : 'hidden md:block'}`}>
+            <div className="bg-white dark:bg-zinc-900 rounded-lg shadow-sm border border-gray-100 dark:border-gray-800 sticky top-4">
+              <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                <h2 className="font-semibold text-lg flex items-center">
+                  <Filter size={18} className="mr-2" />
+                  Filters
+                </h2>
+                <button 
+                  onClick={() => setIsFilterOpen(false)}
+                  className="text-gray-500 md:hidden"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="p-5 space-y-6">
+                {/* Job Type Filter */}
+                <div>
+                  <h3 className="font-medium mb-3 text-gray-800 dark:text-gray-200">Job Type</h3>
+                  <div className="space-y-3">
+                    {['fullTime', 'partTime', 'contract'].map((type) => (
+                      <label key={type} className="flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={filters[type]}
+                          onChange={() => handleFilterChange(type)}
+                          className="rounded border-gray-300 text-purple-600 shadow-sm focus:border-purple-300 focus:ring focus:ring-purple-200 focus:ring-opacity-50 h-5 w-5"
+                        />
+                        <span className="ml-3 text-gray-700 dark:text-gray-300">
+                          {type === 'fullTime' ? 'Full Time' : type === 'partTime' ? 'Part Time' : 'Contract'}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Salary Range Filter */}
+                <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <h3 className="font-medium mb-3 text-gray-800 dark:text-gray-200">Salary Range</h3>
+                  <div className="space-y-3">
+                    {[
+                      { id: 'salary50_100', label: '$50k - $100k' },
+                      { id: 'salary100_150', label: '$100k - $150k' },
+                      { id: 'salary150Plus', label: '$150k+' }
+                    ].map((range) => (
+                      <label key={range.id} className="flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={filters[range.id]}
+                          onChange={() => handleFilterChange(range.id)}
+                          className="rounded border-gray-300 text-purple-600 shadow-sm focus:border-purple-300 focus:ring focus:ring-purple-200 focus:ring-opacity-50 h-5 w-5"
+                        />
+                        <span className="ml-3 text-gray-700 dark:text-gray-300">{range.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Location Filter */}
+                <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <h3 className="font-medium mb-3 text-gray-800 dark:text-gray-200">Location</h3>
+                  <div className="space-y-3">
+                    {['remote', 'onsite', 'hybrid'].map((loc) => (
+                      <label key={loc} className="flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={filters[loc]}
+                          onChange={() => handleFilterChange(loc)}
+                          className="rounded border-gray-300 text-purple-600 shadow-sm focus:border-purple-300 focus:ring focus:ring-purple-200 focus:ring-opacity-50 h-5 w-5"
+                        />
+                        <span className="ml-3 text-gray-700 dark:text-gray-300">
+                          {loc.charAt(0).toUpperCase() + loc.slice(1)}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Filter Actions */}
+                <div className="pt-4 border-t border-gray-200 dark:border-gray-700 flex justify-between">
+                  <button 
+                    onClick={clearFilters}
+                    className="text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 text-sm font-medium"
+                  >
+                    Clear all
+                  </button>
+                  <button className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-1.5 rounded-md text-sm font-medium transition-colors">
+                    Apply filters
                   </button>
                 </div>
               </div>
+            </div>
+          </div>
 
-              <div className="flex flex-col md:flex-row gap-6">
-                {/* Filters - Left on mobile, positioned better on desktop */}
-                <div className="w-full md:w-1/4 order-1 md:order-2">
-                  <div className="bg-white dark:bg-zinc-950 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 sticky top-4">
-                    <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-                      <h2 className="font-semibold text-lg flex items-center">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-5 w-5 mr-2"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
-                          />
-                        </svg>
-                        Filters
-                      </h2>
-                    </div>
-
-                    <div className="p-5 space-y-6">
-                      <div>
-                        <h3 className="font-medium mb-3 text-gray-800 dark:text-gray-200">
-                          Job Type
-                        </h3>
-                        <div className="space-y-3">
-                          <label className="flex items-center cursor-pointer group">
-                            <div className="relative">
-                              <input
-                                type="checkbox"
-                                checked={filters.fullTime}
-                                onChange={() => handleFilterChange("fullTime")}
-                                className="sr-only"
-                              />
-                              <div className="h-5 w-5 border-2 rounded border-gray-300 dark:border-gray-600 group-hover:border-purple-500 transition-colors"></div>
-                              <div
-                                className={`absolute inset-0 flex items-center justify-center transition-opacity ${
-                                  filters.fullTime ? "opacity-100" : "opacity-0"
-                                }`}
-                              >
-                                <svg
-                                  className="h-3 w-3 text-purple-600"
-                                  fill="currentColor"
-                                  viewBox="0 0 20 20"
-                                >
-                                  <path
-                                    fillRule="evenodd"
-                                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                    clipRule="evenodd"
-                                  />
-                                </svg>
-                              </div>
-                            </div>
-                            <span className="ml-3 text-gray-700 dark:text-gray-300">
-                              Full Time
-                            </span>
-                          </label>
-
-                          <label className="flex items-center cursor-pointer group">
-                            <div className="relative">
-                              <input
-                                type="checkbox"
-                                checked={filters.partTime}
-                                onChange={() => handleFilterChange("partTime")}
-                                className="sr-only"
-                              />
-                              <div className="h-5 w-5 border-2 rounded border-gray-300 dark:border-gray-600 group-hover:border-purple-500 transition-colors"></div>
-                              <div
-                                className={`absolute inset-0 flex items-center justify-center transition-opacity ${
-                                  filters.partTime ? "opacity-100" : "opacity-0"
-                                }`}
-                              >
-                                <svg
-                                  className="h-3 w-3 text-purple-600"
-                                  fill="currentColor"
-                                  viewBox="0 0 20 20"
-                                >
-                                  <path
-                                    fillRule="evenodd"
-                                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                    clipRule="evenodd"
-                                  />
-                                </svg>
-                              </div>
-                            </div>
-                            <span className="ml-3 text-gray-700 dark:text-gray-300">
-                              Part Time
-                            </span>
-                          </label>
-
-                          <label className="flex items-center cursor-pointer group">
-                            <div className="relative">
-                              <input
-                                type="checkbox"
-                                checked={filters.contract}
-                                onChange={() => handleFilterChange("contract")}
-                                className="sr-only"
-                              />
-                              <div className="h-5 w-5 border-2 rounded border-gray-300 dark:border-gray-600 group-hover:border-purple-500 transition-colors"></div>
-                              <div
-                                className={`absolute inset-0 flex items-center justify-center transition-opacity ${
-                                  filters.contract ? "opacity-100" : "opacity-0"
-                                }`}
-                              >
-                                <svg
-                                  className="h-3 w-3 text-purple-600"
-                                  fill="currentColor"
-                                  viewBox="0 0 20 20"
-                                >
-                                  <path
-                                    fillRule="evenodd"
-                                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                    clipRule="evenodd"
-                                  />
-                                </svg>
-                              </div>
-                            </div>
-                            <span className="ml-3 text-gray-700 dark:text-gray-300">
-                              Contract
-                            </span>
-                          </label>
-                        </div>
-                      </div>
-
-                      <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-                        <h3 className="font-medium mb-3 text-gray-800 dark:text-gray-200">
-                          Salary Range
-                        </h3>
-                        <div className="space-y-3">
-                          <label className="flex items-center cursor-pointer group">
-                            <div className="relative">
-                              <input
-                                type="checkbox"
-                                checked={filters.salary50_100}
-                                onChange={() =>
-                                  handleFilterChange("salary50_100")
-                                }
-                                className="sr-only"
-                              />
-                              <div className="h-5 w-5 border-2 rounded border-gray-300 dark:border-gray-600 group-hover:border-purple-500 transition-colors"></div>
-                              <div
-                                className={`absolute inset-0 flex items-center justify-center transition-opacity ${
-                                  filters.salary50_100
-                                    ? "opacity-100"
-                                    : "opacity-0"
-                                }`}
-                              >
-                                <svg
-                                  className="h-3 w-3 text-purple-600"
-                                  fill="currentColor"
-                                  viewBox="0 0 20 20"
-                                >
-                                  <path
-                                    fillRule="evenodd"
-                                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                    clipRule="evenodd"
-                                  />
-                                </svg>
-                              </div>
-                            </div>
-                            <span className="ml-3 text-gray-700 dark:text-gray-300">
-                              $50k - $100k
-                            </span>
-                          </label>
-
-                          <label className="flex items-center cursor-pointer group">
-                            <div className="relative">
-                              <input
-                                type="checkbox"
-                                checked={filters.salary100_150}
-                                onChange={() =>
-                                  handleFilterChange("salary100_150")
-                                }
-                                className="sr-only"
-                              />
-                              <div className="h-5 w-5 border-2 rounded border-gray-300 dark:border-gray-600 group-hover:border-purple-500 transition-colors"></div>
-                              <div
-                                className={`absolute inset-0 flex items-center justify-center transition-opacity ${
-                                  filters.salary100_150
-                                    ? "opacity-100"
-                                    : "opacity-0"
-                                }`}
-                              >
-                                <svg
-                                  className="h-3 w-3 text-purple-600"
-                                  fill="currentColor"
-                                  viewBox="0 0 20 20"
-                                >
-                                  <path
-                                    fillRule="evenodd"
-                                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                    clipRule="evenodd"
-                                  />
-                                </svg>
-                              </div>
-                            </div>
-                            <span className="ml-3 text-gray-700 dark:text-gray-300">
-                              $100k - $150k
-                            </span>
-                          </label>
-
-                          <label className="flex items-center cursor-pointer group">
-                            <div className="relative">
-                              <input
-                                type="checkbox"
-                                checked={filters.salary150Plus}
-                                onChange={() =>
-                                  handleFilterChange("salary150Plus")
-                                }
-                                className="sr-only"
-                              />
-                              <div className="h-5 w-5 border-2 rounded border-gray-300 dark:border-gray-600 group-hover:border-purple-500 transition-colors"></div>
-                              <div
-                                className={`absolute inset-0 flex items-center justify-center transition-opacity ${
-                                  filters.salary150Plus
-                                    ? "opacity-100"
-                                    : "opacity-0"
-                                }`}
-                              >
-                                <svg
-                                  className="h-3 w-3 text-purple-600"
-                                  fill="currentColor"
-                                  viewBox="0 0 20 20"
-                                >
-                                  <path
-                                    fillRule="evenodd"
-                                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                    clipRule="evenodd"
-                                  />
-                                </svg>
-                              </div>
-                            </div>
-                            <span className="ml-3 text-gray-700 dark:text-gray-300">
-                              $150k+
-                            </span>
-                          </label>
-                        </div>
-                      </div>
-
-                      <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-                        <h3 className="font-medium mb-3 text-gray-800 dark:text-gray-200">
-                          Location
-                        </h3>
-                        <div className="space-y-3">
-                          <label className="flex items-center cursor-pointer group">
-                            <div className="relative">
-                              <input
-                                type="checkbox"
-                                checked={filters.remote}
-                                onChange={() => handleFilterChange("remote")}
-                                className="sr-only"
-                              />
-                              <div className="h-5 w-5 border-2 rounded border-gray-300 dark:border-gray-600 group-hover:border-purple-500 transition-colors"></div>
-                              <div
-                                className={`absolute inset-0 flex items-center justify-center transition-opacity ${
-                                  filters.remote ? "opacity-100" : "opacity-0"
-                                }`}
-                              >
-                                <svg
-                                  className="h-3 w-3 text-purple-600"
-                                  fill="currentColor"
-                                  viewBox="0 0 20 20"
-                                >
-                                  <path
-                                    fillRule="evenodd"
-                                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                    clipRule="evenodd"
-                                  />
-                                </svg>
-                              </div>
-                            </div>
-                            <span className="ml-3 text-gray-700 dark:text-gray-300">
-                              Remote
-                            </span>
-                          </label>
-
-                          <label className="flex items-center cursor-pointer group">
-                            <div className="relative">
-                              <input
-                                type="checkbox"
-                                checked={filters.onsite}
-                                onChange={() => handleFilterChange("onsite")}
-                                className="sr-only"
-                              />
-                              <div className="h-5 w-5 border-2 rounded border-gray-300 dark:border-gray-600 group-hover:border-purple-500 transition-colors"></div>
-                              <div
-                                className={`absolute inset-0 flex items-center justify-center transition-opacity ${
-                                  filters.onsite ? "opacity-100" : "opacity-0"
-                                }`}
-                              >
-                                <svg
-                                  className="h-3 w-3 text-purple-600"
-                                  fill="currentColor"
-                                  viewBox="0 0 20 20"
-                                >
-                                  <path
-                                    fillRule="evenodd"
-                                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                    clipRule="evenodd"
-                                  />
-                                </svg>
-                              </div>
-                            </div>
-                            <span className="ml-3 text-gray-700 dark:text-gray-300">
-                              On-site
-                            </span>
-                          </label>
-
-                          <label className="flex items-center cursor-pointer group">
-                            <div className="relative">
-                              <input
-                                type="checkbox"
-                                checked={filters.hybrid}
-                                onChange={() => handleFilterChange("hybrid")}
-                                className="sr-only"
-                              />
-                              <div className="h-5 w-5 border-2 rounded border-gray-300 dark:border-gray-600 group-hover:border-purple-500 transition-colors"></div>
-                              <div
-                                className={`absolute inset-0 flex items-center justify-center transition-opacity ${
-                                  filters.hybrid ? "opacity-100" : "opacity-0"
-                                }`}
-                              >
-                                <svg
-                                  className="h-3 w-3 text-purple-600"
-                                  fill="currentColor"
-                                  viewBox="0 0 20 20"
-                                >
-                                  <path
-                                    fillRule="evenodd"
-                                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                    clipRule="evenodd"
-                                  />
-                                </svg>
-                              </div>
-                            </div>
-                            <span className="ml-3 text-gray-700 dark:text-gray-300">
-                              Hybrid
-                            </span>
-                          </label>
-                        </div>
-                      </div>
-
-                      <div className="pt-4 flex justify-between">
-                        <button className="text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 text-sm font-medium">
-                          Clear all filters
-                        </button>
-                        <button className="text-purple-600 hover:text-purple-800 dark:text-purple-400 dark:hover:text-purple-300 text-sm font-medium">
-                          Apply filters
-                        </button>
-                      </div>
-                    </div>
+          {/* Job Listings - Main content area */}
+          <div className="w-full md:w-3/4 order-1 md:order-1">
+            <div className="bg-white dark:bg-zinc-900 rounded-lg shadow-sm">
+              <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                <div className="flex items-center">
+                  <h2 className="text-xl font-semibold">Your Job Listings</h2>
+                  <div className="ml-2 px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded-full text-sm">
+                    {filteredJobs.length}
                   </div>
                 </div>
-
-                {/* Job Listings - Main content area */}
-                <div className="w-full md:w-3/4 order-2 md:order-1">
-                  <div className="bg-white dark:bg-zinc-950 rounded-lg shadow-sm">
-                    <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-                      <h2 className="text-xl font-semibold">Latest jobs</h2>
-                      <div className="flex items-center space-x-2">
-                        <span className="text-sm text-gray-500 dark:text-gray-400">
-                          Sort by:
-                        </span>
-                        <select className="bg-gray-50 dark:bg-zinc-950 border border-gray-200 dark:border-gray-600 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-purple-500">
-                          <option>Newest</option>
-                          <option>Relevant</option>
-                          <option>Salary: High to Low</option>
-                          <option>Salary: Low to High</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    <div className="p-4">
-                      {loading ? (
-                        <div className="flex justify-center items-center h-40">
-                          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
-                        </div>
-                      ) : error ? (
-                        <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg">
-                          <p className="text-red-600 dark:text-red-400 flex items-center">
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              className="h-5 w-5 mr-2"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                              />
-                            </svg>
-                            {error}
-                          </p>
-                        </div>
-                      ) : filteredJobs.length === 0 ? (
-                        <div className="text-center py-8">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-16 w-16 mx-auto text-gray-400"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={1}
-                              d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                            />
-                          </svg>
-                          <h3 className="mt-4 text-lg font-medium">
-                            No jobs found
-                          </h3>
-                          <p className="text-gray-500 dark:text-gray-400 mt-2">
-                            Try adjusting your filters to see more results.
-                          </p>
-                        </div>
-                      ) : (
-                        <div className="space-y-4">
-                          {filteredJobs.map((job) => (
-                            <div
-                              key={job._id}
-                              className="bg-white dark:bg-zinc-950 rounded-lg border border-gray-200 dark:border-gray-700 hover:shadow-md dark:hover:shadow-lg dark:hover:shadow-gray-900/50 transition-all cursor-pointer group"
-                              onClick={() => setSelectedJob(job)}
-                            >
-                              <div className="flex items-center p-5">
-                                <div className="mr-4 p-2 bg-gray-100 dark:bg-gray-700 rounded-lg w-12 h-12 flex items-center justify-center">
-                                  {job.logo}
-                                </div>
-                                <div className="flex-grow ">
-                                  <div className="flex items-center">
-                                    <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                                      {job.company}
-                                    </h3>
-                                    {job.featured && (
-                                      <span className="ml-2 px-2 py-0.5 text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 rounded-full">
-                                        Featured
-                                      </span>
-                                    )}
-                                    {job.new && (
-                                      <span className="ml-2 px-2 py-0.5 text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 rounded-full">
-                                        New
-                                      </span>
-                                    )}
-                                  </div>
-                                  <p className="text-lg font-semibold group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
-                                    {job.role}
-                                  </p>
-                                  <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1 ">
-                                    <div className="flex items-center text-sm text-gray-600 dark:text-gray-300">
-                                      <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        className="h-4 w-4 mr-1"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke="currentColor"
-                                      >
-                                        <path
-                                          strokeLinecap="round"
-                                          strokeLinejoin="round"
-                                          strokeWidth={2}
-                                          d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                                        />
-                                        <path
-                                          strokeLinecap="round"
-                                          strokeLinejoin="round"
-                                          strokeWidth={2}
-                                          d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                                        />
-                                      </svg>
-                                      <span>{job.location}</span>
-                                    </div>
-
-                                    <div className="flex items-center text-sm text-gray-600 dark:text-gray-300">
-                                      <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        className="h-4 w-4 mr-1"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke="currentColor"
-                                      >
-                                        <path
-                                          strokeLinecap="round"
-                                          strokeLinejoin="round"
-                                          strokeWidth={2}
-                                          d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                                        />
-                                      </svg>
-                                      <span>{job.salary}</span>
-                                    </div>
-
-                                    <div className="flex items-center text-sm text-gray-600 dark:text-gray-300">
-                                      <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        className="h-4 w-4 mr-1"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke="currentColor"
-                                      >
-                                        <path
-                                          strokeLinecap="round"
-                                          strokeLinejoin="round"
-                                          strokeWidth={2}
-                                          d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                                        />
-                                      </svg>
-                                      <span>{job.type}</span>
-                                    </div>
-                                  </div>
-                                </div>
-
-                                <div className="ml-4">
-                                  <div className="text-xs text-gray-500 dark:text-gray-400">
-                                    {job.postedDate
-                                      ? job.postedDate
-                                      : "Posted 3d ago"}
-                                  </div>
-                                  <button className="mt-2 px-3 py-1 text-sm font-medium text-purple-600 hover:text-purple-800 dark:text-purple-400 dark:hover:text-purple-300 border border-purple-600 dark:border-purple-500 rounded hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors">
-                                    View
-                                  </button>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm text-gray-500 dark:text-gray-400">Sort by:</span>
+                  <select className="bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-gray-700 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-purple-500">
+                    <option>Newest</option>
+                    <option>Oldest</option>
+                    <option>Most Applications</option>
+                    <option>Status</option>
+                  </select>
                 </div>
               </div>
+
+              <div className="p-4">
+                {loading ? (
+                  <div className="flex justify-center items-center h-40">
+                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+                  </div>
+                ) : error ? (
+                  <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg">
+                    <p className="text-red-600 dark:text-red-400 flex items-center">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-5 w-5 mr-2"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                      {error}
+                    </p>
+                  </div>
+                ) : filteredJobs.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Briefcase className="h-16 w-16 mx-auto text-gray-400 mb-4" />
+                    <h3 className="text-lg font-medium">No jobs found</h3>
+                    <p className="text-gray-500 dark:text-gray-400 mt-2 mb-4">
+                      Try adjusting your filters or create your first job listing.
+                    </p>
+                    <button className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 font-medium mx-auto transition-colors">
+                      <Plus size={18} /> Add New Job
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {filteredJobs.map((job) => (
+                      <div
+                        key={job._id}
+                        className="bg-white dark:bg-zinc-900 rounded-lg border border-gray-200 dark:border-gray-800 hover:shadow-md transition-all group overflow-hidden cursor-pointer"
+                        onClick={() => setSelectedJob(job)} // Set the selected job on click
+                      >
+                        <div className="relative">
+                          {/* Status indicator */}
+                          <div className={`absolute top-0 left-0 w-1 h-full ${
+                            job.status === 'active' ? 'bg-green-500' : 
+                            job.status === 'paused' ? 'bg-yellow-500' : 'bg-gray-400'
+                          }`}></div>
+                          
+                          <div className="flex items-center p-5 pl-6">
+                          <div className="mr-4 w-14 h-14 flex items-center justify-center text-2xl">
+        {job.category === "Engineering" ? (
+          <JobCategoryIcon category="Engineering" size="md" />
+        ) : job.logo ? (
+          <div className="p-3 bg-gray-100 dark:bg-gray-800 rounded-lg w-full h-full flex items-center justify-center">
+            {job.logo}
+          </div>
+        ) : (
+          <JobCategoryIcon category={job.category || "Default"} size="md" />
+        )}
+      </div>
+
+                            
+                            <div className="flex-grow">
+                              <div className="flex items-center mb-1">
+                                <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                                  {job.company}
+                                </h3>
+                                {job.featured && (
+                                  <span className="ml-2 px-2 py-0.5 text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 rounded-full flex items-center">
+                                    <Star size={10} className="mr-1" /> Featured
+                                  </span>
+                                )}
+                                {job.new && (
+                                  <span className="ml-2 px-2 py-0.5 text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 rounded-full">
+                                    New
+                                  </span>
+                                )}
+                                <span className={`ml-2 px-2 py-0.5 text-xs font-medium rounded-full ${
+                                  job.status === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' : 
+                                  job.status === 'paused' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300' : 
+                                  'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                                }`}>
+                                  {job.status === 'active' ? 'Active' : job.status === 'paused' ? 'Paused' : 'Expired'}
+                                </span>
+                              </div>
+                              <p className="text-lg font-semibold group-hover:text-blue-500 dark:group-hover:text-purple-400 transition-colors">
+                              {job.title || "Position"}
+                             
+                              </p>
+                              <p className="text-l font-semibold group-hover:text-zinc-500 dark:group-hover:text-purple-400 transition-colors">
+                             
+                              {job.companyName || "Company"}
+                              </p>
+                              <p className="text-l font-semibold group-hover:text-zinc-500 dark:group-hover:text-purple-400 transition-colors">
+                             
+                             {job.category|| "Company"}
+                             </p>
+                              
+                              <div className="flex flex-wrap gap-4 mt-2">
+                                <div className="flex items-center text-sm text-blue-700  dark:text-blue-300  font-medium px-2 py-0.5 rounded-full">
+                                  <MapPin size={16} className="mr-1" />
+                                  <span>{job.location}</span>
+                                </div>
+
+                                <div className="flex items-center text-sm text-green-700  dark:text-green-300 font-medium px-2 py-0.5 rounded-full">
+                                  <DollarSign size={16} className="mr-1" />
+                                  <span>{job.salary}</span>
+                                </div>
+
+                                <div className="flex items-center text-sm text-gray-600 dark:text-gray-300">
+                                  <Briefcase size={16} className="mr-1" />
+                                  <span>{job.jobType}</span>
+                                </div>
+                                
+                                <div className="flex items-center text-sm text-red-500  dark:text-red-300  font-medium px-2 py-0.5 rounded-full">
+                                  <Clock size={16} className="mr-1" />
+                                  <span> Deadline: {new Date(job.deadline).toLocaleDateString()}</span>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="ml-4 flex flex-col items-end">
+                              <div className="text-xs font-medium bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300 px-2 py-1 rounded-full mb-2">
+                                {job.applicationCount} Applicants
+                              </div>
+                              
+                              <button className="w-full px-2 py-1 bg-zinc-400 group-hover:bg-zinc-600 text-zinc-400 group-hover:text-white dark:bg-zinc-700   rounded-lg font-medium transition-colors flex items-center justify-center group-hover:shadow-sm">
+              View Details
+                                
+            </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              
+              {/* Pagination */}
+              {filteredJobs.length > 0 && (
+                <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                  <div className="text-sm text-gray-500 dark:text-gray-400">
+                    Showing <span className="font-medium">1</span> to <span className="font-medium">{filteredJobs.length}</span> of <span className="font-medium">{filteredJobs.length}</span> results
+                  </div>
+                  <div className="flex">
+                    <button disabled className="px-3 py-1 border border-gray-300 dark:border-gray-700 rounded-l-md bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500">
+                      Previous
+                    </button>
+                    <button className="px-3 py-1 border border-gray-300 dark:border-gray-700 border-l-0 bg-white dark:bg-gray-900 text-purple-600 dark:text-purple-400 font-medium">
+                      1
+                    </button>
+                    <button className="px-3 py-1 border border-gray-300 dark:border-gray-700 rounded-r-md border-l-0 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">
+                      Next
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+    
+
             </div>
           </div>
         </main>
