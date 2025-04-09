@@ -421,15 +421,41 @@ const SidebarLayout = () => {
       return [];
     }
   };
+  const [showToast, setShowToast] = useState(false);
+  const SuccessToast = () => (
+    <div
+      role="alert"
+      className="fixed bottom-9 right-8 bg-green-100 dark:bg-green-900 border-l-4 border-green-500 dark:border-green-700 text-green-900 dark:text-green-100 p-4 rounded-lg flex items-center transition duration-300 ease-in-out hover:bg-green-200 dark:hover:bg-green-800 transform hover:scale-105 z-50"
+    >
+      <svg
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+        fill="none"
+        className="h-5 w-5 flex-shrink-0 mr-2 text-green-600"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          d="M5 13l4 4L19 7"
+          strokeWidth="2"
+          strokeLinejoin="round"
+          strokeLinecap="round"
+        ></path>
+      </svg>
+      <p className="text-xs font-semibold">Job deleted successfully!</p>
+    </div>
+  );
+  
   if (selectedJob) {
+    const { isDarkMode } = useDarkMode(); // Use the isDarkMode context
+  
     const handleDeleteJob = async (jobId) => {
-      console.log("Received jobId for deletion:", jobId); // Debug log
-
+      console.log("Received jobId for deletion:", jobId);
+  
       if (!jobId) {
         console.error("Job ID is undefined. Cannot proceed with deletion.");
         return;
       }
-
+  
       try {
         const token = localStorage.getItem("token");
         const response = await fetch(
@@ -439,21 +465,36 @@ const SidebarLayout = () => {
             headers: { Authorization: `Bearer ${token}` },
           }
         );
-
+  
         if (!response.ok) {
           const errorData = await response.json();
           throw new Error(errorData.message || "Failed to delete job");
         }
-
+  
         console.log("Job deleted successfully");
+  
+        // Remove job from local state
         setAllJobs((prevJobs) => prevJobs.filter((job) => job._id !== jobId));
+  
+        // Show toast
+        setShowToast(true);
+  
+        // Clear selected job after short delay (e.g., close a modal)
+        setTimeout(() => {
+          setShowToast(false);
+          setSelectedJob(null); // Exit the "selectedJob" view/modal
+        }, 2000); // 2 seconds is enough for toast
       } catch (error) {
         console.error("Error deleting job:", error.message);
       }
     };
-
+  
     return (
-      <div className="bg-gray-50 dark:bg-gray-900 min-h-screen p-6">
+      <div
+        className={`min-h-screen ${
+          isDarkMode ? "bg-black text-white" : "bg-white text-black"
+        } p-6`}
+      >
         <div className="max-w-6xl mx-auto">
           <button
             onClick={() => setSelectedJob(null)}
@@ -462,37 +503,84 @@ const SidebarLayout = () => {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to All Jobs
           </button>
-
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden border border-gray-200 dark:border-gray-700">
+          {showToast && <SuccessToast />}
+          <div
+            className={`rounded-lg shadow-md overflow-hidden border ${
+              isDarkMode ? "bg-zinc-900 border-gray-700" : "bg-white border-gray-200"
+            }`}
+          >
             {/* Header section */}
-            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+            <div
+              className={`p-6 border-b ${
+                isDarkMode ? "border-gray-700" : "border-gray-200"
+              }`}
+            >
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div className="flex items-center">
-                  <div className="p-4 bg-gray-100 dark:bg-gray-700 rounded-lg mr-4 w-16 h-16 flex items-center justify-center">
-                    {selectedJob.logo}
+                  <div
+                    className={`h-14 w-14 ${
+                      isDarkMode ? "bg-gray-800" : "bg-gray-100"
+                    } rounded-lg`}
+                  >
+                    {selectedJob.category === "Engineering" ? (
+                      <JobCategoryIcon category="Engineering" size="md" />
+                    ) : selectedJob.logo ? (
+                      <div
+                        className={`${
+                          isDarkMode ? "bg-gray-800" : "bg-gray-100"
+                        }`}
+                      >
+                        {selectedJob.logo}
+                      </div>
+                    ) : (
+                      <JobCategoryIcon
+                        category={selectedJob.category || "Default"}
+                        size="md"
+                      />
+                    )}
                   </div>
                   <div>
-                    <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
-                      {selectedJob.role}
+                    <h1
+                      className={`text-2xl ml-5 font-bold ${
+                        isDarkMode ? "text-white" : "text-gray-800"
+                      }`}
+                    >
+                      {selectedJob.title}
                     </h1>
                     <div className="flex flex-wrap items-center mt-2">
-                      <span className="text-gray-600 dark:text-gray-300">
-                        {selectedJob.company}
+                      <span
+                        className={`${
+                          isDarkMode ? "text-gray-300" : "text-gray-600"
+                        }`}
+                      >
+                        {selectedJob.companyName}
                       </span>
                       <span className="text-gray-400 mx-2">•</span>
-                      <span className="text-gray-600 dark:text-gray-300 flex items-center">
-                        <MapPin className="h-4 w-4 mr-1 text-gray-400 dark:text-gray-500" />
+                      <span
+                        className={`flex items-center ${
+                          isDarkMode ? "text-gray-300" : "text-gray-600"
+                        }`}
+                      >
+                        <MapPin
+                          className={`h-4 w-4 mr-1 ${
+                            isDarkMode ? "text-gray-500" : "text-gray-400"
+                          }`}
+                        />
                         {selectedJob.location}
                       </span>
                     </div>
                   </div>
                 </div>
-
+  
                 {/* Recruiter actions */}
                 <div className="flex flex-wrap gap-2 mt-4 md:mt-0">
                   <button
                     onClick={() => handleEditJob(selectedJob._id)}
-                    className="flex items-center bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-800/50 text-blue-600 dark:text-blue-400 px-4 py-2 rounded-md transition-colors"
+                    className={`flex items-center ${
+                      isDarkMode
+                        ? "bg-blue-900/30 hover:bg-blue-800/50 text-blue-400"
+                        : "bg-blue-50 hover:bg-blue-100 text-blue-600"
+                    } px-4 py-2 rounded-md transition-colors`}
                   >
                     <Edit className="h-4 w-4 mr-2" />
                     Edit
@@ -509,100 +597,227 @@ const SidebarLayout = () => {
                       );
                       handleDeleteJob(selectedJob._id);
                     }}
-                    className="flex items-center bg-red-50 hover:bg-red-100 dark:bg-red-900/30 dark:hover:bg-red-800/50 text-red-600 dark:text-red-400 px-4 py-2 rounded-md transition-colors"
+                    className={`flex items-center ${
+                      isDarkMode
+                        ? "bg-red-900/30 hover:bg-red-800/50 text-red-400"
+                        : "bg-red-50 hover:bg-red-100 text-red-600"
+                    } px-4 py-2 rounded-md transition-colors`}
                   >
                     <Trash2 className="h-4 w-4 mr-2" />
                     Delete
                   </button>
-
+  
                   <button
-                    className="border border-gray-200 dark:border-gray-700 p-2 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 transition-colors"
+                    className={`border ${
+                      isDarkMode
+                        ? "border-gray-700 hover:bg-gray-700 text-gray-400"
+                        : "border-gray-200 hover:bg-gray-50 text-gray-500"
+                    } p-2 rounded-md transition-colors`}
                     aria-label="Share job"
                   >
                     <Share2 className="h-5 w-5" />
                   </button>
                 </div>
               </div>
-
+  
               <div className="flex flex-wrap gap-3 mt-4">
-                <span className="inline-flex items-center px-3 py-1 bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 rounded-full text-sm font-medium">
+                <span
+                  className={`inline-flex items-center px-3 py-1 ${
+                    isDarkMode
+                      ? "0 text-purple-300"
+                      : " text-purple-700"
+                  } rounded-full text-sm font-medium`}
+                >
                   <DollarSign className="h-3.5 w-3.5 mr-1" />
                   {selectedJob.salary}
                 </span>
-                <span className="inline-flex items-center px-3 py-1 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 rounded-full text-sm font-medium">
-                  <Clock className="h-3.5 w-3.5 mr-1" />
-                  Posted {selectedJob.postedDate}
-                </span>
-                {selectedJob.type && (
-                  <span className="inline-flex items-center px-3 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-full text-sm font-medium">
+                {selectedJob.jobType && (
+                  <span
+                    className={`inline-flex items-center px-3 py-1 ${
+                      isDarkMode
+                        ? " text-blue-300"
+                        : " text-blue-700"
+                    } rounded-full text-sm font-medium`}
+                  >
                     <Briefcase className="h-3.5 w-3.5 mr-1" />
-                    {selectedJob.type}
+                    {selectedJob.jobType}
+                  </span>
+                )}{selectedJob.experienceLevel && (
+                  <span
+                    className={`inline-flex items-center px-3 py-1 ${
+                      isDarkMode
+                        ? " text-blue-300"
+                        : " text-blue-700"
+                    } rounded-full text-sm font-medium`}
+                  >
+                    <Briefcase className="h-3.5 w-3.5 mr-1" />
+                    {selectedJob.  experienceLevel}
                   </span>
                 )}
+              
+                <span
+                  className={`inline-flex items-center px-3 py-1 ${
+                    isDarkMode
+                      ? " text-green-300"
+                      : " text-green-700"
+                  } rounded-full text-sm font-medium`}
+                >
+                  <Clock className="h-3.5 w-3.5 mr-1" />
+                 Added at  {new Date(selectedJob.createdAt).toLocaleDateString()}
+                </span>
+                <span
+                  className={`inline-flex items-center px-3 py-1 ${
+                    isDarkMode
+                      ? " text-red-300"
+                      : " text-red-700"
+                  } rounded-full text-sm font-medium`}
+                >
+                  <Clock className="h-3.5 w-3.5 mr-1" />
+                 DeadLine {new Date(selectedJob.deadline).toLocaleDateString()}
+                </span>
+                
               </div>
+         
             </div>
 
             <div className="grid md:grid-cols-3 gap-6 p-6">
               <div className="md:col-span-2 space-y-8">
                 <section>
-                  <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-4 flex items-center">
+                  <h2 className="text-xl font-semibold mb-4 flex items-center">
                     <FileText className="h-5 w-5 mr-2 text-purple-500" />
                     About The Role
                   </h2>
-                  <div className="bg-gray-50 dark:bg-gray-800/70 rounded-lg p-5 border border-gray-100 dark:border-gray-700">
-                    <p className="text-gray-700 dark:text-gray-300 whitespace-pre-line leading-relaxed">
+                  <div className=
+                  {`  ${
+                    isDarkMode
+                      ? "border-gray-700 "
+                      : "border-gray-200 "
+                  } rounded-lg p-5 border`}>
+                    <p className=" whitespace-pre-line leading-relaxed">
                       {selectedJob.description}
                     </p>
                   </div>
                 </section>
 
                 <section>
-                  <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-4 flex items-center">
+                  <h2 className="text-xl font-semibold  mb-4 flex items-center">
                     <CheckSquare className="h-5 w-5 mr-2 text-purple-500" />
-                    Things You Might Do
+                    Job Requirements
                   </h2>
-                  <div className="bg-gray-50 dark:bg-gray-800/70 rounded-lg p-5 border border-gray-100 dark:border-gray-700">
+                  <div className= {`  ${
+                    isDarkMode
+                      ? "border-gray-700 "
+                      : "border-gray-200 "
+                  } rounded-lg p-5 border`}>
                     <ul className="space-y-3">
                       {renderRequirements(selectedJob.requirements)}
                     </ul>
                   </div>
                 </section>
+                <section>
+                <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white flex items-center gap-2">
+                <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5 text-purple-500"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+                />
+              </svg>
+                    Required Skills
+                  </h2>
+                  <div className="flex flex-wrap gap-2">
+              {selectedJob.skills.map((skill, index) => (
+                <span
+                  key={index}
+                  className="bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 px-3 py-1 rounded-full text-sm"
+                >
+                  {skill}
+                </span>
+              ))}
+            </div>
+                </section>
               </div>
 
               <div className="md:col-span-1">
-                <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-100 dark:border-gray-700 p-5 sticky top-6">
-                  <h3 className="font-semibold text-gray-800 dark:text-white mb-4 text-lg flex items-center">
+                <div 
+                className={`rounded-lg p-5 sticky top-6shadow-md overflow-hidden border ${
+                  isDarkMode ? "bg-zinc-900 border-gray-700" : "bg-white border-gray-200"
+                }`}
+                >
+                  <h3 className="font-semibold  mb-4 text-lg flex items-center">
                     <Info className="h-5 w-5 mr-2 text-purple-500" />
                     Job Details
                   </h3>
-
-                  <div className="space-y-5">
-                    <div className="p-3 bg-white dark:bg-gray-800 rounded-md border border-gray-100 dark:border-gray-700">
+                  <div className={`rounded-lg p-3 sticky  top-6shadow-md overflow-hidden border  ${
+                      isDarkMode ? "bg-zinc-900 border-gray-700 text-white" : "bg-white border-gray-200"
+                    }`}>
+                      <h4 className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+                        Category
+                      </h4>
+                      <div className="flex items-center">
+                        {selectedJob.category === "Engineering" ? (
+                                             <JobCategoryIcon category="Engineering" size="xs" />
+                                           ) : selectedJob.logo ? (
+                                             <div className=" bg-gray-100 dark:bg-gray-800  ">
+                                               {selectedJob.logo}
+                                             </div>
+                                           ) : (
+                                             <JobCategoryIcon category={selectedJob.category || "Default"} size="xs" />
+                                           )}
+                        <p className= {`font-medium ${
+                          isDarkMode ? "bg-zinc-900 border-gray-700 text-white" : "bg-white border-gray-200"
+                        }`}>
+                          {selectedJob.category}
+                        </p>
+                      </div>
+                    </div>
+                  <div className="space-y-5 mt-5">
+                    <div 
+                     className={`rounded-lg p-3 sticky  top-6shadow-md overflow-hidden border ${
+                      isDarkMode ? "bg-zinc-900 border-gray-700 text-white" : "bg-white border-gray-200"
+                    }`}
+                    >
                       <h4 className="text-sm text-gray-500 dark:text-gray-400 mb-2">
                         Location
                       </h4>
                       <div className="flex items-center">
                         <MapPin className="h-5 w-5 text-purple-500 mr-2" />
-                        <p className="font-medium text-gray-700 dark:text-gray-200">
+                        <p className=
+                        {`font-medium ${
+                          isDarkMode ? "bg-zinc-900 border-gray-700 text-white" : "bg-white border-gray-200"
+                        }`}>
                           {selectedJob.location}
                         </p>
                       </div>
                     </div>
 
-                    <div className="p-3 bg-white dark:bg-gray-800 rounded-md border border-gray-100 dark:border-gray-700">
+                    <div className={`rounded-lg p-3 sticky  top-6shadow-md overflow-hidden border ${
+                      isDarkMode ? "bg-zinc-900 border-gray-700 text-white" : "bg-white border-gray-200"
+                    }`}>
                       <h4 className="text-sm text-gray-500 dark:text-gray-400 mb-2">
                         Salary Range
                       </h4>
                       <div className="flex items-center">
-                        <DollarSign className="h-5 w-5 text-purple-500 mr-2" />
-                        <p className="font-medium text-gray-700 dark:text-gray-200">
+                        <DollarSign className="h-5 w-5 text-green-500 mr-2" />
+                        <p className= {`font-medium ${
+                          isDarkMode ? " border-gray-700 text-green-500" : "bg-white border-gray-200"
+                        }`}>
                           {selectedJob.salary}
                         </p>
                       </div>
                     </div>
 
                     {selectedJob.department && (
-                      <div className="p-3 bg-white dark:bg-gray-800 rounded-md border border-gray-100 dark:border-gray-700">
+                      <div className={`rounded-lg p-3 sticky  top-6shadow-md overflow-hidden border ${
+                        isDarkMode ? "bg-zinc-900 border-gray-700 text-white" : "bg-white border-gray-200"
+                      }`}>
                         <h4 className="text-sm text-gray-500 dark:text-gray-400 mb-2">
                           Department
                         </h4>
@@ -615,19 +830,26 @@ const SidebarLayout = () => {
                       </div>
                     )}
 
-                    <div className="p-3 bg-white dark:bg-gray-800 rounded-md border border-gray-100 dark:border-gray-700">
-                      <h4 className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+                    <div className={`rounded-lg p-3 sticky  top-6shadow-md overflow-hidden border ${
+                        isDarkMode ? "bg-zinc-900 border-gray-700 text-white" : "bg-white border-gray-200"
+                      }`}>
+                      <h4 
+                      className= {`text-sm mb-2 ${
+                        isDarkMode ? "bg-zinc-900 border-gray-700 text-white" : "bg-white border-gray-200"
+                      }`}>
                         Listing Status
                       </h4>
                       <button
                         onClick={() => handleJobStatus(selectedJob._id)}
                         className={`w-full py-2 px-4 rounded-md ${
-                          selectedJob.isActive
-                            ? "bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-900/60"
-                            : "bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-300 hover:bg-yellow-200 dark:hover:bg-yellow-900/60"
-                        } text-center font-medium flex items-center justify-center transition-colors`}
+                          selectedJob.status === "active"
+                          ? "bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-900/60"
+                          : selectedJob.status === "paused"
+                          ? "bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-300 hover:bg-yellow-200 dark:hover:bg-yellow-900/60"
+                          : "bg-gray-100 dark:bg-gray-900/40 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-800/60"
+                      }text-center font-medium flex items-center justify-center transition-colors`}
                       >
-                        {selectedJob.isActive ? (
+                        {selectedJob.status== "active" ? (
                           <>
                             <CheckCircle className="h-5 w-5 mr-2" />
                             Active Listing
@@ -639,16 +861,14 @@ const SidebarLayout = () => {
                           </>
                         )}
                       </button>
+                      
                     </div>
 
-                    <div className="pt-2">
-                      <button className="mt-2 w-full bg-purple-600 hover:bg-purple-700 dark:bg-purple-700 dark:hover:bg-purple-600 text-white py-3 px-6 rounded-lg font-medium flex items-center justify-center transition-colors md:hidden">
-                        <Send className="h-4 w-4 mr-2" />
-                        Apply for this position
-                      </button>
-                    </div>
+                   
                   </div>
+                  
                 </div>
+                
               </div>
             </div>
           </div>
@@ -827,26 +1047,26 @@ const SidebarLayout = () => {
               />
             </div>
             <div className="flex gap-2">
-              <div className="hidden md:flex items-center gap-6">
-                <div className="text-sm">
-                  <span className="text-gray-500 dark:text-gray-400">Total:</span> 
-                  <span className="ml-1 font-semibold"> jobs</span>
-                </div>
-                <div className="text-sm">
-                  <span className="text-gray-500 dark:text-gray-400">Active:</span> 
-                  <span className="ml-1 font-semibold"> jobs</span>
-                </div>
+            <div className="hidden md:flex items-center gap-6">
+              <div className="text-sm">
+                <span className="text-gray-500 dark:text-gray-400">Total:</span> 
+                <span className="ml-1 font-semibold">{filteredJobs.length} jobs</span>
               </div>
-              {/* Filter button for mobile */}
-              <button 
-                onClick={() => setIsFilterOpen(!isFilterOpen)} 
-                className="md:hidden flex items-center gap-2 px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-zinc-900"
-              >
-                <Filter size={18} />
-                <span>Filters</span>
-                {isFilterOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-              </button>
+              <div className="text-sm">
+                <span className="text-gray-500 dark:text-gray-400">Active:</span> 
+                <span className="ml-1 font-semibold">{filteredJobs.filter(job => job.isActive).length} jobs</span>
+              </div>
             </div>
+            {/* Filter button for mobile */}
+            <button 
+              onClick={() => setIsFilterOpen(!isFilterOpen)} 
+              className="md:hidden flex items-center gap-2 px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-zinc-900"
+            >
+              <Filter size={18} />
+              <span>Filters</span>
+              {isFilterOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+            </button>
+          </div>
           </div>
         </div>
         <div className="flex flex-col md:flex-row gap-6">
@@ -965,6 +1185,7 @@ const SidebarLayout = () => {
                   </select>
                 </div>
               </div>
+             
 
               <div className="p-4">
                 {loading ? (
@@ -1064,7 +1285,7 @@ const SidebarLayout = () => {
                               </p>
                               <p className="text-l font-semibold group-hover:text-zinc-500 dark:group-hover:text-purple-400 transition-colors">
                              
-                             {job.category|| "Company"}
+                             {job.category|| ""}
                              </p>
                               
                               <div className="flex flex-wrap gap-4 mt-2">
@@ -1095,7 +1316,7 @@ const SidebarLayout = () => {
                                 {job.applicationCount} Applicants
                               </div>
                               
-                              <button className="w-full px-2 py-1 bg-zinc-400 group-hover:bg-zinc-600 text-zinc-400 group-hover:text-white dark:bg-zinc-700   rounded-lg font-medium transition-colors flex items-center justify-center group-hover:shadow-sm">
+                              <button className="w-full px-2 py-1 bg-zinc-400 group-hover:bg-zinc-600 text-zinc-100 group-hover:text-white dark:bg-zinc-700   rounded-lg font-medium transition-colors flex items-center justify-center group-hover:shadow-sm">
               View Details
                                 
             </button>
