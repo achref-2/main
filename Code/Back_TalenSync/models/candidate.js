@@ -105,14 +105,14 @@ candidateSchema.methods.addCVToHistory = function (file) {
   }
 
   const newCV = {
-    fileData: file.buffer,
+    fileUrl: file.path, // Use file.path for the URL
     fileName: file.originalname,
     fileSize: file.size,
     fileType: file.mimetype,
+    uploadDate: new Date(),
   };
 
   this.cvHistory.push(newCV);
-  this.cvUploadDate = new Date();
 
   return this.save();
 };

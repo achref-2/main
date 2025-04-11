@@ -260,7 +260,6 @@ const UserMenu = () => {
 const SidebarLayout = () => {
   const location = useLocation(); // Get location object
   const selectedJob = location.state?.job; // Extract job data from state
-
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isModalTwoOpen, setIsModalTwoOpen] = useState(false);
@@ -723,110 +722,60 @@ const SidebarLayout = () => {
     }
   };
   const navigate = useNavigate();
-  const handleSubmitApplication = async () => {
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+   // Extract jobId from selectedJob
+   const handleSubmitApplication = async (e) => {
+    e.preventDefault();
+    setMessage("");
+    setError("");
+  
     try {
-      if (!file) {
-        alert("Please upload your CV before submitting.");
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setError("Authentication token is missing. Please log in again.");
         return;
       }
   
-      if (!selectedJob || !selectedJob.title || !selectedJob.companyName) {
-        alert("Please select a valid job with a title and company name.");
-        return;
-      }
+     
   
-      setIsUploading(true);
-      setUploadError("");
+  console.log("selectedJob:", selectedJob._id);
+      console.log("Submitting application with the following data:");
+      console.log("Cover Letter:", coverLetter);
+      console.log("File:", file);
   
+      // Create FormData to send the file and other data
       const formData = new FormData();
-      formData.append("cv", file);
+      formData.append("jobId", selectedJob._id);
+      formData.append("coverLetter", coverLetter);
+      formData.append("cv", file); // Attach the CV file
   
-      // Step 1: Extract Data from CV
-      const extractResponse = await axios.post(
-        "http://localhost:5000/api/TakeData",
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-          timeout: 30000,
-        }
-      );
+      // Make the API request
+      const response = await axios.post("http://localhost:5000/apply-job", formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data", // Required for file uploads
+        },
+      });
   
-      if (!extractResponse.data || !extractResponse.data.result) {
-        alert("Failed to extract data from the CV. Please try again.");
-        return;
-      }
+      console.log("Application submitted successfully:", response.data);
+      setMessage(response.data.message);
   
-      // Step 2: Combine Extracted Data with Job Details
-      const analysisPayload = {
-        jobTitle: selectedJob.title,
-        companyName: selectedJob.companyName,
-        description: selectedJob.description || "No description provided",
-        cvData: extractResponse.data.result,
-      };
+      // Clear form fields
+      setCoverLetter("");
+      setFile(null);
+    } catch (err) {
+      console.error("Error submitting application:", err);
   
-      console.log("Payload for AnalyseData API:", analysisPayload);
-  
-      // Step 3: Send Data to AnalyseData API
-      const analysisResponse = await axios.post(
-        "http://localhost:5000/api/AnalyseData",
-        analysisPayload,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-          withCredentials: true,
-        }
-      );
-  
-      if (analysisResponse.status === 200 && analysisResponse.data.result) {
-        console.log("Analysis Result:", analysisResponse.data.result);
-  
-        // Step 4: Send Application to Recruiter
-        const recruiterPayload = {
-          jobId: selectedJob._id,
-          recruiterEmail: selectedJob.recruiterEmail, // Assuming recruiterEmail is part of selectedJob
-          applicantData: {
-            name: formData.name,
-            email: formData.email,
-            phone: formData.phone,
-            cvData: extractResponse.data.result,
-          },
-        };
-  
-        const recruiterResponse = await axios.post(
-          "http://localhost:5000/api/sendApplication",
-          recruiterPayload,
-          {
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
-        );
-  
-        if (recruiterResponse.status === 200) {
-          alert("Application sent to the recruiter successfully!");
-          navigate("/dashboard/history"); // Redirect to history or another page
-        } else {
-          alert("Failed to send the application to the recruiter. Please try again.");
-        }
+      if (err.response) {
+        console.error("Backend response:", err.response.data);
+        setError(err.response.data.message || "An error occurred");
       } else {
-        alert("Failed to analyze the application. Please try again.");
+        setError("An error occurred while submitting your application.");
       }
-    } catch (error) {
-      console.error("Error submitting application:", error);
-  
-      if (error.response && error.response.data && error.response.data.error) {
-        alert(`Error: ${error.response.data.error}`);
-      } else {
-        alert("An error occurred while submitting your application. Please try again.");
-      }
-    } finally {
-      setIsUploading(false);
     }
   };
-
+  const [coverLetter, setCoverLetter] = useState(""); // Initialize coverLetter in the state
   const renderPage = () => {
     switch (currentPage) {
       case 1:
@@ -1264,7 +1213,13 @@ const SidebarLayout = () => {
                 application.
               </p>
             </div>
-
+            
+            <textarea
+  value={coverLetter}
+  onChange={(e) => setCoverLetter(e.target.value)}
+  placeholder="Enter your cover letter"
+  className="w-full p-2 border rounded"
+/>
             <div className="space-y-6 mb-8">
               <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-6">
                 <div className="flex items-center gap-4">

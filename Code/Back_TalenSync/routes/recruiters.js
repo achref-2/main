@@ -9,7 +9,7 @@ const auth = require("../middleware/auth");
 const checkRole = require("../middleware/checkRole");
 const { OAuth2Client } = require("google-auth-library");
 const { validateJob } = require("../models/Job"); // Adjust the path based on your project structure
-router.post("/signup", async (req, res) => {
+ router.post("/signup", async (req, res) => {
     try {
       const { error: userError } = validateUser(req.body);
       const existingUser = await User.findOne({ email: req.body.email });

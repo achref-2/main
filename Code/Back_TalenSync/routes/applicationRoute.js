@@ -1,5 +1,4 @@
 const express = require('express');
-//const { Application } = require('../models/Application')
 
 const router = express.Router();
 

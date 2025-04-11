@@ -5,12 +5,15 @@ const cors = require("cors");
 const rateLimit = require("express-rate-limit");
 const multer = require('multer');
 const connection = require("./db");
+const checkRole = require("./middleware/checkRole");
+const { Job } = require("./models/Job");
 const cvRoutes = require("./routes/cv");
 const userRoutes = require("./routes/users");
 const authRoutes = require("./routes/auth");
 const candidateRoutes = require("./routes/candidates");
 const recruitersRoutes = require("./routes/recruiters");
 const applicationRoutes=require("./routes/applicationRoute");
+const { Application } = require("./models/Application");
 const jobsRouter = require("./routes/jobs");
 const Joi = require("joi");
 const { User } = require("./models/user"); // Fixed import for User model
@@ -26,7 +29,9 @@ const jwt = require("jsonwebtoken"); // Added missing jwt import
 
 const fs = require('fs');
 const path = require('path');
-
+const asyncHandler = (fn) => (req, res, next) => {
+  Promise.resolve(fn(req, res, next)).catch(next);
+};
 // Ensure the uploads directory exists
 const uploadDir = 'uploads/';
 if (!fs.existsSync(uploadDir)) {
@@ -465,6 +470,111 @@ app.post('/api/analyze', upload.single('cv'), async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+app.post(
+  "/apply-job",
+  auth,
+  checkRole(["candidate"]),
+  upload.single("cv"),
+  asyncHandler(async (req, res) => {
+    try {
+      console.log("Request received for /apply-job");
+
+      const { jobId, coverLetter } = req.body;
+      const cvPath = req.file ? req.file.path : null;
+
+      console.log("Job ID:", jobId);
+      console.log("Cover Letter:", coverLetter);
+      console.log("CV Path:", cvPath);
+
+      if (!jobId) {
+        console.error("Job ID is missing");
+        return res.status(400).json({ message: "Job ID is required" });
+      }
+      if (!cvPath) {
+        console.error("CV file is missing");
+        return res.status(400).json({ message: "CV is required" });
+      }
+
+      const candidate = await Candidate.findOne({ userId: req.user._id });
+      if (!candidate) {
+        console.error("Candidate profile not found for user ID:", req.user._id);
+        return res.status(404).json({ message: "Candidate profile not found" });
+      }
+      console.log("Candidate found:", candidate._id);
+
+      const job = await Job.findById(jobId).populate({
+        path: "recruiter",
+        strictPopulate: false,
+      });
+      
+      if (!job) {
+        console.error("Job not found for Job ID:", jobId);
+        return res.status(404).json({ message: "Job not found" });
+      }
+      console.log("Job found:", job._id);
+
+      // Check if the candidate has already applied for this job
+      const existingApplication = await Application.findOne({
+        candidateId: candidate._id,
+        jobId: job._id,
+      });
+
+      if (existingApplication) {
+        console.error("Candidate has already applied for this job:", jobId);
+        return res
+          .status(400)
+          .json({ message: "You have already applied for this job" });
+      }
+
+      console.log("No existing application found. Proceeding to create a new one.");
+
+      // Create a new application
+      const application = new Application({
+        candidateId: candidate._id,
+  jobId: job._id,
+  recruiterId: job.recruiter._id,
+  coverLetter: coverLetter || "",
+  cvPath: cvPath,
+  score: 0, // Provide a default value for score
+  date: new Date(), // Provide the current date
+  file: cvPath, // Use the CV file path
+  level: "Entry-level",
+  status: "Pending",
+  title: job.title, // Use the job title
+});
+console.log("Application data:", {
+  candidateId: candidate._id,
+  jobId: job._id,
+  recruiterId: job.recruiter._id,
+  coverLetter: coverLetter || "",
+  cvPath: cvPath,
+  score: 0,
+  date: new Date(),
+  file: cvPath,
+  level: "entry-level", // Try lowercase
+  status: "pending",
+  title: job.title,
+  
+});
+      await application.save();
+      console.log("Application saved successfully:", application._id);
+
+      // Increment the applicationCount for the job
+      job.applicationCount = (job.applicationCount || 0) + 1;
+      await job.save();
+      console.log("Job application count incremented:", job.applicationCount);
+
+      res.status(201).json({
+        message: "Application submitted successfully",
+        application,
+      });
+    } catch (error) {
+      console.error("Error in /apply-job route:", error.message);
+      res.status(500).json({ message: "Internal Server Error", error: error.message });
+    }
+  })
+);
 
 function generateSuggestions(analysis) {
   const suggestions = [];
