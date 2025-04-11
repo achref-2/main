@@ -707,7 +707,73 @@ router.post(
     }
   })
 );
+// Get all pinned jobs
+router.get(
+  "/pinned-jobs",
+  auth,
+  checkRole(["candidate"]),
+  asyncHandler(async (req, res) => {
+    const candidate = await Candidate.findOne({ userId: req.user._id }).populate("pinnedJobs");
 
+    if (!candidate) {
+      return res.status(404).json({ message: "Candidate profile not found" });
+    }
+
+    res.status(200).json(candidate.pinnedJobs);
+  })
+);
+// Pin a job
+router.post(
+  "/pinned-jobs",
+  auth,
+  checkRole(["candidate"]),
+  asyncHandler(async (req, res) => {
+    const { jobId } = req.body;
+
+    if (!jobId) {
+      return res.status(400).json({ message: "Job ID is required" });
+    }
+
+    const candidate = await Candidate.findOne({ userId: req.user._id });
+    if (!candidate) {
+      return res.status(404).json({ message: "Candidate profile not found" });
+    }
+
+    if (candidate.pinnedJobs.includes(jobId)) {
+      return res.status(400).json({ message: "Job is already pinned" });
+    }
+
+    candidate.pinnedJobs.push(jobId);
+    await candidate.save();
+
+    res.status(200).json({ message: "Job pinned successfully", pinnedJobs: candidate.pinnedJobs });
+  })
+);
+
+// Unpin a job
+router.delete(
+  "/pinned-jobs/:jobId",
+  auth,
+  checkRole(["candidate"]),
+  asyncHandler(async (req, res) => {
+    const { jobId } = req.params;
+
+    const candidate = await Candidate.findOne({ userId: req.user._id });
+    if (!candidate) {
+      return res.status(404).json({ message: "Candidate profile not found" });
+    }
+
+    const jobIndex = candidate.pinnedJobs.indexOf(jobId);
+    if (jobIndex === -1) {
+      return res.status(400).json({ message: "Job is not pinned" });
+    }
+
+    candidate.pinnedJobs.splice(jobIndex, 1);
+    await candidate.save();
+
+    res.status(200).json({ message: "Job unpinned successfully", pinnedJobs: candidate.pinnedJobs });
+  })
+);
 // Error handling middleware
 router.use((err, req, res, next) => {
   console.error("Route error:", err);

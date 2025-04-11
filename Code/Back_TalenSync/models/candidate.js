@@ -88,6 +88,8 @@ const candidateSchema = new mongoose.Schema(
       type: cvAnalysisSchema,
       default: null,
     },
+    pinnedJobs: [{ type: mongoose.Schema.Types.ObjectId, ref: "Job" }], // Add pinnedJobs field
+
   },
   { timestamps: true }
 );
