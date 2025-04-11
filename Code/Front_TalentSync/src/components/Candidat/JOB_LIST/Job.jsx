@@ -526,24 +526,7 @@ const SidebarLayout = () => {
     } hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors`;
   };
 
-  const handleSaveJob = (job) => {
-    setSavedJobs((prevSavedJobs) => {
-      // Check if the job is already saved
-      const isAlreadySaved = prevSavedJobs.some(
-        (savedJob) => savedJob.id === job.id
-      );
-
-      if (isAlreadySaved) {
-        // If the job is already saved, update its `isPinned` property
-        return prevSavedJobs.map((savedJob) =>
-          savedJob.id === job._id ? { ...savedJob, isPinned: true } : savedJob
-        );
-      }
-
-      // If the job is not already saved, add it with `isPinned` set to true
-      return [...prevSavedJobs, { ...job, isPinned: true }];
-    });
-  };
+ 
   const [pinnedJobIds, setPinnedJobIds] = useState([]); // Only store IDs of pinned jobs
 
   const getPinnedJobs = () => {

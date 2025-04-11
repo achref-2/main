@@ -164,56 +164,50 @@ def extract_section(text, section_name):
 
 def main():
     """Main function to extract and analyze resume text from a PDF."""
-    if len(sys.argv) < 2:
-        print("\033[91m[Error]\033[0m Please provide the PDF file path as an argument.")
+    if len(sys.argv) < 3:
+        print("[Error] Missing arguments. Expected job description and CV data.", file=sys.stderr)
         sys.exit(1)
 
-    pdf_path = sys.argv[1]
-    job_description = None
-    
-    # Check if job description was provided
-    if len(sys.argv) > 2:
-        job_desc_path = sys.argv[2]
-        if os.path.exists(job_desc_path):
-            with open(job_desc_path, 'r') as f:
-                job_description = f.read()
-        else:
-            print("\033[93m[Warning]\033[0m Job description file not found. Proceeding without it.")
+    job_description = sys.argv[1]
+    cv_data = sys.argv[2]
 
-    print("\033[94m[Processing]\033[0m Extracting text from the resume...\n")
+    print("[Info] Job Description:", job_description, file=sys.stderr)
+    print("[Info] CV Data:", cv_data, file=sys.stderr)
+
+    # Check if cv_data is a file path or JSON data
+    resume_text = None
     
-    resume_text = extract_text_from_pdf(pdf_path)
+    if os.path.exists(cv_data) and cv_data.lower().endswith('.pdf'):
+        # It's a file path to a PDF
+        resume_text = extract_text_from_pdf(cv_data)
+    else:
+        # Assume it's already extracted text in JSON format
+        try:
+            data = json.loads(cv_data)
+            # If the data is already text, use it directly
+            if isinstance(data, str):
+                resume_text = data
+            elif isinstance(data, dict):
+                # If it's a dictionary, it might have the text in a specific field
+                # Adjust this based on your actual data structure
+                resume_text = json.dumps(data)  # Using the entire object as text for analysis
+        except json.JSONDecodeError:
+            # If it's not JSON either, just use it as raw text
+            resume_text = cv_data
 
     if resume_text:
-        print("\033[92m[Success]\033[0m Text extracted successfully!\n")
+        print("\033[92m[Success]\033[0m Text extracted successfully!\n", file=sys.stderr)
         
-        print("\033[1m--- Extracted Resume Text ---\033[0m")
-        print(resume_text[:500] + "..." if len(resume_text) > 500 else resume_text)  # Show preview
-        print("\n" + "="*50 + "\n")
-
-        print("\033[1m--- Resume Analysis ---\033[0m")
         analysis_json = analyze_resume(resume_text, job_description)
         
-        # Parse the JSON for better display
+        # Ensure only JSON is printed to stdout
         try:
             analysis_data = json.loads(analysis_json)
-            if "resume_score" in analysis_data:
-                print(f"\n\033[1;92m[Resume Score]\033[0m: {analysis_data['resume_score']}/100")
-            
-            print("\033[94m[JSON Response]\033[0m")
-            print(json.dumps(analysis_data, indent=2))
-            
-            # Save the analysis to a file
-            output_file = os.path.splitext(pdf_path)[0] + "_analysis.json"
-            with open(output_file, 'w') as f:
-                json.dump(analysis_data, f, indent=2)
-            print(f"\n\033[92m[Success]\033[0m Analysis saved to {output_file}")
-            
+            print(json.dumps(analysis_data, indent=4))  # Output JSON to stdout
         except json.JSONDecodeError:
-            print("\033[91m[Error]\033[0m Invalid JSON response.")
-            print(analysis_json)
+            print("\033[91m[Error]\033[0m Invalid JSON response.", file=sys.stderr)
+            print(analysis_json, file=sys.stderr)
+            sys.exit(1)
     else:
-        print("\033[91m[Error]\033[0m Failed to extract text from the PDF.")
-
-if __name__ == "__main__":
-    main()
+        print("\033[91m[Error]\033[0m Failed to extract text from the PDF.", file=sys.stderr)
+        sys.exit(1)

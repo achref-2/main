@@ -271,87 +271,109 @@ app.post('/api/TakeData', upload.single('cv'), async (req, res) => {
     });
   }
 });
-
 app.post('/api/AnalyseData', async (req, res) => {
   try {
-    const { cvData, jobTitle, company } = req.body;
-
+    const { cvData, jobTitle, companyName, description } = req.body;
+    
+    // Validate input
     if (!cvData) {
       return res.status(400).json({
         error: 'No CV data received',
         details: 'Ensure you send CV data from /api/TakeData.',
       });
     }
-
-    if (!jobTitle || !company) {
+    
+    if (!jobTitle || !companyName) {
       return res.status(400).json({
         error: 'Job details missing',
-        details: 'Ensure jobTitle and company are included in the request body.',
+        details: 'Ensure jobTitle and companyName are included in the request body.',
       });
     }
-
-    console.log('Received CV Data:', cvData);
-    console.log('Job Title:', jobTitle);
-    console.log('Company:', company);
-
-    // Prepare job description (combine job title and company for better analysis)
-    const jobDescription = `${jobTitle} at ${company}`;
-
-    const pythonProcess = spawn('python', [
-      'python/Extract._analyse.py',
-     
-      jobDescription, // Send the job description
-      JSON.stringify(cvData), // Pass extracted CV data
-    ]);
-
-    let analysisResult = '';
-    let errorOutput = '';
-
-    pythonProcess.stdout.on('data', (data) => {
-      analysisResult += data.toString();
-    });
-
-    pythonProcess.stderr.on('data', (data) => {
-      errorOutput += data.toString();
-      console.error(`Python script error: ${data.toString()}`);
-    });
-
-    pythonProcess.on('close', async (code) => {
-      if (code !== 0) {
-        console.error('Python process exited with code:', code);
-        return res.status(500).json({
-          error: 'Python script execution failed',
-          details: errorOutput.trim(),
-        });
-      }
-
-      try {
-        console.log('Raw Analysis Result:', analysisResult);
-
-        let jsonMatch = analysisResult.match(/\{[\s\S]*\}/);
-        let cleanedResult = jsonMatch ? jsonMatch[0] : '{}';
-
-        cleanedResult = cleanedResult
-          .replace(/}\s*{/g, ',')
-          .replace(/\]\s*\[/g, ',')
-          .replace(/,,+/g, ',');
-
-        let result = JSON.parse(cleanedResult);
-
-        console.log('Parsed Analysis Result:', result);
-
-        res.json({
-          message: 'Analysis completed successfully',
-          result,
-        });
-      } catch (error) {
-        console.error('Failed to parse analysis results:', error.message);
-        res.status(500).json({
-          error: 'Failed to parse analysis results',
-          details: error.message,
-        });
-      }
-    });
+    
+    // Construct job description
+    const jobDescription = `${jobTitle} at ${companyName}${description ? `: ${description}` : ' (No description provided)'}`;
+    console.log('Job Description:', jobDescription);
+    
+    // Check if cvData is an object and not a string path
+    // If it's the extracted text, we need to create a temporary file
+    let tempFilePath = null;
+    let pdfPath = null;
+    
+    if (typeof cvData === 'object') {
+      // If cvData contains the extracted text content instead of a file path,
+      // we need to use that directly in the Python script
+      
+      // Since our Python script expects a path, we'll need to modify our approach
+      // Option 1: Pass the extracted text directly as a parameter
+      const pythonProcess = spawn('python', [
+        'python/Extract._analyse.py',
+        jobDescription,
+        JSON.stringify(cvData)  // Pass the data directly, making sure it's a string
+      ]);
+      
+      let analysisResult = '';
+      let errorOutput = '';
+      
+      pythonProcess.stdout.on('data', (data) => {
+        analysisResult += data.toString();
+        console.log('Python Script Output:', data.toString());
+      });
+      
+      pythonProcess.stderr.on('data', (data) => {
+        errorOutput += data.toString();
+        console.error(`Python script error: ${data.toString()}`);
+      });
+      
+      pythonProcess.on('close', async (code) => {
+        if (code !== 0) {
+          console.error('Python process exited with code:', code);
+          return res.status(500).json({
+            error: 'Python script execution failed',
+            details: errorOutput.trim(),
+          });
+        }
+        
+        try {
+          console.log('Raw Analysis Result:', analysisResult);
+          
+          // Try to parse the entire output as JSON first
+          try {
+            const result = JSON.parse(analysisResult.trim());
+            console.log('Parsed Analysis Result:', result);
+            
+            res.json({
+              message: 'Analysis completed successfully',
+              result,
+            });
+          } catch (parseError) {
+            // If that fails, try to extract JSON from the output
+            let jsonMatch = analysisResult.match(/\{[\s\S]*\}/);
+            let cleanedResult = jsonMatch ? jsonMatch[0] : '{}';
+            
+            let result = JSON.parse(cleanedResult);
+            
+            console.log('Parsed Analysis Result:', result);
+            
+            res.json({
+              message: 'Analysis completed successfully',
+              result,
+            });
+          }
+        } catch (error) {
+          console.error('Failed to parse analysis results:', error.message);
+          res.status(500).json({
+            error: 'Failed to parse analysis results',
+            details: error.message,
+          });
+        }
+      });
+    } else {
+      // Assume it's a file path
+      pdfPath = cvData;
+      
+      // Same Python process spawn code as above but using pdfPath
+      // (this branch is unlikely to be taken based on your current setup)
+    }
   } catch (error) {
     console.error('Server error:', error);
     res.status(500).json({

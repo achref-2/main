@@ -729,18 +729,18 @@ const SidebarLayout = () => {
         alert("Please upload your CV before submitting.");
         return;
       }
-
-      if (!selectedJob) {
-        alert("Please select a job before submitting.");
+  
+      if (!selectedJob || !selectedJob.title || !selectedJob.companyName) {
+        alert("Please select a valid job with a title and company name.");
         return;
       }
-
-      setIsUploading(true); // Start the loading state
+  
+      setIsUploading(true);
       setUploadError("");
-
+  
       const formData = new FormData();
       formData.append("cv", file);
-
+  
       // Step 1: Extract Data from CV
       const extractResponse = await axios.post(
         "http://localhost:5000/api/TakeData",
@@ -752,23 +752,22 @@ const SidebarLayout = () => {
           timeout: 30000,
         }
       );
-
-      console.log("Extracted Data Response:", extractResponse.data);
-
+  
       if (!extractResponse.data || !extractResponse.data.result) {
         alert("Failed to extract data from the CV. Please try again.");
         return;
       }
-
+  
       // Step 2: Combine Extracted Data with Job Details
       const analysisPayload = {
-        jobTitle: selectedJob.title || "Unknown Job Title",
-        company: selectedJob.company || "Unknown Company",
-        cvData: extractResponse.data.result, // Ensure extracted data is present
+        jobTitle: selectedJob.title,
+        companyName: selectedJob.companyName,
+        description: selectedJob.description || "No description provided",
+        cvData: extractResponse.data.result,
       };
-
+  
       console.log("Payload for AnalyseData API:", analysisPayload);
-
+  
       // Step 3: Send Data to AnalyseData API
       const analysisResponse = await axios.post(
         "http://localhost:5000/api/AnalyseData",
@@ -780,24 +779,51 @@ const SidebarLayout = () => {
           withCredentials: true,
         }
       );
-
+  
       if (analysisResponse.status === 200 && analysisResponse.data.result) {
         console.log("Analysis Result:", analysisResponse.data.result);
-        alert("Application analyzed successfully!");
-        navigate("/dashboard/history");
+  
+        // Step 4: Send Application to Recruiter
+        const recruiterPayload = {
+          jobId: selectedJob._id,
+          recruiterEmail: selectedJob.recruiterEmail, // Assuming recruiterEmail is part of selectedJob
+          applicantData: {
+            name: formData.name,
+            email: formData.email,
+            phone: formData.phone,
+            cvData: extractResponse.data.result,
+          },
+        };
+  
+        const recruiterResponse = await axios.post(
+          "http://localhost:5000/api/sendApplication",
+          recruiterPayload,
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+  
+        if (recruiterResponse.status === 200) {
+          alert("Application sent to the recruiter successfully!");
+          navigate("/dashboard/history"); // Redirect to history or another page
+        } else {
+          alert("Failed to send the application to the recruiter. Please try again.");
+        }
       } else {
         alert("Failed to analyze the application. Please try again.");
       }
     } catch (error) {
       console.error("Error submitting application:", error);
-
+  
       if (error.response && error.response.data && error.response.data.error) {
         alert(`Error: ${error.response.data.error}`);
       } else {
         alert("An error occurred while submitting your application. Please try again.");
       }
     } finally {
-      setIsUploading(false); 
+      setIsUploading(false);
     }
   };
 
@@ -866,7 +892,10 @@ const SidebarLayout = () => {
                           Job Title: {selectedJob.title}
                         </p>
                         <p className="text-center text-gray-700 dark:text-gray-300">
-                          Company: {selectedJob.company}
+                          Description: {selectedJob.description}
+                        </p>
+                        <p className="text-center text-gray-700 dark:text-gray-300">
+                          Company: {selectedJob.companyName}
                         </p>
                       </div>
                     ) : (
@@ -1401,7 +1430,7 @@ const SidebarLayout = () => {
             <strong>Title:</strong> {exp.title}
           </p>
           <p>
-            <strong>Company:</strong> {exp.company}
+            <strong>Company:</strong> {exp.companyName}
           </p>
           <p>
             <strong>Location:</strong> {exp.location}
