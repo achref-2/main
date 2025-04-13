@@ -14,6 +14,7 @@ const path = require("path");
 const fs = require("fs");
 const { spawn } = require("child_process");
 const { Job } = require("../models/Job");
+const { Application } = require("../models/Application"); // Import the Application model
 // Configuration
 const MAX_CV_SIZE = 5 * 1024 * 1024; // 5MB limit
 const MAX_CV_HISTORY = 10;

@@ -160,6 +160,7 @@ router.post("/jobs/:id/apply", auth, checkRole(["candidate"]), async (req, res) 
     const application = new Application({
       jobId,
       candidateId: candidate._id,
+      recruiterId: job.recruiter, // Set recruiterId
       resumeUrl: latestCV.fileUrl,
       coverLetter,
       status: "pending",
@@ -170,8 +171,15 @@ router.post("/jobs/:id/apply", auth, checkRole(["candidate"]), async (req, res) 
 
     if (!job.applicants.includes(candidate._id)) {
       job.applicants.push(candidate._id);
-      await job.save();
     }
+
+    // Add application ID to jobApplications
+    if (!job.jobApplications) {
+      job.jobApplications = [];
+    }
+    job.jobApplications.push(application._id);
+
+    await job.save();
 
     res.status(201).send({ 
       message: "Successfully applied for the job",

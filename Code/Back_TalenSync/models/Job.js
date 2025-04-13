@@ -57,6 +57,10 @@ const jobSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Candidate'
   }],
+  jobApplications: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Application',
+  }],
   status: {
     type: String,
     enum: ['active', 'closed', 'draft'],

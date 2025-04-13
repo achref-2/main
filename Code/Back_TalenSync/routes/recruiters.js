@@ -683,22 +683,31 @@ router.get("/candidates/applied", auth, checkRole(["recruiter"]), async (req, re
   try {
     console.log("Fetching all candidates who applied to all jobs of the recruiter");
 
-    // Fetch all applications for the recruiter's jobs using recruiterId
-    const applications = await Application.find({ recruiterId: req.user._id })
-      .populate("candidateId", "personalInfo skills certifications education experience")
-      .populate("jobId", "title");
+    // Fetch the recruiter profile
+    const recruiter = await Recruiter.findOne({ userId: req.user._id });
+    if (!recruiter) {
+      console.error("Recruiter profile not found for user:", req.user._id);
+      return res.status(404).send({ message: "Recruiter profile not found" });
+    }
 
-    // Debug: Log the fetched applications
-    console.log("Fetched applications:", applications);
+    console.log("Recruiter profile found:", recruiter);
+
+    // Fetch all applications for the recruiter's jobs
+    const applications = await Application.find({ recruiterId: recruiter._id })
+      .populate("candidateId", "personalInfo.name personalInfo.email personalInfo.phone personalInfo.location skills certifications education experience coverLetter latestAnalysis cvHistory")
+      .populate("jobId", "title location salary skills requirements jobType deadline companyName");
+
+    console.log("Applications fetched:", applications);
 
     if (applications.length === 0) {
-      console.warn("No applications found for the recruiter's jobs. Check if applications are correctly linked to the recruiter.");
+      console.warn("No applications found for the recruiter's jobs.");
       return res.status(404).send({ message: "No applications found for the recruiter's jobs" });
     }
 
-    // Map applications to candidate details
+    // Map applications to candidate and job details
     const candidates = applications.map(application => {
       const candidate = application.candidateId;
+      const job = application.jobId;
       return {
         id: candidate._id,
         name: candidate.personalInfo?.name || "N/A",
@@ -709,15 +718,24 @@ router.get("/candidates/applied", auth, checkRole(["recruiter"]), async (req, re
         certifications: candidate.certifications?.join(", ") || "N/A",
         education: candidate.education?.map(edu => `${edu.degree} in ${edu.fieldOfStudy} from ${edu.institution}`).join(", ") || "N/A",
         experience: candidate.experience?.map(exp => `${exp.title} at ${exp.company} (${exp.period})`).join(", ") || "N/A",
+        coverLetter: candidate.coverLetter || "N/A",
+        latestAnalysis: candidate.latestAnalysis || {},
+        cvHistory: candidate.cvHistory || [],
+        cvPath: application.cvPath, // Include CV file path
         appliedJob: {
-          id: application.jobId._id,
-          title: application.jobId.title,
+          id: job._id,
+          title: job.title,
+          location: job.location || "N/A",
+          salary: job.salary || "N/A",
+          skills: job.skills?.join(", ") || "N/A",
+          requirements: job.requirements || "N/A",
+          jobType: job.jobType || "N/A",
+          deadline: job.deadline || "N/A",
+          companyName: job.companyName || "N/A",
         },
         appliedAt: application.appliedAt,
       };
     });
-
-    console.log("Mapped candidates:", candidates);
 
     res.status(200).send(candidates);
   } catch (error) {

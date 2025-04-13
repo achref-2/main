@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useRef,useEffect } from "react";
 import {
   Menu,
   History,
@@ -15,6 +15,8 @@ import {
   X,
   FlaskConical,
   Wrench,
+  LogOut
+  
 } from "lucide-react";
 import { Dialog } from "@headlessui/react";
 import { Menu as HeadlessMenu } from "@headlessui/react";
@@ -45,97 +47,222 @@ const NavLink = ({ href, icon: Icon, children, isActive }) => (
 const SearchBar = ({ navigationMenu, navigationOption }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-
+  const [activeIndex, setActiveIndex] = useState(0);
+  const inputRef = useRef(null);
+  
+  // Filter menu items based on search query
   const filteredMenu = navigationMenu.filter((item) =>
     item.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
+  
   const filteredOption = navigationOption.filter((item) =>
     item.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
+  
+  // Combine filtered items for keyboard navigation
+  const allFilteredItems = [...filteredMenu, ...filteredOption];
+  
+  // Handle keyboard navigation
+  const handleKeyDown = (e) => {
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setActiveIndex((prev) => (prev < allFilteredItems.length - 1 ? prev + 1 : prev));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setActiveIndex((prev) => (prev > 0 ? prev - 1 : prev));
+    } else if (e.key === "Enter" && allFilteredItems[activeIndex]) {
+      window.location.href = allFilteredItems[activeIndex].href;
+      setIsModalOpen(false);
+    } else if (e.key === "Escape") {
+      setIsModalOpen(false);
+    }
+  };
+  
+  // Close modal when clicking outside
+  useEffect(() => {
+    if (isModalOpen && inputRef.current) {
+      inputRef.current.focus();
+    }
+    
+    const handleClickOutside = (event) => {
+      if (isModalOpen && event.target.classList.contains('modal-backdrop')) {
+        setIsModalOpen(false);
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isModalOpen]);
+  
+  // Reset active index when search changes
+  useEffect(() => {
+    setActiveIndex(0);
+  }, [searchQuery]);
 
   return (
     <>
-      {/* Search Input */}
-      <div className="relative max-w-md w-full">
-        <Search className=" absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-black dark:text-zinc-300" />
-        <input
-          type="search"
-          placeholder="Search..."
-          className="w-80 pl-10 pr-4 py-2 transition-all duration-300 ease-in-out bg-zinc-200 text-black dark:bg-zinc-900 dark:text-white rounded-lg border border-zinc-100 dark:border-zinc-800 focus:outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500 placeholder-gray-900 dark:placeholder-gray-400"
+      {/* Search Input Trigger */}
+      <div className="relative max-w-md w-full group">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500 dark:text-zinc-400" />
+        <div 
           onClick={() => setIsModalOpen(true)}
-          readOnly
-        />
+          className="w-full md:w-80 pl-10 pr-4 py-2.5 flex items-center bg-zinc-100 dark:bg-zinc-800 rounded-xl border border-zinc-200 dark:border-zinc-700 cursor-pointer group-hover:bg-zinc-200 dark:group-hover:bg-zinc-700 transition-colors"
+        >
+          <span className="text-gray-500 dark:text-gray-400 text-sm">Search...</span>
+          <div className="ml-auto flex items-center gap-1 text-xs bg-zinc-200 dark:bg-zinc-700 px-1.5 py-0.5 rounded text-gray-500 dark:text-gray-400">
+            <kbd className="font-sans">⌘</kbd>
+            <kbd className="font-sans">K</kbd>
+          </div>
+        </div>
       </div>
 
       {/* Modal */}
       {isModalOpen && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50"
-          onClick={() => setIsModalOpen(false)} // Close modal on background click
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-start justify-center pt-16 sm:pt-24 px-4 z-50 modal-backdrop"
+          onClick={(e) => {
+            if (e.target.classList.contains('modal-backdrop')) {
+              setIsModalOpen(false);
+            }
+          }}
         >
-          <div
-            className="bg-white  w-50%  dark:bg-zinc-900 p-6 rounded-lg shadow-lg w-full max-w-md relative"
-            onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside the modal
+          <div 
+            className="bg-white dark:bg-zinc-900 rounded-xl shadow-2xl w-full max-w-lg border border-zinc-200 dark:border-zinc-700 overflow-hidden animate-fadeIn"
           >
-            {/* Close Button - Fixed positioning */}
-            <button
-              className="absolute top-3 right-3  rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white transition-colors"
-              onClick={() => setIsModalOpen(false)}
-              aria-label="Close"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-              </svg>
-            </button>
-            
             {/* Search Input Inside Modal */}
-            <div className="relative mb-4  mt-5">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-black dark:text-zinc-300" />
+            <div className="relative border-b border-zinc-200 dark:border-zinc-800">
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500 dark:text-zinc-400" />
               <input
+                ref={inputRef}
                 type="search"
-                placeholder="Type a command or search..."
-                className="w-full pl-10 pr-4 py-2 bg-zinc-200 text-black dark:bg-zinc-800 dark:text-white rounded-lg border border-zinc-100 dark:border-zinc-700 focus:outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500 placeholder-gray-900 dark:placeholder-gray-400"
+                placeholder="Type to search..."
+                className="w-full pl-12 pr-12 py-4 bg-transparent text-gray-900 dark:text-white text-base focus:outline-none placeholder-gray-500 dark:placeholder-gray-400"
                 autoFocus
+                value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={handleKeyDown}
               />
+              <button
+                className="absolute right-4 top-1/2 transform -translate-y-1/2 p-1.5 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 text-gray-500 dark:text-gray-400"
+                onClick={() => setIsModalOpen(false)}
+                aria-label="Close"
+              >
+                <span className="text-xs font-medium">ESC</span>
+              </button>
             </div>
 
-            {/* Dropdown Menu */}
-            <div>
-              <div className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
-                MENU
+            {/* Results container with max height and scrolling */}
+            <div className="max-h-96 overflow-y-auto p-2">
+              {/* Show no results message if both arrays are empty */}
+              {filteredMenu.length === 0 && filteredOption.length === 0 && searchQuery && (
+                <div className="flex flex-col items-center justify-center py-8">
+                  <div className="bg-zinc-100 dark:bg-zinc-800 p-3 rounded-full mb-3">
+                    <Search className="w-6 h-6 text-gray-400 dark:text-gray-500" />
+                  </div>
+                  <p className="text-gray-500 dark:text-gray-400">No results found</p>
+                  <p className="text-sm text-gray-400 dark:text-gray-500">Try different keywords</p>
+                </div>
+              )}
+              
+              {/* Menu Section */}
+              {filteredMenu.length > 0 && (
+                <div className="mb-2">
+                  <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 px-3 py-2 uppercase tracking-wider">
+                    Menu
+                  </div>
+                  <div className="space-y-1">
+                    {filteredMenu.map((item, index) => (
+                      <a
+                        key={item.name}
+                        href={item.href}
+                        className={`flex items-center gap-3 px-3 py-2.5 rounded-lg ${
+                          index === activeIndex 
+                            ? 'bg-zinc-200 dark:bg-zinc-700 text-gray-900 dark:text-white' 
+                            : 'text-gray-700 dark:text-gray-300 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                        } transition-colors duration-75`}
+                        onMouseEnter={() => setActiveIndex(index)}
+                      >
+                        <div className="bg-zinc-100 dark:bg-zinc-800 p-2 rounded-md">
+                          <item.icon className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <div className="font-medium">{item.name}</div>
+                          {item.description && (
+                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                              {item.description}
+                            </div>
+                          )}
+                        </div>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {/* Options Section */}
+              {filteredOption.length > 0 && (
+                <div>
+                  <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 px-3 py-2 uppercase tracking-wider">
+                    Options
+                  </div>
+                  <div className="space-y-1">
+                    {filteredOption.map((item, index) => (
+                      <a
+                        key={item.name}
+                        href={item.href}
+                        className={`flex items-center gap-3 px-3 py-2.5 rounded-lg ${
+                          index + filteredMenu.length === activeIndex 
+                            ? 'bg-zinc-200 dark:bg-zinc-700 text-gray-900 dark:text-white' 
+                            : 'text-gray-700 dark:text-gray-300 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                        } transition-colors duration-75`}
+                        onMouseEnter={() => setActiveIndex(index + filteredMenu.length)}
+                      >
+                        <div className="bg-zinc-100 dark:bg-zinc-800 p-2 rounded-md">
+                          <item.icon className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <div className="font-medium">{item.name}</div>
+                          {item.description && (
+                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                              {item.description}
+                            </div>
+                          )}
+                        </div>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            {/* Footer with keyboard shortcuts */}
+            <div className="border-t border-zinc-200 dark:border-zinc-800 p-3 bg-zinc-50 dark:bg-zinc-900 text-xs text-gray-500 dark:text-gray-400 flex justify-between">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-1">
+                  <span>↑↓</span>
+                  <span>Navigate</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <span>↵</span>
+                  <span>Select</span>
+                </div>
               </div>
-              {filteredMenu.map((item) => (
-                <a
-                  key={item.name}
-                  href={item.href}
-                  className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-800 text-gray-700 dark:text-gray-300"
-                >
-                  <item.icon className="w-5 h-5" />
-                  {item.name}
-                </a>
-              ))}
-              <div className="text-sm font-medium text-gray-500 dark:text-gray-400 mt-4 mb-2">
-                OPTIONS
+              <div className="flex items-center gap-1">
+                <span>Esc</span>
+                <span>Cancel</span>
               </div>
-              {filteredOption.map((item) => (
-                <a
-                  key={item.name}
-                  href={item.href}
-                  className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-800 text-gray-700 dark:text-gray-300"
-                >
-                  <item.icon className="w-5 h-5" />
-                  {item.name}
-                </a>
-              ))}
             </div>
           </div>
         </div>
       )}
     </>
   );
-};
+}
 const UserMenu = () => {
+  const { isDarkMode, toggleTheme } = useDarkMode();
+  
   const handleSignout = () => {
     localStorage.removeItem("token");
     fetch("http://localhost:5000/api/auth/logout", {
@@ -149,96 +276,192 @@ const UserMenu = () => {
   };
 
   const menuItems = [
-    { label: "Your History", href: "#profile" },
-    { label: "Settings", href: "/Settings" },
+    { 
+      label: "Your History", 
+      href: "#profile", 
+      icon: History,
+      description: "View your past activities"
+    },
+    { 
+      label: "Settings", 
+      href: "/Settings", 
+      icon: Settings,
+      description: "Manage your preferences"
+    },
   ];
-  const { isDarkMode, toggleTheme } = useDarkMode();
 
   return (
     <HeadlessMenu as="div" className="relative">
-      <MenuButton className="flex rounded-full ring-offset-gray-800 focus-visible:ring-2">
-        <span className="sr-only">Open user menu</span>
-        <img
-          className="h-8 w-8 rounded-full ring-2 ring-gray-700 hover:ring-blue-500 transition-all"
-          src="../../assets/images/avatar.jpg"
-          alt="User avatar"
-        />
-      </MenuButton>
-
-      <MenuItems
-        className={`absolute right-0 z-50 mt-2 w-48 rounded-md py-1 border-2 border-dashed  shadow-xl  focus:outline-none 
-     ${
-       isDarkMode
-         ? "bg-zinc-900 text-white bg-opacity-100 border-zinc-400"
-         : "bg-zinc-200 text-black bg-opacity-5  border-zinc-700"
-     } backdrop-blur-sm`}
-      >
-        {menuItems.map(({ label, href }) => (
-          <MenuItem key={label}>
-            {({ active }) => (
-              <a
-                href={href}
-                className={`block px-4 py-2 text-sm  border-b-2 border-dashed ${
-                  active
-                    ? isDarkMode
-                      ? "bg-zinc-900 text-white " // Dark mode: Different active bg color
-                      : "bg-zinc-300 text-black" // Light mode: Default active color
-                    : isDarkMode
-                    ? "bg-zinc-950 text-zinc-100 border-zinc-400" // Dark mode: Normal state
-                    : "text-black" // Light mode: Normal state
+      {({ open }) => (
+        <>
+          <MenuButton className="flex items-center focus:outline-none">
+            <div className="relative">
+              <img
+                className={`h-9 w-9 rounded-full object-cover ring-2 transition-all duration-200 ${
+                  open 
+                    ? 'ring-blue-500 ring-offset-2 ring-offset-white dark:ring-offset-zinc-900' 
+                    : 'ring-gray-200 dark:ring-gray-700 hover:ring-blue-400'
                 }`}
-              >
-                {label}
-              </a>
-            )}
-          </MenuItem>
-        ))}
+                src="../../assets/images/avatar.jpg"
+                alt="User avatar"
+              />
+              <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-green-500 ring-1 ring-white dark:ring-zinc-900"></span>
+            </div>
+          </MenuButton>
 
-        <MenuItem>
-          {({ active }) => (
-            <button
-              onClick={handleSignout}
-              className={`block w-full text-left px-4 py-2 text-sm border-b-2 border-dashed ${
-                active
-                  ? isDarkMode
-                    ? "bg-zinc-900 text-white " // Dark mode: Different active bg color
-                    : "bg-zinc-300 text-black" // Light mode: Default active color
-                  : isDarkMode
-                  ? "bg-zinc-950 text-zinc-100 border-zinc-400" // Dark mode: Normal state
-                  : "text-black" // Light mode: Normal state
-              }`}
-            >
-              Sign out
-            </button>
-          )}
-        </MenuItem>
-        <MenuItem>
-          {({ active }) => (
-            <button
-              onClick={toggleTheme}
-              className={` w-full text-left px-4 py-2 text-sm flex items-center justify-between ${
-                active
-                  ? isDarkMode
-                    ? "bg-zinc-900 text-white" // Dark mode: Active bg color
-                    : "bg-zinc-300 text-black" // Light mode: Active bg color
-                  : isDarkMode
-                  ? "bg-zinc-950 text-zinc-100 border-zinc-400" // Dark mode: Normal state
-                  : "text-black" // Light mode: Normal state
-              }`}
-              aria-label={
-                isDarkMode ? "Switch to light mode" : "Switch to dark mode"
-              }
-            >
-              <span>Theme</span>
-              {isDarkMode ? (
-                <Sun className="w-5 h-5 text-gray-600 dark:text-zinc-100" />
-              ) : (
-                <Moon className="w-5 h-5 text-gray-900 dark:text-gray-400" />
-              )}
-            </button>
-          )}
-        </MenuItem>
-      </MenuItems>
+          <MenuItems
+            className={`absolute right-0 z-50 mt-2 w-64 origin-top-right rounded-xl py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none transform transition-all duration-100 ${
+              open ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
+            } ${
+              isDarkMode
+                ? "bg-zinc-800 text-white border border-zinc-700"
+                : "bg-white text-gray-800 border border-gray-100"
+            }`}
+          >
+            {/* Header with user info */}
+            <div className="px-4 py-3 border-b border-gray-100 dark:border-zinc-700">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <img
+                    className="h-10 w-10 rounded-full"
+                    src="../../assets/images/avatar.jpg"
+                    alt=""
+                  />
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">
+                    John Doe
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                    john.doe@example.com
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="py-1">
+              {menuItems.map(({ label, href, icon: Icon, description }) => (
+                <MenuItem key={label}>
+                  {({ active }) => (
+                    <a
+                      href={href}
+                      className={`group flex items-center justify-between px-4 py-2 text-sm ${
+                        active
+                          ? "bg-gray-100 text-gray-900 dark:bg-zinc-700 dark:text-white"
+                          : "text-gray-700 dark:text-gray-200"
+                      }`}
+                    >
+                      <div className="flex items-center">
+                        <div className={`mr-3 p-1 rounded-md ${
+                          active 
+                            ? 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300' 
+                            : 'bg-gray-100 text-gray-500 dark:bg-zinc-700 dark:text-gray-400'
+                        }`}>
+                          <Icon className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <p className="font-medium">{label}</p>
+                          {description && (
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                              {description}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <ChevronRight className={`w-4 h-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity duration-150 ${
+                        active ? 'opacity-100' : ''
+                      }`} />
+                    </a>
+                  )}
+                </MenuItem>
+              ))}
+            </div>
+
+            <div className="border-t border-gray-100 dark:border-zinc-700 py-1">
+              <MenuItem>
+                {({ active }) => (
+                  <button
+                    onClick={toggleTheme}
+                    className={`w-full group flex items-center justify-between px-4 py-2 text-sm ${
+                      active
+                        ? "bg-gray-100 text-gray-900 dark:bg-zinc-700 dark:text-white"
+                        : "text-gray-700 dark:text-gray-200"
+                    }`}
+                  >
+                    <div className="flex items-center">
+                      <div className={`mr-3 p-1 rounded-md ${
+                        active 
+                          ? 'bg-amber-100 text-amber-600 dark:bg-indigo-900 dark:text-indigo-300' 
+                          : 'bg-gray-100 text-gray-500 dark:bg-zinc-700 dark:text-gray-400'
+                      }`}>
+                        {isDarkMode ? (
+                          <Sun className="w-4 h-4" />
+                        ) : (
+                          <Moon className="w-4 h-4" />
+                        )}
+                      </div>
+                      <div>
+                        <p className="font-medium">
+                          {isDarkMode ? "Light Mode" : "Dark Mode"}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          Switch appearance
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex h-5 items-center">
+                      <div
+                        className={`w-9 h-5 flex items-center rounded-full p-1 ${
+                          isDarkMode 
+                            ? "bg-indigo-600" 
+                            : "bg-gray-300"
+                        }`}
+                      >
+                        <div
+                          className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-300 ${
+                            isDarkMode ? "translate-x-3" : "translate-x-0"
+                          }`}
+                        />
+                      </div>
+                    </div>
+                  </button>
+                )}
+              </MenuItem>
+            </div>
+
+            <div className="border-t border-gray-100 dark:border-zinc-700 py-1">
+              <MenuItem>
+                {({ active }) => (
+                  <button
+                    onClick={handleSignout}
+                    className={`group flex items-center justify-between w-full px-4 py-2 text-sm ${
+                      active
+                        ? "bg-gray-100 text-red-600 dark:bg-zinc-700 dark:text-red-400"
+                        : "text-gray-700 dark:text-gray-200"
+                    }`}
+                  >
+                    <div className="flex items-center">
+                      <div className={`mr-3 p-1 rounded-md ${
+                        active 
+                          ? 'bg-red-100 text-red-600 dark:bg-red-900 dark:text-red-300' 
+                          : 'bg-gray-100 text-gray-500 dark:bg-zinc-700 dark:text-gray-400'
+                      }`}>
+                        <LogOut className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p className="font-medium">Sign out</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          End your current session
+                        </p>
+                      </div>
+                    </div>
+                  </button>
+                )}
+              </MenuItem>
+            </div>
+          </MenuItems>
+        </>
+      )}
     </HeadlessMenu>
   );
 };
@@ -289,7 +512,7 @@ const SettingsComp = () => {
   const navigation_menu = [
     { name: "Dashboard", href: "/dashboard", icon: Menu, current: false },
     {
-      name: "History",
+      name: "Past Applications",
       href: "/dashboard/history",
       icon: History,
       current: false,
@@ -298,8 +521,8 @@ const SettingsComp = () => {
     { name: "Billing", href: "/Pricing", icon: PlusSquare, current: false },
   ];
   const navigation_option = [
-    { name: "Settings", href: "/Settings", icon: Settings, current: false },
-    { name: "Support", href: "/cv", icon: Wrench, current: true },
+    { name: "Settings", href: "/Settings", icon: Settings, current: true },
+    { name: "Support", href: "/cv", icon: Wrench, current: false },
     { name: "cv testing", href: "/Testing", icon: FlaskConical, current: false },
   ];
 

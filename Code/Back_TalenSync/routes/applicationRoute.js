@@ -203,53 +203,20 @@ router.post('/apply-job', auth, checkRole(['candidate']), upload.single('cv'), a
           return res.status(404).json({ message: 'Candidate profile not found' });
         }
 
-        candidate.latestAnalysis = result; // Assuming `latestAnalysis` is a field in the Candidate model
+        // Ensure similarity_score is present
+        if (!result.similarity_score) {
+          result.similarity_score = 0.5; // Default value if missing
+        }
+
+        candidate.latestAnalysis = {
+          similarity_score: result.similarity_score,
+          skills: result.skills || [],
+          suggestions: result.suggestions || [],
+          analyzedAt: new Date(),
+        };
         await candidate.save();
 
         console.log('Saved extraction result to candidate profile:', candidate._id);
-
-        // Improved parsing logic for raw_analysis
-        const parseRawAnalysis = (rawAnalysis) => {
-          const extractSection = (title) => {
-            const regex = new RegExp(`\\*\\*${title}\\*\\*:(.*?)\\n\\n`, 's');
-            const match = rawAnalysis.match(regex);
-            return match ? match[1].trim() : 'N/A';
-          };
-
-          const contactInfo = extractSection('Contact Information');
-          const workExperience = extractSection('Work Experience Summary');
-          const technicalSkills = extractSection('Technical Skills');
-          const languages = extractSection('Languages');
-
-          const extractContactDetail = (field) => {
-            const regex = new RegExp(`\\*\\*${field}:\\*\\* (.*?)\\n`);
-            const match = contactInfo?.match(regex);
-            return match ? match[1].trim() : 'N/A';
-          };
-
-          return {
-            name: extractContactDetail('Name'),
-            email: extractContactDetail('Email'),
-            phone: extractContactDetail('Phone'),
-            experience: workExperience || 'N/A',
-            skills: technicalSkills || 'N/A',
-            languages: languages || 'N/A',
-          };
-        };
-
-        // Example usage of parseRawAnalysis
-        const candidateDetails = parseRawAnalysis(result.raw_analysis);
-
-        console.log('Parsed Candidate Details:', candidateDetails);
-
-        // Fetch candidate with populated user details
-        if (!candidate) return res.status(404).json({ message: 'Candidate profile not found' });
-
-        console.log('Candidate found:', {
-          id: candidate._id,
-          name: candidate.userId?.firstName || 'N/A',
-          email: candidate.userId?.email || 'N/A',
-        });
 
         // Fetch job and recruiter
         const job = await Job.findOne({ _id: jobId, status: 'active' }).populate({ path: 'recruiter', strictPopulate: false });
@@ -282,28 +249,11 @@ router.post('/apply-job', auth, checkRole(['candidate']), upload.single('cv'), a
         // Use provided cover letter or default from candidate
         let finalCoverLetter = userCoverLetter || candidate.coverLetter || 'N/A';
 
-        // Improved fetched candidate structure
-        const fetchedCandidate = {
-          id: candidate._id,
-          name: candidateDetails.name || candidate.userId?.firstName || 'N/A',
-          email: candidateDetails.email || candidate.userId?.email || 'N/A',
-          phone: candidateDetails.phone || 'N/A',
-          location: 'Tunis, Tunisia', // Example location, replace with actual data if available
-          skills: candidateDetails.skills || 'React.js, Spring Boot, MySQL, MongoDB', // Example skills, replace with actual data
-          certifications: 'SolidWorks Certification, ABAP Programming', // Example certifications, replace with actual data
-          education: 'Bachelor in Computer Science from University of Tunis', // Example education, replace with actual data
-          experience: candidateDetails.experience || 'Stagiaire en dev WEB app at Tunisair technics (June 2023): Developed a dashboard for employees to manage aircraft parts.',
-          coverLetter: finalCoverLetter || 'Highly motivated software engineering student seeking a challenging internship leveraging expertise in React.js, Spring Boot, and Machine Learning.',
-          pinnedJobs: job.applicants.map(applicant => applicant.toString()).join(', '),
-        };
-
-        console.log('Improved Fetched Candidate:', fetchedCandidate);
-
         // Create application
         const application = new Application({
           candidateId: candidate._id,
           jobId: job._id,
-          recruiterId: job.recruiter?._id,
+          recruiterId: job.recruiter?._id, // Set recruiterId
           coverLetter: finalCoverLetter,
           cvPath,
           file: cvPath,
@@ -311,7 +261,7 @@ router.post('/apply-job', auth, checkRole(['candidate']), upload.single('cv'), a
           date: new Date(),
           title: job.title,
           level: level || 'JUNIOR',
-          status: 'Incomplete',
+          status: 'Pending',
         });
 
         await application.save();
@@ -327,34 +277,21 @@ router.post('/apply-job', auth, checkRole(['candidate']), upload.single('cv'), a
         if (!job.applicants.includes(candidate._id)) {
           job.applicants.push(candidate._id);
         }
+
+        // Add application ID to jobApplications
+        if (!job.jobApplications) {
+          job.jobApplications = [];
+        }
+        job.jobApplications.push(application._id);
+
         await job.save();
 
         console.log('Job updated with new applicant:', {
           jobId: job._id,
           applicationCount: job.applicationCount,
           applicants: job.applicants.map(applicant => applicant.toString()),
+          jobApplications: job.jobApplications.map(app => app.toString()),
         });
-
-        // Update recruiter
-        if (job.recruiter) {
-          job.recruiter.jobApplications = job.recruiter.jobApplications || [];
-          job.recruiter.jobApplications.push({
-            jobId: job._id,
-            candidateId: candidate._id,
-            applicationId: application._id,
-            date: new Date(),
-          });
-          await job.recruiter.save();
-
-          console.log('Recruiter updated with new application:', {
-            recruiterId: job.recruiter._id,
-            jobApplications: job.recruiter.jobApplications.map(app => ({
-              jobId: app.jobId,
-              candidateId: app.candidateId,
-              applicationId: app.applicationId,
-            })),
-          });
-        }
 
         res.status(201).json({
           message: 'Application submitted successfully',
