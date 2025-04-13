@@ -353,6 +353,88 @@ const UserMenu = () => {
     </HeadlessMenu>
   );
 };
+const AppliedCandidatesContent = () => {
+  const [candidates, setCandidates] = useState([]);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    fetchAppliedCandidates();
+  }, []);
+
+  const fetchAppliedCandidates = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/recruiters/candidates/applied', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      const text = await response.text();
+      console.log("Raw response text:", text);
+
+      if (!response.ok) {
+        throw new Error(`HTTP Error! Status: ${response.status}`);
+      }
+
+      try {
+        const data = JSON.parse(text);
+        console.log("Fetched applied candidates:", data);
+        setCandidates(data);
+      } catch (jsonError) {
+        throw new Error("Invalid JSON response received.");
+      }
+    } catch (err) {
+      console.error("Error fetching applied candidates:", err);
+      setError('Failed to load applied candidates');
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      {error && (
+        <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 text-red-600 dark:text-red-400">
+          {error}
+        </div>
+      )}
+
+      {candidates.length === 0 ? (
+        <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+          No applied candidates found
+        </div>
+      ) : (
+        <div className="grid gap-4">
+          {candidates.map((candidate, index) => (
+            <div
+              key={index}
+              className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            >
+              <div className="space-y-1">
+                <div className="font-medium text-gray-900 dark:text-white">
+                  {candidate.name}
+                </div>
+                <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
+                  <Calendar className="h-4 w-4 mr-1" />
+                  Applied on: {new Date(candidate.appliedDate).toLocaleString()}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => window.open(candidate.cvPath, '_blank')}
+                  className="px-3 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                >
+                  View CV
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 const SidebarLayout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -381,7 +463,42 @@ const navigation_menu = [
       document.documentElement.classList.remove("dark");
     }
   }, [isDarkMode]);
+  const [candidates, setCandidates] = useState([]);
+  const [error, setError] = useState('');
 
+  useEffect(() => {
+    fetchAppliedCandidates();
+  }, []);
+
+  const fetchAppliedCandidates = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/recruiters/candidates/applied', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      const text = await response.text();
+      console.log("Raw response text:", text);
+
+      if (!response.ok) {
+        throw new Error(`HTTP Error! Status: ${response.status}`);
+      }
+
+      try {
+        const data = JSON.parse(text);
+        console.log("Fetched applied candidates:", data);
+        setCandidates(data);
+      } catch (jsonError) {
+        throw new Error("Invalid JSON response received.");
+      }
+    } catch (err) {
+      console.error("Error fetching applied candidates:", err);
+      setError('Failed to load applied candidates');
+    }
+  };
   return (
     <div className={`min-h-screen ${isDarkMode ? 'dark' : ''}`}>
       <div className="flex h-screen bg-white dark:bg-black">
@@ -464,47 +581,46 @@ const navigation_menu = [
 
         {/* Main Content */}
         <main className="flex-1 overflow-auto bg-gray-50 dark:bg-black transition-all duration-300 ease-in-out z-30">
-          {/* Header */}
-          <header className="bg-white dark:bg-black  border-gray-200 dark:border-gray-800 sticky top-0 transition-all duration-300 ease-in-out z-30">
-            <div className="flex items-center justify-between px-6 py-4">
-               <SearchBar
-                                                          navigationMenu={[
-                                                            { name: "Dashboard", href: "/dashboard/recuiter", icon: Menu },
-                                                            { name: "History", href: "/dashboard/recuiter/history", icon: History },
-                                                            { name: "Job List", href: "/dashboard/recuiter/joblist", icon: Menu },
-                                                            { name: "Billing", href: "/Pricing", icon: PlusSquare },
-                                                          ]}
-                                                          navigationOption={[
-                                                            { name: "Settings", href: "/dashboard/recuiter/settings", icon: Settings },
-                                                            { name: "Support", href: "/dashboard/recuiter/jobbuilder", icon: Wrench },
-                                                            { name: "cv testing", href: "/Testing", icon: FlaskConical },
-                                                          ]}
-                                                        />
-              <div className="flex items-center gap-4">
-                <button
-                  type="button"
-                  className="relative p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg
-                    focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <span className="sr-only">View notifications</span>
-                  <BellIcon className="h-6 w-6" />
-                  <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white dark:ring-gray-900" />
-                </button>
-                <UserMenu />
-                
-              </div>
-            </div>
-          </header>
+  {/* Header */}
+  <header className="bg-white dark:bg-black border-gray-200 dark:border-gray-800 sticky top-0 transition-all duration-300 ease-in-out z-30">
+    <div className="flex items-center justify-between px-6 py-4">
+      <SearchBar
+        navigationMenu={[
+          { name: "Dashboard", href: "/dashboard/recuiter", icon: Menu },
+          { name: "History", href: "/dashboard/recuiter/history", icon: History },
+          { name: "Job List", href: "/dashboard/recuiter/joblist", icon: Menu },
+          { name: "Billing", href: "/Pricing", icon: PlusSquare },
+        ]}
+        navigationOption={[
+          { name: "Settings", href: "/dashboard/recuiter/settings", icon: Settings },
+          { name: "Support", href: "/dashboard/recuiter/jobbuilder", icon: Wrench },
+          { name: "cv testing", href: "/Testing", icon: FlaskConical },
+        ]}
+      />
+      <div className="flex items-center gap-4">
+        <button
+          type="button"
+          className="relative p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg
+            focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <span className="sr-only">View notifications</span>
+          <BellIcon className="h-6 w-6" />
+          <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white dark:ring-gray-900" />
+        </button>
+        <UserMenu />
+      </div>
+    </div>
+  </header>
 
-          {/* Main Content Area */}
-          <div className="p-6 space-y-6 transition-all duration-300 ease-in-out z-30">
-            <div>
-              <h1 className="text-2xl font-semibold text-gray-900 dark:text-white transition-all duration-300 ease-in-out z-30">CV History</h1>
-              <p className="text-gray-500 dark:text-gray-400 transition-all duration-300 ease-in-out z-30">View and manage your CV uploads</p>
-            </div>
-            <CVHistoryContent className="transition-all duration-300 ease-in-out z-30"/>
-          </div>
-        </main>
+  {/* Main Content Area */}
+  <div className="p-6 space-y-6 transition-all duration-300 ease-in-out z-30">
+    <div>
+      <h1 className="text-2xl font-semibold text-gray-900 dark:text-white transition-all duration-300 ease-in-out z-30">Applied Candidates</h1>
+      <p className="text-gray-500 dark:text-gray-400 transition-all duration-300 ease-in-out z-30">View and manage candidates who applied to your jobs</p>
+    </div>
+    <AppliedCandidatesContent className="transition-all duration-300 ease-in-out z-30" />
+  </div>
+</main>
       </div>
     </div>
   );

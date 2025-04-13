@@ -89,7 +89,11 @@ const candidateSchema = new mongoose.Schema(
       default: null,
     },
     pinnedJobs: [{ type: mongoose.Schema.Types.ObjectId, ref: "Job" }], // Add pinnedJobs field
-
+    coverLetter: {
+      type: String,
+      trim: true,
+      default: null,
+    },
   },
   { timestamps: true }
 );

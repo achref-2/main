@@ -778,94 +778,6 @@ router.delete(
   })
 );
 
-
-
-// Apply to a job
-// Apply to a job
-router.post(
-  "/apply-job",
-  auth,
-  checkRole(["candidate"]),
-  upload.single('cv'),
-  asyncHandler(async (req, res) => {
-    try {
-      console.log("Request received for /apply-job");
-
-      const { jobId, coverLetter } = req.body;
-      const cvPath = req.file ? req.file.path : null;
-
-      console.log("Job ID:", jobId);
-      console.log("Cover Letter:", coverLetter);
-      console.log("CV Path:", cvPath);
-
-      if (!jobId) {
-        console.error("Job ID is missing");
-        return res.status(400).json({ message: "Job ID is required" });
-      }
-      if (!cvPath) {
-        console.error("CV file is missing");
-        return res.status(400).json({ message: "CV is required" });
-      }
-
-      const candidate = await Candidate.findOne({ userId: req.user._id });
-      if (!candidate) {
-        console.error("Candidate profile not found for user ID:", req.user._id);
-        return res.status(404).json({ message: "Candidate profile not found" });
-      }
-      console.log("Candidate found:", candidate._id);
-
-      const job = await Job.findById(jobId).populate({
-        path: "recruiterId",
-        strictPopulate: false,
-      });      if (!job) {
-        console.error("Job not found for Job ID:", jobId);
-        return res.status(404).json({ message: "Job not found" });
-      }
-      console.log("Job found:", job._id);
-
-      // Check if the candidate has already applied for this job
-      const existingApplication = await Application.findOne({
-        candidateId: candidate._id,
-        jobId: job._id,
-      });
-
-      if (existingApplication) {
-        console.error("Candidate has already applied for this job:", jobId);
-        return res
-          .status(400)
-          .json({ message: "You have already applied for this job" });
-      }
-
-      console.log("No existing application found. Proceeding to create a new one.");
-
-      // Create a new application
-      const application = new Application({
-        candidateId: candidate._id,
-        jobId: job._id,
-        recruiterId: job.recruiterId._id,
-        coverLetter: coverLetter || "",
-        cvPath: cvPath, // Add this line to store the CV file path
-        status: "Under Review",
-      });
-
-      await application.save();
-      console.log("Application saved successfully:", application._id);
-
-      // Increment the applicationCount for the job
-      job.applicationCount = (job.applicationCount || 0) + 1;
-      await job.save();
-      console.log("Job application count incremented:", job.applicationCount);
-
-      res.status(201).json({
-        message: "Application submitted successfully",
-        application,
-      });
-    } catch (error) {
-      console.error("Error in /apply-job route:", error.message);
-      res.status(500).json({ message: "Internal Server Error", error: error.message });
-    }
-  })
-);
 // Get application status
 router.get(
   "/applications",
@@ -887,6 +799,35 @@ router.get(
     });
   })
 );
+
+// Get candidate's cover letter by ID
+router.get('/candidate/:id/cover-letter', async (req, res) => {
+  try {
+    const candidateId = req.params.id;
+
+    // Find the candidate by ID
+    const candidate = await Candidate.findById(candidateId);
+
+    if (!candidate) {
+      return res.status(404).json({ error: 'Candidate not found' });
+    }
+
+    // Check if the candidate has a cover letter
+    if (!candidate.coverLetter) {
+      return res.status(404).json({ error: 'Cover letter not found for this candidate' });
+    }
+
+    // Return the cover letter
+    res.json({
+      candidateId: candidate._id,
+      coverLetter: candidate.coverLetter,
+    });
+  } catch (error) {
+    console.error('Error fetching cover letter:', error.message);
+    res.status(500).json({ error: 'Internal Server Error', details: error.message });
+  }
+});
+
 // Error handling middleware
 router.use((err, req, res, next) => {
   console.error("Route error:", err);

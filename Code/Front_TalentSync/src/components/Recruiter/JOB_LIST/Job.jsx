@@ -68,6 +68,9 @@ const SearchBar = ({ navigationMenu, navigationOption }) => {
   const filteredOption = navigationOption.filter((item) =>
     item.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
+  const [applicants, setApplicants] = useState([]);
+
+
 
   return (
     <>
@@ -422,6 +425,8 @@ const SidebarLayout = () => {
     }
   };
   const [showToast, setShowToast] = useState(false);
+  const [applicants, setApplicants] = useState([]); // State for storing applicants
+
   const SuccessToast = () => (
     <div
       role="alert"
@@ -488,7 +493,40 @@ const SidebarLayout = () => {
         console.error("Error deleting job:", error.message);
       }
     };
-  
+    const fetchApplicants = async (jobId) => {
+      if (!jobId) {
+        console.error("Missing jobId or token");
+        return;
+      }
+    
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          console.error("Token is missing");
+          return;
+        }
+    
+        const response = await fetch(`http://localhost:5000/api/recruiters/jobs/${jobId}/applicants`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+    
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error('Error fetching applicants:', errorData.message);
+          return;
+        }
+    
+        const applicantsData = await response.json();
+        console.log('Applicants fetched successfully:', applicantsData);
+        setApplicants(applicantsData); // Update state
+      } catch (error) {
+        console.error('Error during fetch:', error.message);
+      }
+    };
     return (
       <div
         className={`min-h-screen ${
@@ -743,6 +781,36 @@ const SidebarLayout = () => {
               ))}
             </div>
                 </section>
+                {selectedJob && (
+  <>
+    <h1>Get applied candidates</h1>
+    <button
+  onClick={() => {
+    console.log("Selected Job:", selectedJob); // Log the entire selectedJob object
+    console.log("Job ID:", selectedJob?._id); // Log the _id specifically
+    fetchApplicants(selectedJob?._id); // Use _id instead of job_id
+  }}
+>
+  Get Applicants
+</button>
+<div>
+  <p>Total Applicants: {applicants.length}</p>
+  <div>
+    {applicants.map((applicant, index) => (
+      <div key={index} className="p-4 border-b border-gray-200 dark:border-gray-700">
+        <p><strong>Name:</strong> {applicant.name}</p>
+        <p><strong>Email:</strong> {applicant.email}</p>
+        <p><strong>Phone:</strong> {applicant.phone}</p>
+        <p><strong>Resume:</strong> <a href={applicant.resumeUrl} target="_blank" rel="noopener noreferrer">View Resume</a></p>
+        <p><strong>Applied Date:</strong> {new Date(applicant.appliedDate).toLocaleDateString()}</p>
+      </div>
+    ))}
+  </div>
+</div>
+  </>
+
+)}
+
               </div>
 
               <div className="md:col-span-1">

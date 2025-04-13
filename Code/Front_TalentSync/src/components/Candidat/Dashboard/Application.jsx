@@ -298,7 +298,7 @@ const SidebarLayout = () => {
     { name: "Support", href: "/cv", icon: Wrench, current: false },
   ];
 
-  const { isDarkMode, toggleTheme } = useDarkMode();
+  const { isDarkMode } = useDarkMode();
   const [file, setFile] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   
@@ -408,13 +408,6 @@ const SidebarLayout = () => {
   }, [backendData]);
   
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
 
   const handleSave = () => {
     if (onUpdate) {
@@ -539,7 +532,7 @@ const SidebarLayout = () => {
                 .replace(/\*\*/g, "</strong>")
                 .replace(/\n\n/g, "<br/><br/>")
                 .replace(/\* /g, "• "),
-            }}
+              }}
           />
         );
       }
@@ -721,7 +714,6 @@ const SidebarLayout = () => {
       return [];
     }
   };
-  const navigate = useNavigate();
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
    // Extract jobId from selectedJob
@@ -737,9 +729,7 @@ const SidebarLayout = () => {
         return;
       }
   
-     
-  
-  console.log("selectedJob:", selectedJob._id);
+      console.log("selectedJob:", selectedJob._id);
       console.log("Submitting application with the following data:");
       console.log("Cover Letter:", coverLetter);
       console.log("File:", file);
@@ -751,7 +741,7 @@ const SidebarLayout = () => {
       formData.append("cv", file); // Attach the CV file
   
       // Make the API request
-      const response = await axios.post("http://localhost:5000/apply-job", formData, {
+      const response = await axios.post("http://localhost:5000/api/applications/apply-job", formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data", // Required for file uploads
@@ -775,7 +765,97 @@ const SidebarLayout = () => {
       }
     }
   };
-  const [coverLetter, setCoverLetter] = useState(""); // Initialize coverLetter in the state
+  const [coverLetter, setCoverLetter] = useState("");
+
+  const generateCoverLetter = async () => {
+  setLoading(true);
+  setError(null);
+
+  try {
+    const formDataToSend = new FormData();
+
+    // Fix field name to match backend (jobDetailsText)
+    if (selectedJob) {
+      const jobDetails = `Job Title: ${selectedJob.title}\nCompany: ${selectedJob.companyName}\nDescription: ${selectedJob.description}`;
+      formDataToSend.append("jobDetailsText", jobDetails);
+    } else {
+      throw new Error("Job details are missing.");
+    }
+
+    const resumeAnalysis = JSON.stringify(formData);
+    const blob = new Blob([resumeAnalysis], { type: "application/json" });
+    formDataToSend.append("resumeAnalysis", blob);
+
+    const response = await axios.post(
+      "http://localhost:5000/api/applications/generate-cover-letter",
+      formDataToSend,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+
+    const generatedLetter = response.data.coverLetter || response.data.result?.coverLetter;
+    setCoverLetter(generatedLetter);
+
+    const blobResponse = new Blob([generatedLetter], { type: "text/plain" });
+    const url = URL.createObjectURL(blobResponse);
+    setDownloadUrl(url);
+
+    setLoading(false);
+  } catch (err) {
+    console.error("Error in cover letter generation process:", err);
+    setError(err.response?.data?.error || "Failed to generate cover letter");
+    setLoading(false);
+  }
+};
+
+  // Cover letter generator state
+  const [previewActive, setPreviewActive] = useState(false);
+  const [resumeFile, setResumeFile] = useState(null);
+  const [jobDetailsFile, setJobDetailsFile] = useState(null);
+  const [jobDetailsText, setJobDetailsText] = useState('');
+  const [useJobFile, setUseJobFile] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [downloadUrl, setDownloadUrl] = useState(null);
+
+  // Handle form submission for application
+ 
+
+  // Cover letter generator functions
+
+  // Handle cover letter generator form submission
+ 
+  // Handle resume file selection
+
+  // Handle job details file selection
+
+  // Reset the form
+
+
+  // Loading animation component
+  const LoadingAnimation = () => (
+    <div className="inline-block mr-2">
+      <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+    </div>
+  );
+
+  
+  // Auto-populate job details from selectedJob when available
+  useEffect(() => {
+    if (selectedJob) {
+      const formattedJobDetails = `Job Title: ${selectedJob.title}\nCompany: ${selectedJob.companyName}\nDescription: ${selectedJob.description}`;
+      setJobDetailsText(formattedJobDetails);
+    }
+  }, [selectedJob]);
+  
+  // Handle resume file upload
+  
+  // Handle form submission
+  
+  // Reset form
+  
   const renderPage = () => {
     switch (currentPage) {
       case 1:
@@ -1192,82 +1272,80 @@ const SidebarLayout = () => {
         );
 
       case 4:
-        return (
-          <div className="max-w-4xl mx-auto px-0 py-5">
-            <h1 className="text-2xl font-bold text-center mb-8 text-gray-900 dark:text-white">
-              Application Session
-            </h1>
-
-            <div className="mb-8">
-              <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-                Step 4 of 4 (Submitting)
-              </div>
-            </div>
-
-            <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-6 mb-6">
-              <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
-                Submit Application
-              </h2>
-              <p className="text-gray-700 dark:text-gray-300">
-                Please review all your information before submitting your
-                application.
-              </p>
-            </div>
-            
-            <textarea
-  value={coverLetter}
-  onChange={(e) => setCoverLetter(e.target.value)}
-  placeholder="Enter your cover letter"
-  className="w-full p-2 border rounded"
-/>
-            <div className="space-y-6 mb-8">
-              <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-6">
-                <div className="flex items-center gap-4">
-                  <div className="flex-shrink-0 w-12 h-12 bg-green-100 dark:bg-green-800 rounded-full flex items-center justify-center text-green-600 dark:text-green-300">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      strokeWidth={2}
-                      stroke="currentColor"
-                      className="w-8 h-8"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                    </svg>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-medium text-gray-800 dark:text-gray-200">
-                      Ready to Submit
-                    </h3>
-                    <p className="text-gray-700 dark:text-gray-300 mt-1">
-                      Your application is ready to be submitted with all the
-                      information provided.
-                    </p>
-                  </div>
+       
+          return (
+            <div className="max-w-4xl mx-auto px-0 py-5">
+              <h1 className="text-2xl font-bold text-center mb-8 text-gray-900 dark:text-white">
+                Application Session
+              </h1>
+  
+              <div className="mb-8">
+                <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                  Step 4 of 4 (Submitting)
                 </div>
               </div>
-
-              <div className="flex justify-center">
-              {isUploading && <LoadingAnimation />}
-
-<button 
-  onClick={handleSubmitApplication}
-  disabled={isUploading}
-  className={`px-4 py-2 rounded-md ${
-    isUploading 
-      ? "bg-gray-400 cursor-not-allowed" 
-      : "bg-blue-500 hover:bg-blue-600 text-white"
-  }`}
->
-  {isUploading ? "Processing..." : "Submit Application"}
-</button>
+  
+              <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-6 mb-6">
+                <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
+                  Submit Application
+                </h2>
+                <p className="text-gray-700 dark:text-gray-300">
+                  Please review all your information before submitting your
+                  application.
+                </p>
               </div>
+              
+           
+              
+              <div className="space-y-6 mb-8">
+                <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-6">
+                  <div className="flex items-center gap-4">
+                    <div className="flex-shrink-0 w-12 h-12 bg-green-100 dark:bg-green-800 rounded-full flex items-center justify-center text-green-600 dark:text-green-300">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        strokeWidth={2}
+                        stroke="currentColor"
+                        className="w-8 h-8"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-medium text-gray-800 dark:text-gray-200">
+                        Ready to Submit
+                      </h3>
+                      <p className="text-gray-700 dark:text-gray-300 mt-1">
+                        Your application is ready to be submitted with all the
+                        information provided.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+  <button className="bg-slate-100" onClick={generateCoverLetter}>Generate </button>
+                <div className="flex justify-center">
+                  {isUploading && <LoadingAnimation />}
+                  <button 
+                    onClick={handleSubmitApplication}
+                    disabled={isUploading}
+                    className={`px-4 py-2 rounded-md ${
+                      isUploading 
+                        ? "bg-gray-400 cursor-not-allowed" 
+                        : "bg-blue-500 hover:bg-blue-600 text-white"
+                    }`}
+                  >
+                    {isUploading ? "Processing..." : "Submit Application"}
+                  </button>
+                </div>
+              </div>
+              
+            
             </div>
-          </div>
         );
         case 5:
           return (

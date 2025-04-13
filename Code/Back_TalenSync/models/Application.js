@@ -1,30 +1,22 @@
 const mongoose = require('mongoose');
 const Joi = require('joi');
-
-const applicationSchema = new mongoose.Schema({
-  candidateId: { type: mongoose.Schema.Types.ObjectId, ref: "Candidate", required: true },
-  jobId: { type: mongoose.Schema.Types.ObjectId, ref: "Job", required: true },
-  recruiterId: { type: mongoose.Schema.Types.ObjectId, ref: "Recruiter", required: true },
-  coverLetter: { type: String, default: "" },
-  cvPath: { type: String, required: true },
-  score: { type: Number, required: true }, // Ensure this field is included
-  date: { type: Date, required: true, default: Date.now }, // Ensure this field is included
-  file: { type: String, required: true }, // Ensure this field is included
-  level: {
-    type: String,
-    required: true
-    // Remove enum temporarily to see if this is the issue
+const applicationSchema = new mongoose.Schema(
+  {
+    candidateId: { type: mongoose.Schema.Types.ObjectId, ref: "Candidate", required: true },
+    jobId: { type: mongoose.Schema.Types.ObjectId, ref: "Job", required: true },
+    recruiterId: { type: mongoose.Schema.Types.ObjectId, ref: "Recruiter", required: true },
+    coverLetter: { type: String, default: "" },
+    cvPath: { type: String, required: true },
+    score: { type: Number, required: true },
+    date: { type: Date, required: true, default: Date.now },
+    file: { type: String, required: true },
+    title: { type: String, required: true },
+    appliedAt: { type: Date, default: Date.now },
+    level: { type: String, enum: ['JUNIOR', 'MID', 'SENIOR'], required: true },
+    status: { type: String, enum: ['Pending', 'Accepted', 'Rejected'], default: 'Pending' }, // Add 'status' field
   },
-  status: {
-    type: String,
-    default: "Under Review"
-    // Remove enum temporarily to see if this is the issue
-  },
-  title: { type: String, required: true }, // Ensure this field is included
-  
-  appliedAt: { type: Date, default: Date.now },
-});
-
+  { collection: "applications", strict: true } // Ensure strict mode is enabled
+);
 // Create compound index to ensure a candidate can only apply once to a job
 applicationSchema.index({ jobId: 1, candidateId: 1 }, { unique: true });
 
@@ -38,8 +30,7 @@ const validateApplication = (application) => {
     jobId: Joi.string().required(),
     resumeUrl: Joi.string().required(),
     coverLetter: Joi.string(),
-    level: Joi.string().valid('Entry-level', 'Mid-level', 'Senior', 'Executive').required(),
-    status: Joi.string().valid('Under Review', 'Pending', 'Accepted', 'Refused'),  });
+  });
 
   return schema.validate(application);
 };

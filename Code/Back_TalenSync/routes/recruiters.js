@@ -9,7 +9,9 @@ const auth = require("../middleware/auth");
 const checkRole = require("../middleware/checkRole");
 const { OAuth2Client } = require("google-auth-library");
 const { validateJob } = require("../models/Job"); // Adjust the path based on your project structure
- router.post("/signup", async (req, res) => {
+const { Application } = require('../models/Application'); // Import the Application model
+
+router.post("/signup", async (req, res) => {
     try {
       const { error: userError } = validateUser(req.body);
       const existingUser = await User.findOne({ email: req.body.email });
@@ -531,31 +533,68 @@ router.patch("/jobs/:id/feature", auth, checkRole(["recruiter"]), async (req, re
 router.get("/jobs/:id/applicants", auth, checkRole(["recruiter"]), async (req, res) => {
   try {
     const jobId = req.params.id;
+    console.log("Job ID from request params:", jobId);
+    console.log("User ID from token:", req.user._id);
+    console.log("Connected to database successfully");
+
     const recruiter = await Recruiter.findOne({ userId: req.user._id });
-    
-    if (!recruiter) 
+    if (!recruiter) {
+      console.error("Recruiter profile not found for user:", req.user._id);
       return res.status(404).send({ message: "Recruiter profile not found" });
-    
-    // Check if the job belongs to this recruiter
-    if (!recruiter.jobPostings.includes(jobId)) {
-      return res.status(403).send({ message: "Access denied. This job posting doesn't belong to you." });
     }
-    
+
+    console.log("Recruiter jobPostings:", recruiter.jobPostings.map(posting => posting.toString()));
+
     const job = await Job.findById(jobId);
-    if (!job) 
+    if (!job) {
+      console.error("Job not found in database:", jobId);
       return res.status(404).send({ message: "Job posting not found" });
-    
-    // Get candidates who applied to this job
+    }
+
+    console.log("Job applicants:", job.applicants.map(applicant => applicant.toString()));
+
     const candidates = await Candidate.find({ _id: { $in: job.applicants } })
                                      .populate('userId', '-password');
-    
-    res.status(200).send(candidates);
+
+    const formattedCandidates = candidates.map(candidate => {
+      const education = candidate.education.map(edu => {
+        const degree = edu.degree || "Unknown Degree";
+        const field = edu.fieldOfStudy || "Unknown Field";
+        const institution = edu.institution || "Unknown Institution";
+        return `${degree} in ${field} from ${institution}`;
+      }).join(", ") || "N/A";
+
+      const experience = candidate.experience.map(exp => {
+        const title = exp.title || "Unknown Title";
+        const company = exp.company || "Unknown Company";
+        const startDate = exp.startDate || "Unknown Start Date";
+        const endDate = exp.endDate || "Present";
+        return `${title} at ${company} (${startDate} - ${endDate})`;
+      }).join(", ") || "N/A";
+
+      return {
+        id: candidate._id,
+        name: candidate.userId?.firstName || "N/A",
+        email: candidate.userId?.email || "N/A",
+        phone: candidate.personalInfo?.phone || "N/A",
+        location: candidate.personalInfo?.location || "N/A",
+        skills: candidate.skills.filter(skill => skill).join(", ") || "N/A",
+        certifications: candidate.certifications.filter(cert => cert).join(", ") || "N/A",
+        education,
+        experience,
+        coverLetter: candidate.coverLetter || "N/A",
+        pinnedJobs: candidate.pinnedJobs.map(job => job.toString()).join(", ") || "N/A"
+      };
+    });
+
+    console.log("Formatted Candidates:", formattedCandidates);
+
+    res.status(200).send(formattedCandidates);
   } catch (error) {
     console.error("Error fetching applicants:", error);
     res.status(500).send({ message: "Internal Server Error" });
   }
 });
-
 // Update application status for a candidate
 router.put("/jobs/:jobId/applicants/:candidateId", auth, checkRole(["recruiter"]), async (req, res) => {
   try {
@@ -635,6 +674,54 @@ router.get("/dashboard", auth, checkRole(["recruiter"]), async (req, res) => {
     });
   } catch (error) {
     console.error("Error fetching dashboard data:", error);
+    res.status(500).send({ message: "Internal Server Error" });
+  }
+});
+
+// Get all candidates who applied to the recruiter's jobs
+router.get("/candidates/applied", auth, checkRole(["recruiter"]), async (req, res) => {
+  try {
+    console.log("Fetching all candidates who applied to all jobs of the recruiter");
+
+    // Fetch all applications for the recruiter's jobs using recruiterId
+    const applications = await Application.find({ recruiterId: req.user._id })
+      .populate("candidateId", "personalInfo skills certifications education experience")
+      .populate("jobId", "title");
+
+    // Debug: Log the fetched applications
+    console.log("Fetched applications:", applications);
+
+    if (applications.length === 0) {
+      console.warn("No applications found for the recruiter's jobs. Check if applications are correctly linked to the recruiter.");
+      return res.status(404).send({ message: "No applications found for the recruiter's jobs" });
+    }
+
+    // Map applications to candidate details
+    const candidates = applications.map(application => {
+      const candidate = application.candidateId;
+      return {
+        id: candidate._id,
+        name: candidate.personalInfo?.name || "N/A",
+        email: candidate.personalInfo?.email || "N/A",
+        phone: candidate.personalInfo?.phone || "N/A",
+        location: candidate.personalInfo?.location || "N/A",
+        skills: candidate.skills?.join(", ") || "N/A",
+        certifications: candidate.certifications?.join(", ") || "N/A",
+        education: candidate.education?.map(edu => `${edu.degree} in ${edu.fieldOfStudy} from ${edu.institution}`).join(", ") || "N/A",
+        experience: candidate.experience?.map(exp => `${exp.title} at ${exp.company} (${exp.period})`).join(", ") || "N/A",
+        appliedJob: {
+          id: application.jobId._id,
+          title: application.jobId.title,
+        },
+        appliedAt: application.appliedAt,
+      };
+    });
+
+    console.log("Mapped candidates:", candidates);
+
+    res.status(200).send(candidates);
+  } catch (error) {
+    console.error("Error fetching candidates for recruiter's jobs:", error);
     res.status(500).send({ message: "Internal Server Error" });
   }
 });
