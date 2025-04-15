@@ -37,13 +37,15 @@ import {
       Mail,
       
     LogOut, 
-    Users
+    Users,
+    MapPin
 } from "lucide-react";
 import { Menu as HeadlessMenu } from "@headlessui/react";
 import { BellIcon } from "@heroicons/react/24/outline";
 import { MenuButton, MenuItem, MenuItems } from "@headlessui/react";
 import { useDarkMode } from "../../DarkModeProvider"; // Import the hook
 import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 const NavLink = ({ href, icon: Icon, children, isActive }) => (
   <Link
@@ -513,7 +515,17 @@ function DeleteConfirmationModal({ isOpen, onClose, onConfirm }) {
 }
 
 function ApplicationDetailsModal({ isOpen, onClose, application }) {
-  if (!isOpen) return null;
+  if (!isOpen || !application) return null;
+
+  // Format date strings properly
+  const formatDate = (dateString) => {
+    if (!dateString) return "Not specified";
+    return new Date(dateString).toLocaleDateString(undefined, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
 
   // Improved status badge styles with better semantic colors
   const getStatusBadge = (status) => {
@@ -526,6 +538,36 @@ function ApplicationDetailsModal({ isOpen, onClose, application }) {
 
     return statusStyles[status] || "bg-gray-100 text-gray-800 border border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700";
   };
+
+  // Parse requirements into array
+  const parseRequirements = (requirements) => {
+    if (!requirements) return [];
+    if (Array.isArray(requirements)) return requirements;
+    return requirements.split(/[,;]/).map(item => item.trim()).filter(Boolean);
+  };
+
+  // Handle file download
+  const handleFileDownload = () => {
+    const fileUrl = application.file || application.cvPath;
+    if (!fileUrl) {
+      alert("No resume file available");
+      return;
+    }
+    
+    // Determine if it's a full URL or relative path
+    const fullUrl = fileUrl.startsWith('http') 
+      ? fileUrl 
+      : `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/${fileUrl}`;
+    
+    window.open(fullUrl, '_blank');
+  };
+
+  // Extract skills from job data
+  const skills = application.jobId?.skills || application.skills || [];
+  
+  // Parse requirements from job data
+  const requirements = parseRequirements(application.jobId?.requirements || application.requirements);
+  const description = parseRequirements(application.jobId?.description || application.description || "No description provided");
 
   return (
     <div
@@ -577,7 +619,7 @@ function ApplicationDetailsModal({ isOpen, onClose, application }) {
           <div className="mb-6 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
             <div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                {application.title || "No Title Provided"}
+                {application.jobId?.title || application.title || "No Title Provided"}
               </h3>
               <div className="flex flex-wrap gap-2 items-center">
                 <span
@@ -585,21 +627,26 @@ function ApplicationDetailsModal({ isOpen, onClose, application }) {
                     application.status
                   )}`}
                 >
-                  {application.status || "Unknown Status"}
+                  {application.status || "Pending"}
                 </span>
-                {application.deadline && (
+                {(application.jobId?.deadline || application.deadline) && (
                   <span className="inline-flex items-center text-xs text-gray-500 dark:text-gray-400">
                     <svg className="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
-                    Deadline: {application.deadline}
+                    Deadline: {formatDate(application.jobId?.deadline || application.deadline)}
+                  </span>
+                )}
+                {application.level && (
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200 dark:bg-purple-900/40 dark:text-purple-300 dark:border-purple-800">
+                    {application.level}
                   </span>
                 )}
               </div>
             </div>
             
             {/* Score displayed prominently with visual indicator */}
-            {application.score && (
+            {application.score !== undefined && (
               <div className="flex items-center gap-2 bg-gray-50 dark:bg-zinc-800 rounded-full px-3 py-1">
                 <div className="relative w-8 h-8">
                   <svg className="w-8 h-8" viewBox="0 0 36 36">
@@ -638,7 +685,7 @@ function ApplicationDetailsModal({ isOpen, onClose, application }) {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
                   </svg>
                   <p className="font-medium text-gray-900 dark:text-white">
-                    {application.company || "No Company Provided"}
+                    {application.jobId?.companyName || application.companyName || "No Company Provided"}
                   </p>
                 </div>
               </div>
@@ -650,7 +697,7 @@ function ApplicationDetailsModal({ isOpen, onClose, application }) {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
                   </svg>
                   <p className="font-medium text-gray-900 dark:text-white">
-                    {application.location || "No Location Provided"}
+                    {application.jobId?.location || application.location || "No Location Provided"}
                   </p>
                 </div>
               </div>
@@ -669,65 +716,145 @@ function ApplicationDetailsModal({ isOpen, onClose, application }) {
               <div className="bg-gray-50 dark:bg-zinc-800 p-3 rounded-lg flex flex-col">
                 <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Submitted On</p>
                 <p className="text-sm font-medium text-gray-900 dark:text-white">
-                  {application.date || "No Date Provided"}
+                  {formatDate(application.appliedAt || application.date)}
                 </p>
               </div>
               <div className="bg-gray-50 dark:bg-zinc-800 p-3 rounded-lg flex flex-col">
                 <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Job Type</p>
                 <p className="text-sm font-medium text-gray-900 dark:text-white">
-                  {application.jobType || "Not Specified"}
+                  {application.jobId?.jobType || application.jobType || "Not Specified"}
                 </p>
               </div>
+              {(application.jobId?.salary || application.salary) && (
+                <div className="bg-gray-50 dark:bg-zinc-800 p-3 rounded-lg flex flex-col">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Salary Range</p>
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">
+                    {application.jobId?.salary || application.salary}
+                  </p>
+                </div>
+              )}
+              {application.coverLetter && application.coverLetter !== "N/A" && (
+                <div className="bg-gray-50 dark:bg-zinc-800 p-3 rounded-lg flex flex-col">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Cover Letter</p>
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">
+                    {application.coverLetter.length > 50 
+                      ? `${application.coverLetter.substring(0, 50)}...` 
+                      : application.coverLetter}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Description Section */}
+          {/* Requirements Section */}
+          {requirements.length > 0 && (
+            <div className="mb-6">
+              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 flex items-center">
+                <svg className="w-4 h-4 mr-1.5 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h7"></path>
+                </svg>
+                Requirements
+              </h4>
+              <div className="bg-gray-50 dark:bg-zinc-800 p-4 rounded-lg text-gray-700 dark:text-gray-300 text-sm">
+                <ul className="list-disc pl-5 space-y-1">
+                  {requirements.map((req, index) => (
+                    <li key={index}>{req}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
+          
+          {description && description.length > 0 && (
+            <div className="mb-6">
+              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 flex items-center">
+                <svg
+                  className="w-4 h-4 mr-1.5 text-gray-500 dark:text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M4 6h16M4 12h16M4 18h7"
+                  ></path>
+                </svg>
+                Description
+              </h4>
+              <div className="bg-gray-50 dark:bg-zinc-800 p-4 rounded-lg text-gray-700 dark:text-gray-300 text-sm">
+                <ul className="list-disc pl-5 space-y-1">
+                  {Array.isArray(description) ? (
+                    description.map((req, index) => <li key={index}>{req}</li>)
+                  ) : (
+                    <li>{description}</li>
+                  )}
+                </ul>
+              </div>
+            </div>
+          )}
+
+          {/* Skills */}
           <div className="mb-6">
-            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 flex items-center">
-              <svg className="w-4 h-4 mr-1.5 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h7"></path>
-              </svg>
-              Description
-            </h4>
-            <div className="bg-gray-50 dark:bg-zinc-800 p-4 rounded-lg text-gray-700 dark:text-gray-300 text-sm">
-              {application.description || "No Description Provided"}
-            </div>
-          </div>
-
-          {/* Skills & Certifications */}
-          <div>
             <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 flex items-center">
               <svg className="w-4 h-4 mr-1.5 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
               </svg>
-              Requirements
+              Skills
             </h4>
-            <div className="grid grid-cols-1 gap-4">
-              <div className="bg-gray-50 dark:bg-zinc-800 p-3 rounded-lg">
-                <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Skills</p>
-                <div className="flex flex-wrap gap-2">
-                  {application.skills?.length ? (
-                    application.skills.map((skill, index) => (
-                      <span 
-                        key={index}
-                        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs bg-blue-100 text-blue-800 border border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800"
-                      >
-                        {skill}
-                      </span>
-                    ))
-                  ) : (
-                    <p className="text-sm text-gray-500 dark:text-gray-400">No Skills Provided</p>
-                  )}
-                </div>
-              </div>
-              <div className="bg-gray-50 dark:bg-zinc-800 p-3 rounded-lg">
-                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Certifications</p>
-                <p className="text-sm text-gray-900 dark:text-white">
-                  {application.certifications || "No Certifications Provided"}
-                </p>
+            <div className="bg-gray-50 dark:bg-zinc-800 p-3 rounded-lg">
+              <div className="flex flex-wrap gap-2">
+                {skills && skills.length > 0 ? (
+                  skills.map((skill, index) => (
+                    <span 
+                      key={index}
+                      className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs bg-blue-100 text-blue-800 border border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800"
+                    >
+                      {skill}
+                    </span>
+                  ))
+                ) : (
+                  <p className="text-sm text-gray-500 dark:text-gray-400">No Skills Provided</p>
+                )}
               </div>
             </div>
           </div>
+
+          {/* Resume File Section */}
+          {(application.file || application.cvPath) && (
+            <div className="mb-6">
+              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 flex items-center">
+                <svg className="w-4 h-4 mr-1.5 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                </svg>
+                Resume
+              </h4>
+              <div className="bg-gray-50 dark:bg-zinc-800 p-4 rounded-lg flex items-center justify-between">
+                <div className="flex items-center text-gray-700 dark:text-gray-300">
+                  <svg className="w-8 h-8 text-gray-400 mr-3" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                    <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd"></path>
+                  </svg>
+                  <div>
+                    <p className="text-sm font-medium">Resume File</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {application.file?.split('\\').pop() || application.cvPath?.split('\\').pop() || "Resume File"}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={handleFileDownload}
+                  className="inline-flex items-center px-3 py-1 bg-gray-200 dark:bg-zinc-700 rounded-md text-sm text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-zinc-600 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                  </svg>
+                  Download
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Footer */}
@@ -738,75 +865,8 @@ function ApplicationDetailsModal({ isOpen, onClose, application }) {
           >
             Close
           </button>
-          <div className="flex gap-3">
-            {/* Additional actions could go here */}
-            <button
-              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-zinc-900"
-              onClick={() => window.open(application.detailsUrl, "_blank")}
-              aria-label="View full application details"
-            >
-              View Full Details
-              <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
-              </svg>
-            </button>
-          </div>
+          
         </div>
-      </div>
-    </div>
-  );
-}
-function Card({ application, children, className, onDelete, isDarkMode, onViewDetails }) {
-  const { id, score, status } = application || { id: null, score: 0, status: "Incomplete" };
-  
-  return (
-    <div
-      className={`group relative border rounded-lg shadow-sm p-6 transition-all duration-300 ease-in-out hover:shadow-md hover:-translate-y-1 
-      ${isDarkMode ? 'border-zinc-700 bg-zinc-800/50' : 'border-zinc-200 bg-white'} ${className}`}
-      data-testid={`application-card-${id}`}
-    >
-      {/* Content area */}
-      <div className="relative">
-        {children}
-      </div>
-
-      {/* Action buttons - using a footer design */}
-      <div className="mt-6 pt-4 flex justify-between items-center gap-2 border-t border-zinc-200 dark:border-zinc-700">
-        <button
-          className="p-2 rounded-md text-zinc-400 hover:bg-zinc-100 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-all duration-200
-          dark:hover:bg-zinc-700 dark:focus:ring-offset-zinc-800"
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete && onDelete(application);
-          }}
-          aria-label="Delete application"
-        >
-          <Trash2 className="w-4 h-4" />
-        </button>
-        <button
-          className={`flex items-center gap-1 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 
-          ${isDarkMode
-            ? "bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-500 focus:ring-offset-zinc-800"
-            : "bg-blue-500 hover:bg-blue-600 text-white focus:ring-blue-500 focus:ring-offset-white"
-          } focus:outline-none focus:ring-2 focus:ring-offset-2`}
-          onClick={() => onViewDetails && onViewDetails(application)}
-        >
-          View Details
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-4 w-4 ml-1 transition-transform duration-200 transform group-hover:translate-x-1"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M13 7l5 5m0 0l-5 5m5-5H6"
-            />
-          </svg>
-        </button>
       </div>
     </div>
   );
@@ -972,6 +1032,194 @@ function CardStatus({ status }) {
   );
 }
 
+function ApplicationGrid({ filteredApplications, handleDeleteClick, handleViewDetails, isDarkMode }) {
+  // Empty state handling
+  if (!filteredApplications || filteredApplications.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 px-4 text-center bg-zinc-50 dark:bg-zinc-800/30 rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700">
+        <FolderSearch className="h-12 w-12 text-zinc-400 dark:text-zinc-500 mb-4" />
+        <h3 className="text-xl font-medium text-zinc-800 dark:text-zinc-200 mb-2">No applications found</h3>
+        <p className="text-zinc-500 dark:text-zinc-400 max-w-md">
+          Try adjusting your filters or create a new application to get started.
+        </p>
+        <button className="mt-6 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-zinc-800">
+          Create New Application
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {filteredApplications.map((application, index) => (
+        <Card
+          key={application.id || index}
+          application={application}
+          onDelete={() => handleDeleteClick(application)}
+          onViewDetails={() => handleViewDetails(application)}
+          isDarkMode={isDarkMode}
+        />
+      ))}
+    </div>
+  );
+}
+
+function Card({ application, onDelete, isDarkMode, onViewDetails }) {
+  const { id, score, status, title, level, tags, file, appliedAt, location, company } = application || {};
+  
+  const getStatusColor = (status) => {
+    const statusMap = {
+      pending: "border-yellow-500 bg-yellow-50 dark:bg-yellow-900/10",
+      interview: "border-blue-500 bg-blue-50 dark:bg-blue-900/10",
+      offer: "border-green-500 bg-green-50 dark:bg-green-900/10",
+      rejected: "border-red-500 bg-red-50 dark:bg-red-900/10",
+      applied: "border-purple-500 bg-purple-50 dark:bg-purple-900/10",
+    };
+    return statusMap[status?.toLowerCase()] || "border-zinc-300 dark:border-zinc-700";
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    try {
+      const date = new Date(dateString);
+      return new Intl.DateTimeFormat('en-US', { 
+        month: 'short', 
+        day: 'numeric',
+        year: 'numeric'
+      }).format(date);
+    } catch (e) {
+      return dateString;
+    }
+  };
+
+  // For improved animations with state
+  const [isHovered, setIsHovered] = useState(false);
+  
+  return (
+    <div
+      className={`group relative border-l-4 rounded-lg shadow-sm transition-all duration-300 ease-in-out
+        ${getStatusColor(status)}
+        ${isDarkMode ? 'bg-zinc-800/90 border-t border-r border-b border-zinc-700' : 'bg-white border-t border-r border-b border-zinc-200'}`}
+      data-testid={`application-card-${id}`}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      onClick={() => onViewDetails(application)}
+    >
+      {/* Status badge */}
+      <div className="absolute top-4 right-4 z-10">
+        <StatusBadge status={status} />
+      </div>
+      
+      {/* Score indicator */}
+      {score !== undefined && <CardScore score={score} />}
+      
+      {/* Card Content */}
+      <div className="p-6">
+        {/* Header */}
+        <div className="mb-4 mt-9">
+          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 truncate pr-20">
+            {title || "Untitled Application"}
+          </h2>
+          
+          {company && (
+            <div className="flex items-center mt-1 text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              <Building className="w-3.5 h-3.5 mr-1.5" />
+              <span className="truncate">{company}</span>
+            </div>
+          )}
+        </div>
+        
+        {/* Tags */}
+        <div className="flex flex-wrap gap-2 mb-4">
+          {level && <Badge level={level} />}
+          
+          {tags?.slice(0, 3).map(tag => (
+            <Badge key={tag} level={tag} size="small" />
+          ))}
+          
+          {tags && tags.length > 3 && (
+            <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-300">
+              +{tags.length - 3}
+            </span>
+          )}
+        </div>
+        
+        {/* Info items */}
+        <div className="space-y-2">
+          <CardInfo
+            icon={<FileText size={16} />}
+            text={file}
+            tooltip={`File: ${file}`}
+          />
+          <CardInfo
+            icon={<Calendar size={16} />}
+            text={formatDate(appliedAt)}
+            tooltip={`Applied on: ${formatDate(appliedAt)}`}
+          />
+          {location && (
+            <CardInfo
+              icon={<MapPin size={16} />}
+              text={location}
+              tooltip={`Location: ${location}`}
+            />
+          )}
+        </div>
+      </div>
+      
+      {/* Action buttons footer */}
+      <div className={`px-6 py-3 bg-zinc-50 dark:bg-zinc-800/50 border-t border-zinc-200 dark:border-zinc-700 rounded-b-lg flex justify-between items-center
+        ${isHovered ? 'opacity-100' : 'opacity-0 md:opacity-0 sm:opacity-100'} transition-opacity duration-200`}>
+        <button
+          className="p-2 rounded-md text-zinc-500 hover:bg-zinc-200 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-all duration-200
+          dark:text-zinc-400 dark:hover:bg-zinc-700 dark:focus:ring-offset-zinc-800"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete(application);
+          }}
+          aria-label="Delete application"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
+        
+        <div className="flex space-x-2">
+          <button
+            className="p-2 rounded-md text-zinc-500 hover:bg-zinc-200 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200
+            dark:text-zinc-400 dark:hover:bg-zinc-700 dark:focus:ring-offset-zinc-800"
+            onClick={(e) => {
+              e.stopPropagation();
+              // Add your download/export functionality here
+            }}
+            aria-label="Export application"
+          >
+            <Download className="w-4 h-4" />
+          </button>
+          
+          <button
+            className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 
+            ${isDarkMode
+              ? "bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-500 focus:ring-offset-zinc-800"
+              : "bg-blue-500 hover:bg-blue-600 text-white focus:ring-blue-500 focus:ring-offset-white"
+            } focus:outline-none focus:ring-2 focus:ring-offset-2`}
+            onClick={(e) => {
+              e.stopPropagation();
+              onViewDetails(application);
+            }}
+          >
+            Details
+            <ChevronRight className="h-4 w-4 transition-transform duration-200 transform group-hover:translate-x-0.5" />
+          </button>
+        </div>
+      </div>
+      
+      {/* Hover overlay for better UX feedback */}
+      <div className={`absolute inset-0 bg-zinc-900/5 dark:bg-zinc-100/5 rounded-lg pointer-events-none transition-opacity duration-200
+        ${isHovered ? 'opacity-100' : 'opacity-0'}`} 
+        aria-hidden="true"
+      />
+    </div>
+  );
+}
+
 function CardScore({ score }) {
   const getScoreConfig = (score) => {
     if (score >= 8) return {
@@ -992,7 +1240,7 @@ function CardScore({ score }) {
 
   return (
     <div
-      className={`absolute  -top-3   py-1 px-3 right-1 flex items-center gap-1  rounded-full text-xs font-medium ${config.color}`}
+      className={`absolute top-4 left-4 py-1 px-2 flex items-center gap-1 rounded-full text-xs font-medium ${config.color}`}
     >
       {config.icon}
       <span>{score}</span>
@@ -1001,8 +1249,10 @@ function CardScore({ score }) {
 }
 
 function CardInfo({ icon, text, tooltip }) {
+  if (!text) return null;
+  
   return (
-    <div className="mt-2 flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400 truncate" title={tooltip || text}>
+    <div className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400 truncate" title={tooltip || text}>
       <span className="text-zinc-400 dark:text-zinc-500 flex-shrink-0">{icon}</span> 
       <span className="truncate">{text}</span>
     </div>
@@ -1029,7 +1279,7 @@ function Badge({ level, size = "default" }) {
     }
   };
 
-  const config = levelConfig[level] || levelConfig.default;
+  const config = levelConfig[level?.toUpperCase()] || levelConfig.default;
   const sizeClass = size === "small" ? "text-xs px-1.5 py-0.5" : "text-xs px-2 py-1";
 
   return (
@@ -1042,10 +1292,26 @@ function Badge({ level, size = "default" }) {
   );
 }
 
+
 // Example usage
 function ApplicationCardList({ filteredApplications, handleDeleteClick, handleViewDetails, isDarkMode }) {
+  // For empty state
+  if (filteredApplications.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+        <div className="bg-gray-100 dark:bg-gray-800 rounded-full p-4 mb-4">
+          <FileSearch size={32} className="text-gray-500 dark:text-gray-400" />
+        </div>
+        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No applications found</h3>
+        <p className="text-sm text-gray-500 dark:text-gray-400 max-w-md">
+          Try adjusting your filters or adding a new application to get started.
+        </p>
+      </div>
+    );
+  }
+
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-fadeIn">
       {filteredApplications.map((application, index) => (
         <Card
           key={application.id || index}
@@ -1053,50 +1319,191 @@ function ApplicationCardList({ filteredApplications, handleDeleteClick, handleVi
           onDelete={() => handleDeleteClick(application)}
           onViewDetails={() => handleViewDetails(application)}
           isDarkMode={isDarkMode}
-          className="cursor-pointer hover:border-blue-500 dark:hover:border-blue-400"
-          onClick={() => handleViewDetails(application)}
+          className={`transform transition-all duration-200 hover:translate-y-px hover:shadow-md 
+            ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}
         >
-          <div className="mb-6 pt-4"> {/* Add padding top to avoid overlapping with status badges */}
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white truncate">
-              {application.title}
-            </h2>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 line-clamp-2">
+          {/* Status indicator bar */}
+          <div className={`h-1 w-full rounded-t-lg ${getStatusColor(application.status)}`}></div>
+          
+          <div className="p-4">
+            {/* Header section with title and actions */}
+            <div className="flex justify-between items-start mb-2">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white truncate flex-1 pr-2">
+                {application.title}
+              </h2>
+              
+              <div className="flex items-center space-x-1">
+                {/* Status badge */}
+                <StatusBadge status={application.status} />
+                
+                {/* Score indicator if available */}
+                {application.score !== undefined && (
+                  <span className={`inline-flex items-center justify-center h-6 w-6 rounded-full text-xs font-medium 
+                    ${getScoreColor(application.score)}`}>
+                    {application.score}
+                  </span>
+                )}
+              </div>
+            </div>
+            
+            {/* Description - limited to 2 lines */}
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 line-clamp-2 mb-3 min-h-8">
               {application.description || "No description provided"}
             </p>
             
-            <div className="flex flex-wrap gap-2 mt-3">
-              <Badge level={application.level} />
-              {application.tags?.map(tag => (
-                <Badge key={tag} level={tag} size="small" />
+            {/* Company name if available */}
+            {application.company && (
+              <div className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                <Building size={14} className="mr-1 flex-shrink-0" />
+                <span className="truncate">{application.company}</span>
+              </div>
+            )}
+            
+            {/* Tags and skill level */}
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              {application.level && (
+                <Badge 
+                  level={application.level} 
+                  className={`${getBadgeColorByLevel(application.level)}`}
+                />
+              )}
+              
+              {application.tags?.slice(0, 3).map(tag => (
+                <Badge 
+                  key={tag} 
+                  level={tag} 
+                  size="small"
+                  className="bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300"
+                />
               ))}
               
+              {/* Show count of additional tags if more than 3 */}
+              {application.tags && application.tags.length > 3 && (
+                <span className="text-xs px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
+                  +{application.tags.length - 3}
+                </span>
+              )}
             </div>
           </div>
           
-          <CardContent>
+          {/* Footer with metadata */}
+          <div className="px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-100 dark:border-gray-700 
+            rounded-b-lg grid grid-cols-2 gap-y-2 text-sm">
             <CardInfo
-              icon={<FileText size={16} />}
+              icon={<FileText size={14} />}
               text={application.file}
               tooltip={`File: ${application.file}`}
+              className="text-gray-600 dark:text-gray-400"
             />
             <CardInfo
-              icon={<Calendar size={16} />}
-              text={application.date}
-              tooltip={`Date: ${application.date}`}
+              icon={<Calendar size={14} />}
+              text={formatDate(application.date)}
+              tooltip={`Applied on: ${formatDate(application.date)}`}
+              className="text-gray-600 dark:text-gray-400"
             />
             
             {application.location && (
               <CardInfo
-                icon={<MapPin size={16} />}
+                icon={<MapPin size={14} />}
                 text={application.location}
                 tooltip={`Location: ${application.location}`}
+                className="text-gray-600 dark:text-gray-400 col-span-2"
               />
             )}
-          </CardContent>
+          </div>
           
+          {/* Action buttons */}
+          <div className="absolute bottom-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="flex space-x-1">
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleViewDetails(application);
+                }}
+                className="p-1 rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 
+                  text-gray-600 dark:text-gray-300"
+                aria-label="View details"
+              >
+                <Eye size={16} />
+              </button>
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDeleteClick(application);
+                }}
+                className="p-1 rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-red-100 dark:hover:bg-red-900
+                  text-gray-600 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400"
+                aria-label="Delete application"
+              >
+                <Trash2 size={16} />
+              </button>
+            </div>
+          </div>
         </Card>
       ))}
     </div>
+  );
+}
+
+// Helper functions
+function getStatusColor(status) {
+  const statusMap = {
+    pending: 'bg-yellow-400',
+    interview: 'bg-blue-500',
+    offer: 'bg-green-500',
+    rejected: 'bg-red-500',
+    applied: 'bg-purple-500',
+    // Add more statuses as needed
+  };
+  return statusMap[status?.toLowerCase()] || 'bg-gray-400';
+}
+
+function getScoreColor(score) {
+  if (score >= 80) return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+  if (score >= 60) return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
+  return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+}
+
+function getBadgeColorByLevel(level) {
+  const levelMap = {
+    entry: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+    mid: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
+    senior: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200',
+    // Add more levels as needed
+  };
+  return levelMap[level?.toLowerCase()] || 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
+}
+
+function formatDate(dateString) {
+  if (!dateString) return 'N/A';
+  try {
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat('en-US', { 
+      month: 'short', 
+      day: 'numeric',
+      year: 'numeric'
+    }).format(date);
+  } catch (e) {
+    return dateString; // Fallback to original string if parsing fails
+  }
+}
+
+function StatusBadge({ status }) {
+  const statusClasses = {
+    pending: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
+    interview: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+    offer: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+    rejected: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+    applied: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
+    // Add more statuses as needed
+  };
+  
+  const className = statusClasses[status?.toLowerCase()] || 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
+  
+  return (
+    <span className={`px-2 py-1 rounded-full text-xs font-medium capitalize ${className}`}>
+      {status || 'Unknown'}
+    </span>
   );
 }
 
@@ -1173,6 +1580,7 @@ const SidebarLayout = () => {
   const [applications, setApplications] = useState([]); // Ensure applications is initialized as an empty array
   const [activeFilter, setActiveFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const navigate = useNavigate(); // If using react-router-dom
 
   const handleViewDetails = (application) => {
     setSelectedApplication(application);
@@ -1183,6 +1591,7 @@ const SidebarLayout = () => {
     setIsModalTwoOpen(false);
     setSelectedApplication(null);
   };
+  const [loading, setLoading] = useState(false);
 
   // Fetch applications from the backend
   useEffect(() => {
@@ -1192,40 +1601,71 @@ const SidebarLayout = () => {
         if (!token) {
           throw new Error("No authentication token found");
         }
-
+        
         const response = await fetch("http://localhost:5000/api/candidates/applications", {
           method: "GET",
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
-
+        
         if (!response.ok) {
           if (response.status === 401) {
             throw new Error("Unauthorized: Please log in again.");
           }
-          throw new Error("Failed to fetch applications");
+          throw new Error(`Failed to fetch applications: ${response.status}`);
         }
-
+        
         const data = await response.json();
-        if (data && Array.isArray(data.applications)) {
-          setApplications(data.applications); // Update the applications state with the applications array
+        
+        if (data && data.message === "Applications retrieved successfully" && Array.isArray(data.applications)) {
+          const formattedApplications = data.applications.map((app) => ({
+            id: app._id,
+            title: app.jobId?.title || app.title || "No Title Provided",
+            companyName: app.jobId?.companyName || "Unknown Company",
+            location: app.jobId?.location || "Unknown Location",
+            jobType: app.jobId?.jobType || "Not Specified",
+            deadline: app.jobId?.deadline
+              ? new Date(app.jobId.deadline).toLocaleDateString()
+              : "No Deadline",
+            appliedAt: app.appliedAt
+              ? new Date(app.appliedAt).toLocaleDateString()
+              : "Unknown Date",
+              description: app.description || app.jobId?.description || "No Description Provided", // Updated logic
+              salary: app.jobId?.salary || "Not Specified",
+            requirements: app.jobId?.requirements || "No Requirements Provided",
+            skills: app.jobId?.skills || [],
+            status: app.status || "Pending",
+            score: app.score || 0,
+            file: app.file || app.cvPath || "No File Provided",
+            level: app.level || "Not Specified",
+            coverLetter: app.coverLetter || "No Cover Letter",
+            recruiter: app.recruiterId?._id || "Unknown Recruiter",
+          }));
+          setApplications(formattedApplications);
         } else {
-          console.error("Unexpected response format:", data);
-          setApplications([]); // Fallback to an empty array
+          console.warn("Unexpected response format:", data);
+          setApplications([]);
         }
       } catch (error) {
         console.error("Error fetching applications:", error);
+        setError(error.message);
+        
         if (error.message.includes("Unauthorized")) {
-          alert("Session expired. Please log in again.");
-          window.location.href = "/login"; // Redirect to login page
+          toast.error("Session expired. Please log in again.");
+          // Use react-router-dom navigation instead of direct window location change
+          navigate("/login");
+        } else {
+          toast.error("Failed to load applications. Please try again later.");
         }
+      } finally {
+        setLoading(false);
       }
     };
-
+  
+    setLoading(true);
     fetchApplications();
-  }, []); // Empty dependency array ensures this runs only once
-
+  }, [navigate]); // Add navigate to dependency array if using react-router// Empty dependency array ensures this runs only once // Empty dependency array ensures this runs only once // Empty dependency array ensures this runs only once
   const filteredApplications = Array.isArray(applications)
     ? filterApplications(applications, activeFilter, searchQuery)
     : []; // Safeguard to ensure applications is an array
@@ -1457,12 +1897,12 @@ const SidebarLayout = () => {
     className="cursor-pointer hover:border-blue-500 dark:hover:border-blue-400"
   >
     {/* No need to manually add CardStatus and CardScore here as they're handled in the Card component */}
-    <div className="mb-6 pt-4"> {/* Add padding to avoid overlapping with status badges */}
+    <div className="mb-6 pt-2"> {/* Add padding to avoid overlapping with status badges */}
       <h2 className="text-lg font-semibold text-gray-900 dark:text-white truncate">
         {application.title}
       </h2>
       
-      <div className="flex flex-wrap gap-2 mt-3">
+      <div className="flex flex-wrap gap-2 mt-6">
         <Badge level={application.level} />
         
         {/* Optional: If you have tags, you can map them here */}
@@ -1485,8 +1925,8 @@ const SidebarLayout = () => {
        <CardScore score={application.score} />
       <CardInfo
         icon={<Calendar size={16} />}
-        text={application.date}
-        tooltip={`Date: ${application.date}`}
+        text={application.appliedAt}
+        tooltip={`Date: ${application.appliedAt}`}
       />
       
       {/* Optional: Add location if available */}

@@ -13,7 +13,7 @@ const applicationSchema = new mongoose.Schema(
     title: { type: String, required: true },
     appliedAt: { type: Date, default: Date.now },
     level: { type: String, enum: ['JUNIOR', 'MID', 'SENIOR'], required: true },
-    status: { type: String, enum: ['Pending', 'Accepted', 'Rejected'], default: 'Pending' }, // Add 'status' field
+    status: { type: String, enum: ['Pending', 'Accepted', 'Rejected', 'Review', 'Approve', 'Reject'], default: 'Pending' },
   },
   { collection: "applications", strict: true } // Ensure strict mode is enabled
 );

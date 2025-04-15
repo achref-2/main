@@ -28,7 +28,6 @@ import {
   Phone,
   MapPin,
   Award,
- 
   Star,
   Clock,
   Filter,
@@ -523,119 +522,171 @@ const AppliedCandidatesContent = () => {
           },
         }
       );
-  
+
       if (response.status === 404) {
         setCandidates([]);
         setError("No applications found for your jobs.");
         setLoading(false);
         return;
       }
-  
+
       if (!response.ok) {
         throw new Error(`HTTP Error! Status: ${response.status}`);
       }
-  
+
       // Get the response text
       const text = await response.text();
-      
+
       try {
         // Check if the response starts with "Raw response text:" and handle accordingly
-        const jsonText = text.startsWith("Raw response text:") 
-          ? text.substring("Raw response text:".length).trim() 
+        const jsonText = text.startsWith("Raw response text:")
+          ? text.substring("Raw response text:".length).trim()
           : text;
-        
+
         // Parse the JSON data
         const data = JSON.parse(jsonText);
-  
+
         // Transform and sanitize the data for better handling
-        const sanitizedCandidates = data.map((application) => {
-          // Check if application is valid
-          if (!application) return null;
-  
-          // Handle nested objects safely with optional chaining and default values
-          const candidate = application.candidateId || {};
-          const personalInfo = candidate.personalInfo || {};
-          const job = application.jobId || {};
-          const latestAnalysis = application.latestAnalysis || {};
-          const cvHistory = Array.isArray(application.cvHistory) ? application.cvHistory : [];
-          const latestCV = cvHistory.length > 0 ? cvHistory[0] : {};
-          const analysis = latestCV.analysis || {};
-          
-          // Extract information from raw_analysis if available
-          const rawAnalysis = analysis.raw_analysis || "";
-          const parsedAnalysis = parseResumeAnalysis(rawAnalysis);
-          
-          // Use data from analysis if available, especially when main fields are N/A
-          const name = personalInfo.name && personalInfo.name !== "N/A" 
-          ? personalInfo.name 
-          : (parsedAnalysis.contactInfo?.name   || "Unknown").replace(/\*\* /g, '');         
-           const email = personalInfo.email && personalInfo.email !== "N/A" ? personalInfo.email : (parsedAnalysis.contactInfo.email || analysis.contacts?.Email || "Not provided").replace(/\*\* /g, '');
-          const phone =  personalInfo.name && personalInfo.phone !== "N/A" ? personalInfo.phone : (parsedAnalysis.contactInfo.phone || analysis.contacts?.phone || "Not provided").replace(/\*\* /g, '');
-          const location =  personalInfo.location && personalInfo.location !== "N/A" ? personalInfo.location : parsedAnalysis.location || "Not provided";
-  
-          // Combine skills from multiple sources
-          const skills = candidate.skills?.join(", ") || 
-                         parsedAnalysis.technicalSkills || 
-                         analysis.skills || 
-                         "Not provided";
-                         
-          // Extract education and experience data
-          const education = Array.isArray(candidate.education) && candidate.education.length > 0
-  ? candidate.education.map(
-      (edu) => `${edu.degree || "Unknown degree"} in ${edu.field || "Unknown field"} from ${edu.institution || "Unknown institution"}`
-    ).join("; ")
-  : parsedAnalysis.Education || parsedAnalysis.education || analysis.education || "Not provided";
-         
-          const experience = candidate.experience?.map(
-            (exp) => `${exp.role || ""} at ${exp.company || ""}`
-          ).join("; ") || parsedAnalysis.experience || analysis.experience || "Not provided";
-  
-          return {
-            id: application._id || application.id || "",
-            name: name,
-            email: email,
-            phone: phone,
-            location: location,
-            skills: skills,
-            certifications: candidate.certifications?.join(", ") || parsedAnalysis.certifications || "Not provided",
-            education: education,
-            experience: experience,
-            languages: parsedAnalysis.languages || "Not provided",
-            coverLetter: application.coverLetter !== "N/A" ? application.coverLetter : "Not provided",
-            latestAnalysis: {
-              similarityScore: latestAnalysis.similarity_score || 0,
-              skills: latestAnalysis.skills || [],
-              suggestions: latestAnalysis.suggestions || [],
-              analyzedAt: latestAnalysis.analyzedAt || new Date().toISOString(),
-              strengths: parsedAnalysis.strengths || [],
-              improvements: parsedAnalysis.improvements || [],
-              linkedinSuggestions: parsedAnalysis.linkedinSuggestions || []
-            },
-            resumeAnalysis: parsedAnalysis,
-            cvHistory: cvHistory.map(cv => ({
-              fileUrl: cv.fileUrl || "",
-              fileName: cv.fileName || "",
-              uploadDate: cv.uploadDate || "",
-              analysis: cv.analysis || {}
-            })),
-            appliedJob: {
-              title: job.title || "Unknown",
-              location: job.location || "Not provided",
-              salary: job.salary || "Not provided",
-              jobType: job.jobType || "Not specified",
-              requirements: job.requirements || "Not provided",
-              deadline: job.deadline ? new Date(job.deadline).toLocaleDateString() : "No deadline",
-              companyName: job.companyName || "Not provided",
-              skills: job.skills?.join(", ") || "Not provided",
-            },
-            appliedAt: application.appliedAt ? new Date(application.appliedAt).toLocaleString() : "Unknown",
-            status: application.status || "Pending",
-            score: application.score || latestAnalysis.similarity_score || 0,
-            cvPath: latestCV.fileUrl || application.cvPath || "Not available",
-            recommendationPath: application.recommendationPath || "Not available",
-          };
-        }).filter(Boolean); // Remove any null entries
-  
+        const sanitizedCandidates = data
+          .map((application) => {
+            // Check if application is valid
+            if (!application) return null;
+
+            // Handle nested objects safely with optional chaining and default values
+            const candidate = application.candidateId || {};
+            const personalInfo = candidate.personalInfo || {};
+            const job = application.jobId || {};
+            const latestAnalysis = application.latestAnalysis || {};
+            const cvHistory = Array.isArray(application.cvHistory)
+              ? application.cvHistory
+              : [];
+            const latestCV = cvHistory.length > 0 ? cvHistory[0] : {};
+            const analysis = latestCV.analysis || {};
+
+            // Extract information from raw_analysis if available
+            const rawAnalysis = analysis.raw_analysis || "";
+            const parsedAnalysis = parseResumeAnalysis(rawAnalysis);
+
+            // Use data from analysis if available, especially when main fields are N/A
+            const name =
+              personalInfo.name && personalInfo.name !== "N/A"
+                ? personalInfo.name
+                : (parsedAnalysis.contactInfo?.name || "Unknown").replace(
+                    /\*\* /g,
+                    ""
+                  );
+            const email =
+              personalInfo.email && personalInfo.email !== "N/A"
+                ? personalInfo.email
+                : (
+                    parsedAnalysis.contactInfo.email ||
+                    analysis.contacts?.Email ||
+                    "Not provided"
+                  ).replace(/\*\* /g, "");
+            const phone =
+              personalInfo.name && personalInfo.phone !== "N/A"
+                ? personalInfo.phone
+                : (
+                    parsedAnalysis.contactInfo.phone ||
+                    analysis.contacts?.phone ||
+                    "Not provided"
+                  ).replace(/\*\* /g, "");
+            const location =
+              personalInfo.location && personalInfo.location !== "N/A"
+                ? personalInfo.location
+                : parsedAnalysis.location || "Not provided";
+
+            // Combine skills from multiple sources
+            const skills =
+              candidate.skills?.join(", ") ||
+              parsedAnalysis.technicalSkills ||
+              analysis.skills ||
+              "Not provided";
+
+            // Extract education and experience data
+            const education =
+              Array.isArray(candidate.education) &&
+              candidate.education.length > 0
+                ? candidate.education
+                    .map(
+                      (edu) =>
+                        `${edu.degree || "Unknown degree"} in ${
+                          edu.field || "Unknown field"
+                        } from ${edu.institution || "Unknown institution"}`
+                    )
+                    .join("; ")
+                : parsedAnalysis.Education ||
+                  parsedAnalysis.education ||
+                  analysis.education ||
+                  "Not provided";
+
+            const experience =
+              candidate.experience
+                ?.map((exp) => `${exp.role || ""} at ${exp.company || ""}`)
+                .join("; ") ||
+              parsedAnalysis.experience ||
+              analysis.experience ||
+              "Not provided";
+            return {
+              id: application._id || application.id || "",
+              name: name,
+              email: email,
+              phone: phone,
+              location: location,
+              skills: skills,
+              applicationId: application.applicationId || "", // Correctly extract applicationId
+              certifications:
+                candidate.certifications?.join(", ") ||
+                parsedAnalysis.certifications ||
+                "Not provided",
+              education: education,
+              experience: experience,
+              languages: parsedAnalysis.languages || "Not provided",
+              coverLetter:
+                application.coverLetter !== "N/A"
+                  ? application.coverLetter
+                  : "Not provided",
+              latestAnalysis: {
+                similarityScore: latestAnalysis.similarity_score || 0,
+                skills: latestAnalysis.skills || [],
+                suggestions: latestAnalysis.suggestions || [],
+                analyzedAt:
+                  latestAnalysis.analyzedAt || new Date().toISOString(),
+                strengths: parsedAnalysis.strengths || [],
+                improvements: parsedAnalysis.improvements || [],
+                linkedinSuggestions: parsedAnalysis.linkedinSuggestions || [],
+              },
+              resumeAnalysis: parsedAnalysis,
+              cvHistory: cvHistory.map((cv) => ({
+                fileUrl: cv.fileUrl || "",
+                fileName: cv.fileName || "",
+                uploadDate: cv.uploadDate || "",
+                analysis: cv.analysis || {},
+              })),
+              appliedJob: {
+                title: job.title || "Unknown",
+                location: job.location || "Not provided",
+                salary: job.salary || "Not provided",
+                jobType: job.jobType || "Not specified",
+                requirements: job.requirements || "Not provided",
+                deadline: job.deadline
+                  ? new Date(job.deadline).toLocaleDateString()
+                  : "No deadline",
+                companyName: job.companyName || "Not provided",
+                skills: job.skills?.join(", ") || "Not provided",
+              },
+              appliedAt: application.appliedAt
+                ? new Date(application.appliedAt).toLocaleString()
+                : "Unknown",
+              status: application.status || "Pending",
+              score: application.score || latestAnalysis.similarity_score || 0,
+              cvPath: latestCV.fileUrl || application.cvPath || "Not available",
+              recommendationPath:
+                application.recommendationPath || "Not available",
+            };
+          })
+          .filter(Boolean); // Remove any null entries
+
         setCandidates(sanitizedCandidates);
       } catch (jsonError) {
         console.error("Error parsing JSON:", jsonError, "Response text:", text);
@@ -648,10 +699,9 @@ const AppliedCandidatesContent = () => {
       setLoading(false);
     }
   };
-  
   // Function to parse resume analysis markdown text
   const parseResumeAnalysis = (rawAnalysis) => {
-    if (!rawAnalysis || typeof rawAnalysis !== 'string') {
+    if (!rawAnalysis || typeof rawAnalysis !== "string") {
       return {
         contactInfo: {},
         experience: "",
@@ -659,129 +709,177 @@ const AppliedCandidatesContent = () => {
         languages: "",
         strengths: [],
         improvements: [],
-        linkedinSuggestions: []
+        linkedinSuggestions: [],
       };
     }
-  
+
     const result = {
       contactInfo: {
         name: "",
         email: "",
         phone: "",
-        linkedin: ""
+        linkedin: "",
       },
       experience: "",
       technicalSkills: "",
       languages: "",
       strengths: [],
       improvements: [],
-      linkedinSuggestions: []
+      linkedinSuggestions: [],
     };
-  
+
     // Extract contact information
-    const contactMatch = rawAnalysis.match(/\*\*1\.\s*Contact Information:\*\*([\s\S]*?)(?=\*\*2\.|\n\n\*\*)/);
+    const contactMatch = rawAnalysis.match(
+      /\*\*1\.\s*Contact Information:\*\*([\s\S]*?)(?=\*\*2\.|\n\n\*\*)/
+    );
     if (contactMatch && contactMatch[1]) {
       const contactSection = contactMatch[1];
-      
-      const nameMatch = contactSection.match(/\*\*Name:\*\*\s*(.*?)(?=\n|\*\*)/);
+
+      const nameMatch = contactSection.match(
+        /\*\*Name:\*\*\s*(.*?)(?=\n|\*\*)/
+      );
       if (nameMatch) result.contactInfo.name = nameMatch[1].trim();
-      
-      const emailMatch = contactSection.match(/\*\*Email:\*\*\s*(.*?)(?=\n|\*\*)/);
+
+      const emailMatch = contactSection.match(
+        /\*\*Email:\*\*\s*(.*?)(?=\n|\*\*)/
+      );
       if (emailMatch) result.contactInfo.email = emailMatch[1].trim();
-      
-      const phoneMatch = contactSection.match(/\*\*Phone:\*\*\s*(.*?)(?=\n|\*\*)/);
+
+      const phoneMatch = contactSection.match(
+        /\*\*Phone:\*\*\s*(.*?)(?=\n|\*\*)/
+      );
       if (phoneMatch) result.contactInfo.phone = phoneMatch[1].trim();
-      
-      const linkedinMatch = contactSection.match(/\*\*LinkedIn:\*\*\s*(.*?)(?=\n|\*\*)/);
+
+      const linkedinMatch = contactSection.match(
+        /\*\*LinkedIn:\*\*\s*(.*?)(?=\n|\*\*)/
+      );
       if (linkedinMatch) result.contactInfo.linkedin = linkedinMatch[1].trim();
     }
-  
+
     // Extract work experience
-    const experienceMatch = rawAnalysis.match(/\*\*2\.\s*Work Experience Summary:\*\*([\s\S]*?)(?=\*\*3\.|\n\n\*\*)/);
+    const experienceMatch = rawAnalysis.match(
+      /\*\*2\.\s*Work Experience Summary:\*\*([\s\S]*?)(?=\*\*3\.|\n\n\*\*)/
+    );
     if (experienceMatch && experienceMatch[1]) {
-      const experienceItems = experienceMatch[1].match(/\*\s*\*\*(.*?):\*\*\s*(.*?)(?=\n\*|\n\n|$)/g);
-      
+      const experienceItems = experienceMatch[1].match(
+        /\*\s*\*\*(.*?):\*\*\s*(.*?)(?=\n\*|\n\n|$)/g
+      );
+
       if (experienceItems) {
-        result.experience = experienceItems.map(item => {
-          const [_, position, details] = item.match(/\*\s*\*\*(.*?):\*\*\s*(.*)/) || [null, "", ""];
-          return `${position}: ${details.trim()}`;
-        }).join("; ");
+        result.experience = experienceItems
+          .map((item) => {
+            const [_, position, details] = item.match(
+              /\*\s*\*\*(.*?):\*\*\s*(.*)/
+            ) || [null, "", ""];
+            return `${position}: ${details.trim()}`;
+          })
+          .join("; ");
       }
     }
-  
+
     // Extract technical skills
-    const skillsMatch = rawAnalysis.match(/\*\*3\.\s*Technical Skills:\*\*([\s\S]*?)(?=\*\*4\.|\n\n\*\*)/);
+    const skillsMatch = rawAnalysis.match(
+      /\*\*3\.\s*Technical Skills:\*\*([\s\S]*?)(?=\*\*4\.|\n\n\*\*)/
+    );
     if (skillsMatch && skillsMatch[1]) {
-      const skillItems = skillsMatch[1].match(/\*\s*\*\*(.*?):\*\*\s*(.*?)(?=\n\*|\n\n|$)/g);
-      
+      const skillItems = skillsMatch[1].match(
+        /\*\s*\*\*(.*?):\*\*\s*(.*?)(?=\n\*|\n\n|$)/g
+      );
+
       if (skillItems) {
-        const skills = skillItems.map(item => {
-          const match = item.match(/\*\s*\*\*(.*?):\*\*\s*(.*)/);
-          if (match && match[2].trim()) {
-            return `${match[1]}: ${match[2].trim()}`;
-          }
-          return match ? match[1] : "";
-        }).filter(Boolean);
-        
+        const skills = skillItems
+          .map((item) => {
+            const match = item.match(/\*\s*\*\*(.*?):\*\*\s*(.*)/);
+            if (match && match[2].trim()) {
+              return `${match[1]}: ${match[2].trim()}`;
+            }
+            return match ? match[1] : "";
+          })
+          .filter(Boolean);
+
         result.technicalSkills = skills.join("; ");
       }
     }
-  
+
     // Extract languages
-    const languagesMatch = rawAnalysis.match(/\*\*4\.\s*Languages:\*\*([\s\S]*?)(?=\*\*5\.|\n\n\*\*)/);
+    const languagesMatch = rawAnalysis.match(
+      /\*\*4\.\s*Languages:\*\*([\s\S]*?)(?=\*\*5\.|\n\n\*\*)/
+    );
     if (languagesMatch && languagesMatch[1]) {
-      const languageItems = languagesMatch[1].match(/\*\s*(.*?):\s*(.*?)(?=\n\*|\n\n|$)/g);
-      
+      const languageItems = languagesMatch[1].match(
+        /\*\s*(.*?):\s*(.*?)(?=\n\*|\n\n|$)/g
+      );
+
       if (languageItems) {
-        result.languages = languageItems.map(item => {
-          const match = item.match(/\*\s*(.*?):\s*(.*)/);
-          return match ? `${match[1]}: ${match[2].trim()}` : "";
-        }).filter(Boolean).join(", ");
+        result.languages = languageItems
+          .map((item) => {
+            const match = item.match(/\*\s*(.*?):\s*(.*)/);
+            return match ? `${match[1]}: ${match[2].trim()}` : "";
+          })
+          .filter(Boolean)
+          .join(", ");
       }
     }
-  
+
     // Extract strengths
-    const strengthsMatch = rawAnalysis.match(/\*\*Strengths:\*\*([\s\S]*?)(?=\*\*Areas for Improvement|\*\*Weaknesses|\n\n\*\*)/);
+    const strengthsMatch = rawAnalysis.match(
+      /\*\*Strengths:\*\*([\s\S]*?)(?=\*\*Areas for Improvement|\*\*Weaknesses|\n\n\*\*)/
+    );
     if (strengthsMatch && strengthsMatch[1]) {
-      const strengthItems = strengthsMatch[1].match(/\*\s*(.*?)(?=\n\*|\n\n|$)/g);
-      
+      const strengthItems = strengthsMatch[1].match(
+        /\*\s*(.*?)(?=\n\*|\n\n|$)/g
+      );
+
       if (strengthItems) {
-        result.strengths = strengthItems.map(item => item.replace(/^\*\s*/, "").trim()).filter(Boolean);
+        result.strengths = strengthItems
+          .map((item) => item.replace(/^\*\s*/, "").trim())
+          .filter(Boolean);
       }
     }
-  
+
     // Extract areas for improvement
-    const improvementsMatch = rawAnalysis.match(/\*\*Areas for Improvement:\*\*([\s\S]*?)(?=\*\*6\.|\n\n\*\*)/);
+    const improvementsMatch = rawAnalysis.match(
+      /\*\*Areas for Improvement:\*\*([\s\S]*?)(?=\*\*6\.|\n\n\*\*)/
+    );
     if (improvementsMatch && improvementsMatch[1]) {
-      const improvementSections = improvementsMatch[1].match(/\*\s*\*\*(.*?):\*\*\s*(.*?)(?=\n\*\s*\*\*|\n\n|$)/g);
-      
+      const improvementSections = improvementsMatch[1].match(
+        /\*\s*\*\*(.*?):\*\*\s*(.*?)(?=\n\*\s*\*\*|\n\n|$)/g
+      );
+
       if (improvementSections) {
-        result.improvements = improvementSections.map(section => {
-          const match = section.match(/\*\s*\*\*(.*?):\*\*\s*(.*)/s);
-          return match ? `${match[1]}: ${match[2].trim()}` : "";
-        }).filter(Boolean);
+        result.improvements = improvementSections
+          .map((section) => {
+            const match = section.match(/\*\s*\*\*(.*?):\*\*\s*(.*)/s);
+            return match ? `${match[1]}: ${match[2].trim()}` : "";
+          })
+          .filter(Boolean);
       }
     }
-  
+
     // Extract LinkedIn suggestions
-    const linkedinMatch = rawAnalysis.match(/\*\*6\.\s*LinkedIn Profile Suggestions:\*\*([\s\S]*?)(?=\n\n\*\*|$)/);
+    const linkedinMatch = rawAnalysis.match(
+      /\*\*6\.\s*LinkedIn Profile Suggestions:\*\*([\s\S]*?)(?=\n\n\*\*|$)/
+    );
     if (linkedinMatch && linkedinMatch[1]) {
-      const linkedinItems = linkedinMatch[1].match(/\*\s*\*\*(.*?):\*\*\s*(.*?)(?=\n\*\s*\*\*|\n\n|$)/g);
-      
+      const linkedinItems = linkedinMatch[1].match(
+        /\*\s*\*\*(.*?):\*\*\s*(.*?)(?=\n\*\s*\*\*|\n\n|$)/g
+      );
+
       if (linkedinItems) {
-        result.linkedinSuggestions = linkedinItems.map(item => {
-          const match = item.match(/\*\s*\*\*(.*?):\*\*\s*(.*)/s);
-          return match ? `${match[1]}: ${match[2].trim()}` : "";
-        }).filter(Boolean);
+        result.linkedinSuggestions = linkedinItems
+          .map((item) => {
+            const match = item.match(/\*\s*\*\*(.*?):\*\*\s*(.*)/s);
+            return match ? `${match[1]}: ${match[2].trim()}` : "";
+          })
+          .filter(Boolean);
       }
     }
-  
+
     return result;
   };
 
   // Filter and sort candidates
-  const filteredCandidates = candidates
-    .filter((candidate) => {
+const filteredCandidates = candidates.filter((candidate) => {
       // Filter by search term
       const searchFields = [
         candidate.name,
@@ -792,7 +890,6 @@ const AppliedCandidatesContent = () => {
       ]
         .join(" ")
         .toLowerCase();
-      console.log(candidate.appliedJob);
       const matchesSearch =
         searchTerm === "" || searchFields.includes(searchTerm.toLowerCase());
 
@@ -826,17 +923,18 @@ const AppliedCandidatesContent = () => {
   const getStatusColor = (status) => {
     const statusMap = {
       pending: "bg-yellow-100 text-yellow-800 border-yellow-200",
-      rejected: "bg-red-100 text-red-800 border-red-200",
+      reject: "bg-red-100 text-red-800 border-red-200",
+      approve: "bg-green-100 text-green-800 border-green-200",
       shortlisted: "bg-green-100 text-green-800 border-green-200",
+      review:"bg-orange-100 text-range-800 border-range-200",
       hired: "bg-blue-100 text-blue-800 border-blue-200",
       interviewing: "bg-purple-100 text-purple-800 border-purple-200",
     };
     return (
       statusMap[status.toLowerCase()] ||
-      "bg-gray-100 text-gray-800 border-gray-200"
+      " text-gray-800 border-gray-200"
     );
   };
-
   const getScoreBadgeColor = (score) => {
     if (score >= 80) return "bg-green-100 text-green-800 border-green-200";
     if (score >= 60) return "bg-blue-100 text-blue-800 border-blue-200";
@@ -885,11 +983,57 @@ const AppliedCandidatesContent = () => {
     a.click();
     document.body.removeChild(a);
   };
+  const updateApplicationStatus = async (applicationId, newStatus) => {
+    try {
+      // Normalize the newStatus to match the server's expected case-sensitive values
+      const validStatuses = [
+        "Pending",
+        "Accepted",
+        "Rejected",
+        "Review",
+        "Approve",
+        "Reject",
+      ];
+
+      const normalizedStatus = validStatuses.find(
+        (status) => status.toLowerCase() === newStatus.toLowerCase()
+      );
+
+      if (!normalizedStatus) {
+        alert("Invalid status value. Please provide a valid status.");
+        return;
+      }
+
+      const response = await fetch(
+        `http://localhost:5000/api/applications/applications/${applicationId}/status`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          body: JSON.stringify({ status: normalizedStatus }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to update status");
+      }
+
+      const updatedApplication = await response.json();
+      alert(`Status updated to ${normalizedStatus} successfully!`);
+      // Optionally, refresh the candidates list or update the UI
+      fetchAppliedCandidates();
+    } catch (error) {
+      console.error("Error updating application status:", error);
+      alert("Failed to update status. Please try again.");
+    }
+  };
 
   return (
     <div className="space-y-6">
       {/* Header with title and export button */}
-      
 
       {/* Filters and search */}
       <div className="flex flex-col md:flex-row gap-4">
@@ -986,9 +1130,9 @@ const AppliedCandidatesContent = () => {
       {/* Candidates list */}
       {!loading && filteredCandidates.length > 0 && (
         <div className="grid gap-4">
-          {filteredCandidates.map((candidate) => (
+          {filteredCandidates.map((candidate, index) => (
             <div
-              key={candidate.id}
+              key={candidate.id || index}
               className="bg-white dark:bg-zinc-950 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden transition-all duration-200"
             >
               {/* Card header - always visible */}
@@ -1030,12 +1174,14 @@ const AppliedCandidatesContent = () => {
 
                       {/* Status badge */}
                       <div
-                        className={`text-sm px-2 py-1 rounded-md border flex items-center ${getStatusColor(
-                          candidate.status
-                        )}`}
-                      >
-                        {candidate.status}
-                      </div>
+  className={`text-sm px-2 py-1 rounded-md border flex items-center ${getStatusColor(
+    candidate.status
+  )}`}
+  aria-label={`Status: ${candidate.status}`}
+  title={`Status: ${candidate.status}`}
+>
+  {candidate.status.charAt(0).toUpperCase() + candidate.status.slice(1)}
+</div>
 
                       {/* Score badge */}
                       <div
@@ -1074,349 +1220,513 @@ const AppliedCandidatesContent = () => {
               </div>
 
               {/* Expanded content */}
-{expandedCandidateId === candidate.id && (
-  <div className="border-t border-gray-200 dark:border-gray-700 p-4">
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      {/* Candidate details */}
-      <div className="space-y-4">
-        <h4 className="font-medium text-gray-900 dark:text-white">
-          Candidate Details
-        </h4>
+              {expandedCandidateId === candidate.id && (
+                <div className="border-t border-gray-200 dark:border-gray-700 p-4">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Candidate details */}
+                    <div className="space-y-4">
+                      <h4 className="font-medium text-gray-900 dark:text-white">
+                        Candidate Details
+                      </h4>
 
-        {/* Contact info */}
-        <div>
-          <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Contact Information
-          </h5>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <div className="flex items-center text-sm text-gray-600 dark:text-gray-300">
-              <Mail size={14} className="mr-1 flex-shrink-0" />
-              <span className="truncate">{candidate.email}</span>
-            </div>
-            <div className="flex items-center text-sm text-gray-600 dark:text-gray-300">
-              <Phone size={14} className="mr-1 flex-shrink-0" />
-              <span>{candidate.phone}</span>
-            </div>
-            <div className="flex items-center text-sm text-gray-600 dark:text-gray-300">
-              <MapPin size={14} className="mr-1 flex-shrink-0" />
-              <span>{candidate.location}</span>
-            </div>
-            {candidate.resumeAnalysis?.contactInfo?.linkedin && (
-              <div className="flex items-center text-sm text-gray-600 dark:text-gray-300">
-                <Linkedin size={14} className="mr-1 flex-shrink-0" />
-                <a href={candidate.resumeAnalysis.contactInfo.linkedin} target="_blank" rel="noopener noreferrer" 
-                   className="text-blue-600 dark:text-blue-400 hover:underline">
-                  LinkedIn Profile
-                </a>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Skills */}
-        <div>
-          <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Technical Skills
-          </h5>
-          <div className="flex flex-wrap gap-2">
-            {candidate.skills && candidate.skills !== "Not provided" ? (
-              candidate.skills.split("; ").flatMap(skillGroup => {
-                const [category, skillsList] = skillGroup.split(": ");
-                if (!skillsList) return [category].filter(s => s && s.trim() !== "");
-                return skillsList.split(", ").map(skill => skill.trim()).filter(Boolean);
-              }).map((skill, idx) => (
-                <span
-                  key={idx}
-                  className="text-xs px-2 py-1 bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 rounded border border-blue-100 dark:border-blue-800/30"
-                >
-                  {skill}
-                </span>
-              ))
-            ) : (
-              <span className="text-sm text-gray-500 dark:text-gray-400">
-                No skills listed
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Languages */}
-        {candidate.languages && candidate.languages !== "Not provided" && (
-          <div>
-            <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Languages
-            </h5>
-            <div className="flex flex-wrap gap-2">
-              {candidate.languages.split(", ").map((lang, idx) => (
-                <span
-                  key={idx}
-                  className="text-xs px-2 py-1 bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400 rounded border border-purple-100 dark:border-purple-800/30"
-                >
-                  {lang}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Experience */}
-        <div>
-          <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Experience
-          </h5>
-          <div className="space-y-2">
-            {candidate.experience && candidate.experience !== "Not provided" ? 
-              candidate.experience.split("; ").map((exp, idx) => (
-                <div key={idx} className="text-sm text-gray-600 dark:text-gray-300 pl-2 border-l-2 border-gray-300 dark:border-gray-600">
-                  {exp}
-                </div>
-              )) : (
-                <p className="text-sm text-gray-500 dark:text-gray-400">No experience listed</p>
-              )
-            }
-          </div>
-        </div>
-
-        {/* Education */}
-        <div>
-  <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-    Education
-  </h5>
-  <div className="space-y-1">
-    {candidate.education && candidate.education !== "Not provided" ? 
-      candidate.education.split("; ").map((edu, idx) => (
-        <div key={idx} className="text-sm text-gray-600 dark:text-gray-300">
-          {edu}
-        </div>
-      )) : (
-        <p className="text-sm text-gray-500 dark:text-gray-400">No education listed</p>
-      )
-    }
-  </div>
-</div>
-
-        {/* Certifications */}
-        <div>
-          <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Certifications
-          </h5>
-          <p className="text-sm text-gray-600 dark:text-gray-300">
-            {candidate.certifications}
-          </p>
-        </div>
-      </div>
-
-      {/* Analysis and Job details */}
-      <div className="space-y-5">
-        {/* Resume Analysis */}
-        <div>
-          <h4 className="font-medium text-gray-900 dark:text-white mb-3">
-            Resume Analysis
-          </h4>
-          
-          {/* Latest Analysis Score */}
-          <div className="bg-white dark:bg-zinc-900 rounded-lg border border-gray-200 dark:border-gray-700 p-4 mb-4">
-            <div className="flex justify-between items-center">
-              <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                Job Match Score
-              </h5>
-              <div className={`text-sm px-2 py-1 rounded-full ${getScoreBadgeColor(candidate.score * 100)}`}>
-                {Math.round(candidate.score * 100)}%
-              </div>
-            </div>
-            
-            <div className="mt-2 w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
-              <div className={`h-2.5 rounded-full ${getScoreBadgeColor(candidate.score * 100).replace('border-', '')}`} 
-                  style={{ width: `${Math.round(candidate.score * 100)}%` }}></div>
-            </div>
-            
-            <div className="mt-4">
-              <h6 className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
-                Analysis Date
-              </h6>
-              <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center">
-                <Calendar size={12} className="mr-1" />
-                {new Date(candidate.latestAnalysis.analyzedAt).toLocaleString()}
-              </div>
-            </div>
-          </div>
-
-          {/* Resume Strengths */}
-          {candidate.latestAnalysis.strengths && candidate.latestAnalysis.strengths.length > 0 && (
-            <div className="bg-white dark:bg-zinc-900 rounded-lg border border-gray-200 dark:border-gray-700 p-4 mb-4">
-              <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Resume Strengths
-              </h5>
-              <ul className="space-y-1 list-disc list-inside text-sm text-gray-600 dark:text-gray-300">
-                {candidate.latestAnalysis.strengths.map((strength, idx) => (
-                  <li key={idx}>{strength}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {/* Areas for Improvement */}
-          {candidate.latestAnalysis.improvements && candidate.latestAnalysis.improvements.length > 0 && (
-            <div className="bg-white dark:bg-zinc-900 rounded-lg border border-gray-200 dark:border-gray-700 p-4 mb-4">
-              <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Areas for Improvement
-              </h5>
-              <div className="space-y-2">
-                {candidate.latestAnalysis.improvements.map((improvement, idx) => {
-                  const [title, description] = improvement.split(': ');
-                  return (
-                    <div key={idx} className="text-sm">
-                      <span className="font-medium text-gray-700 dark:text-gray-300">{title}: </span>
-                      <span className="text-gray-600 dark:text-gray-400">{description}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* LinkedIn Suggestions */}
-          {candidate.latestAnalysis.linkedinSuggestions && candidate.latestAnalysis.linkedinSuggestions.length > 0 && (
-            <div className="bg-white dark:bg-zinc-900 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Linkedin size={16} className="text-blue-600 dark:text-blue-400" />
-                <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  LinkedIn Profile Suggestions
-                </h5>
-              </div>
-              <div className="space-y-2">
-                {candidate.latestAnalysis.linkedinSuggestions.map((suggestion, idx) => {
-                  const [title, description] = suggestion.split(': ');
-                  return (
-                    <div key={idx} className="text-sm">
-                      <span className="font-medium text-gray-700 dark:text-gray-300">{title}: </span>
-                      <span className="text-gray-600 dark:text-gray-400">{description}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Job Application Details */}
-        <div>
-          <h4 className="font-medium text-gray-900 dark:text-white mb-3">
-            Applied Job
-          </h4>
-          <div className="bg-white dark:bg-zinc-900 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-            <div className="flex flex-col space-y-2">
-              <div className="flex items-center justify-between">
-                <h5 className="text-base font-medium">{candidate.appliedJob.title}</h5>
-                <span className="text-xs bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300 rounded-full px-2 py-1">
-                  {candidate.appliedJob.jobType}
-                </span>
-              </div>
-              
-              <div className="text-sm text-gray-600 dark:text-gray-300 flex items-center gap-1">
-                <Building2 size={14} />
-                <span>{candidate.appliedJob.companyName}</span>
-              </div>
-              
-              <div className="text-sm text-gray-600 dark:text-gray-300 flex items-center gap-1">
-                <MapPin size={14} />
-                <span>{candidate.appliedJob.location}</span>
-              </div>
-              
-              <div className="text-sm text-gray-600 dark:text-gray-300 flex items-center gap-1">
-                <DollarSign size={14} />
-                <span>{candidate.appliedJob.salary}</span>
-              </div>
-              
-              <div className="text-sm text-gray-600 dark:text-gray-300 flex items-center gap-1">
-                <Clock size={14} />
-                <span>Deadline: {candidate.appliedJob.deadline}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Document links and Actions */}
-        <div className="space-y-4">
-          {/* Document links */}
-          <div>
-            <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Documents
-            </h5>
-            <div className="flex flex-col gap-2">
-              <button
-                onClick={() => candidate.cvPath !== "Not available" && window.open(candidate.cvPath, "_blank")}
-                className={`flex items-center gap-2 px-3 py-2 text-sm bg-white dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors w-full ${candidate.cvPath === "Not available" ? "opacity-50 cursor-not-allowed" : ""}`}
-                disabled={candidate.cvPath === "Not available"}
-              >
-                <FileText size={16} className="text-blue-600 dark:text-blue-400" />
-                <span>View CV</span>
-              </button>
-
-              <button
-                onClick={() => candidate.coverLetter !== "Not provided" && window.open(candidate.coverLetter, "_blank")}
-                className={`flex items-center gap-2 px-3 py-2 text-sm bg-white dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors w-full ${candidate.coverLetter === "Not provided" ? "opacity-50 cursor-not-allowed" : ""}`}
-                disabled={candidate.coverLetter === "Not provided"}
-              >
-                <FileText size={16} className="text-green-600 dark:text-green-400" />
-                <span>View Cover Letter</span>
-              </button>
-
-              <button
-                onClick={() => candidate.recommendationPath !== "Not available" && window.open(candidate.recommendationPath, "_blank")}
-                className={`flex items-center gap-2 px-3 py-2 text-sm bg-white dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors w-full ${candidate.recommendationPath === "Not available" ? "opacity-50 cursor-not-allowed" : ""}`}
-                disabled={candidate.recommendationPath === "Not available"}
-              >
-                <Award size={16} className="text-purple-600 dark:text-purple-400" />
-                <span>View AI Recommendation</span>
-              </button>
-            </div>
-          </div>
-
-          {/* CV History */}
-          {candidate.cvHistory && candidate.cvHistory.length > 0 && (
-            <div>
-              <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                CV History
-              </h5>
-              <div className="space-y-2">
-                {candidate.cvHistory.map((cv, index) => (
-                  <div key={index} className="border border-gray-200 dark:border-gray-700 rounded-md p-2">
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-2">
-                        <FileText size={14} className="text-blue-600 dark:text-blue-400" />
-                        <span className="text-sm truncate max-w-[150px]">{cv.fileName || "CV " + (index + 1)}</span>
+                      {/* Contact info */}
+                      <div>
+                        <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Contact Information
+                        </h5>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          <div className="flex items-center text-sm text-gray-600 dark:text-gray-300">
+                            <Mail size={14} className="mr-1 flex-shrink-0" />
+                            <span className="truncate">{candidate.email}</span>
+                          </div>
+                          <div className="flex items-center text-sm text-gray-600 dark:text-gray-300">
+                            <Phone size={14} className="mr-1 flex-shrink-0" />
+                            <span>{candidate.phone}</span>
+                          </div>
+                          <div className="flex items-center text-sm text-gray-600 dark:text-gray-300">
+                            <MapPin size={14} className="mr-1 flex-shrink-0" />
+                            <span>{candidate.location}</span>
+                          </div>
+                          {candidate.resumeAnalysis?.contactInfo?.linkedin && (
+                            <div className="flex items-center text-sm text-gray-600 dark:text-gray-300">
+                              <Linkedin
+                                size={14}
+                                className="mr-1 flex-shrink-0"
+                              />
+                              <a
+                                href={
+                                  candidate.resumeAnalysis.contactInfo.linkedin
+                                }
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 dark:text-blue-400 hover:underline"
+                              >
+                                LinkedIn Profile
+                              </a>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <span className="text-xs text-gray-500">
-                        {cv.uploadDate ? new Date(cv.uploadDate).toLocaleDateString() : "N/A"}
-                      </span>
-                    </div>
-                    <div className="mt-2 flex justify-end">
-                      <button
-                        onClick={() => window.open(cv.fileUrl, "_blank")}
-                        disabled={!cv.fileUrl}
-                        className="text-xs bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 px-2 py-1 rounded hover:bg-blue-100 dark:hover:bg-blue-800/30 transition-colors"
-                      >
-                        View
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
 
-          {/* Action buttons */}
-          <div className="pt-2">
-            <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Actions
-            </h5>
-            <div className="flex gap-2">
-              <button className="flex-1 px-3 py-2 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors">
-                Update Status
-            </button>
-            <button className="flex-1 px-3 py-2 text-sm text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors">
-            Contact
+                      {/* Skills */}
+                      <div>
+                        <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Technical Skills
+                        </h5>
+                        <div className="flex flex-wrap gap-2">
+                          {candidate.skills &&
+                          candidate.skills !== "Not provided" ? (
+                            candidate.skills
+                              .split("; ")
+                              .flatMap((skillGroup) => {
+                                const [category, skillsList] =
+                                  skillGroup.split(": ");
+                                if (!skillsList)
+                                  return [category].filter(
+                                    (s) => s && s.trim() !== ""
+                                  );
+                                return skillsList
+                                  .split(", ")
+                                  .map((skill) => skill.trim())
+                                  .filter(Boolean);
+                              })
+                              .map((skill, idx) => (
+                                <span
+                                  key={idx}
+                                  className="text-xs px-2 py-1 bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 rounded border border-blue-100 dark:border-blue-800/30"
+                                >
+                                  {skill}
+                                </span>
+                              ))
+                          ) : (
+                            <span className="text-sm text-gray-500 dark:text-gray-400">
+                              No skills listed
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Languages */}
+                      {candidate.languages &&
+                        candidate.languages !== "Not provided" && (
+                          <div>
+                            <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                              Languages
+                            </h5>
+                            <div className="flex flex-wrap gap-2">
+                              {candidate.languages
+                                .split(", ")
+                                .map((lang, idx) => (
+                                  <span
+                                    key={idx}
+                                    className="text-xs px-2 py-1 bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400 rounded border border-purple-100 dark:border-purple-800/30"
+                                  >
+                                    {lang}
+                                  </span>
+                                ))}
+                            </div>
+                          </div>
+                        )}
+
+                      {/* Experience */}
+                      <div>
+                        <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Experience
+                        </h5>
+                        <div className="space-y-2">
+                          {candidate.experience &&
+                          candidate.experience !== "Not provided" ? (
+                            candidate.experience.split("; ").map((exp, idx) => (
+                              <div
+                                key={idx}
+                                className="text-sm text-gray-600 dark:text-gray-300 pl-2 border-l-2 border-gray-300 dark:border-gray-600"
+                              >
+                                {exp}
+                              </div>
+                            ))
+                          ) : (
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                              No experience listed
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Education */}
+                      <div>
+                        <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Education
+                        </h5>
+                        <div className="space-y-1">
+                          {candidate.education &&
+                          candidate.education !== "Not provided" ? (
+                            candidate.education.split("; ").map((edu, idx) => (
+                              <div
+                                key={idx}
+                                className="text-sm text-gray-600 dark:text-gray-300"
+                              >
+                                {edu}
+                              </div>
+                            ))
+                          ) : (
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                              No education listed
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Certifications */}
+                      <div>
+                        <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Certifications
+                        </h5>
+                        <p className="text-sm text-gray-600 dark:text-gray-300">
+                          {candidate.certifications}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Analysis and Job details */}
+                    <div className="space-y-5">
+                      {/* Resume Analysis */}
+                      <div>
+                        <h4 className="font-medium text-gray-900 dark:text-white mb-3">
+                          Resume Analysis
+                        </h4>
+
+                        {/* Latest Analysis Score */}
+                        <div className="bg-white dark:bg-zinc-900 rounded-lg border border-gray-200 dark:border-gray-700 p-4 mb-4">
+                          <div className="flex justify-between items-center">
+                            <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                              Job Match Score
+                            </h5>
+                            <div
+                              className={`text-sm px-2 py-1 rounded-full ${getScoreBadgeColor(
+                                candidate.score * 100
+                              )}`}
+                            >
+                              {Math.round(candidate.score * 100)}%
+                            </div>
+                          </div>
+
+                          <div className="mt-2 w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+                            <div
+                              className={`h-2.5 rounded-full ${getScoreBadgeColor(
+                                candidate.score * 100
+                              ).replace("border-", "")}`}
+                              style={{
+                                width: `${Math.round(candidate.score * 100)}%`,
+                              }}
+                            ></div>
+                          </div>
+
+                          <div className="mt-4">
+                            <h6 className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                              Analysis Date
+                            </h6>
+                            <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center">
+                              <Calendar size={12} className="mr-1" />
+                              {new Date(
+                                candidate.latestAnalysis.analyzedAt
+                              ).toLocaleString()}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Resume Strengths */}
+                        {candidate.latestAnalysis.strengths &&
+                          candidate.latestAnalysis.strengths.length > 0 && (
+                            <div className="bg-white dark:bg-zinc-900 rounded-lg border border-gray-200 dark:border-gray-700 p-4 mb-4">
+                              <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Resume Strengths
+                              </h5>
+                              <ul className="space-y-1 list-disc list-inside text-sm text-gray-600 dark:text-gray-300">
+                                {candidate.latestAnalysis.strengths.map(
+                                  (strength, idx) => (
+                                    <li key={idx}>{strength}</li>
+                                  )
+                                )}
+                              </ul>
+                            </div>
+                          )}
+
+                        {/* Areas for Improvement */}
+                        {candidate.latestAnalysis.improvements &&
+                          candidate.latestAnalysis.improvements.length > 0 && (
+                            <div className="bg-white dark:bg-zinc-900 rounded-lg border border-gray-200 dark:border-gray-700 p-4 mb-4">
+                              <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Areas for Improvement
+                              </h5>
+                              <div className="space-y-2">
+                                {candidate.latestAnalysis.improvements.map(
+                                  (improvement, idx) => {
+                                    const [title, description] =
+                                      improvement.split(": ");
+                                    return (
+                                      <div key={idx} className="text-sm">
+                                        <span className="font-medium text-gray-700 dark:text-gray-300">
+                                          {title}:{" "}
+                                        </span>
+                                        <span className="text-gray-600 dark:text-gray-400">
+                                          {description}
+                                        </span>
+                                      </div>
+                                    );
+                                  }
+                                )}
+                              </div>
+                            </div>
+                          )}
+
+                        {/* LinkedIn Suggestions */}
+                        {candidate.latestAnalysis.linkedinSuggestions &&
+                          candidate.latestAnalysis.linkedinSuggestions.length >
+                            0 && (
+                            <div className="bg-white dark:bg-zinc-900 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+                              <div className="flex items-center gap-2 mb-2">
+                                <Linkedin
+                                  size={16}
+                                  className="text-blue-600 dark:text-blue-400"
+                                />
+                                <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                  LinkedIn Profile Suggestions
+                                </h5>
+                              </div>
+                              <div className="space-y-2">
+                                {candidate.latestAnalysis.linkedinSuggestions.map(
+                                  (suggestion, idx) => {
+                                    const [title, description] =
+                                      suggestion.split(": ");
+                                    return (
+                                      <div key={idx} className="text-sm">
+                                        <span className="font-medium text-gray-700 dark:text-gray-300">
+                                          {title}:{" "}
+                                        </span>
+                                        <span className="text-gray-600 dark:text-gray-400">
+                                          {description}
+                                        </span>
+                                      </div>
+                                    );
+                                  }
+                                )}
+                              </div>
+                            </div>
+                          )}
+                      </div>
+
+                      {/* Job Application Details */}
+                      <div>
+                        <h4 className="font-medium text-gray-900 dark:text-white mb-3">
+                          Applied Job
+                        </h4>
+                        <div className="bg-white dark:bg-zinc-900 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+                          <div className="flex flex-col space-y-2">
+                            <div className="flex items-center justify-between">
+                              <h5 className="text-base font-medium">
+                                {candidate.appliedJob.title}
+                              </h5>
+                              <span className="text-xs bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300 rounded-full px-2 py-1">
+                                {candidate.appliedJob.jobType}
+                              </span>
+                            </div>
+
+                            <div className="text-sm text-gray-600 dark:text-gray-300 flex items-center gap-1">
+                              <Building2 size={14} />
+                              <span>{candidate.appliedJob.companyName}</span>
+                            </div>
+
+                            <div className="text-sm text-gray-600 dark:text-gray-300 flex items-center gap-1">
+                              <MapPin size={14} />
+                              <span>{candidate.appliedJob.location}</span>
+                            </div>
+
+                            <div className="text-sm text-gray-600 dark:text-gray-300 flex items-center gap-1">
+                              <DollarSign size={14} />
+                              <span>{candidate.appliedJob.salary}</span>
+                            </div>
+
+                            <div className="text-sm text-gray-600 dark:text-gray-300 flex items-center gap-1">
+                              <Clock size={14} />
+                              <span>
+                                Deadline: {candidate.appliedJob.deadline}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Document links and Actions */}
+                      <div className="space-y-4">
+                        {/* Document links */}
+                        <div>
+                          <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Documents
+                          </h5>
+                          <div className="flex flex-col gap-2">
+                            <button
+                              onClick={() =>
+                                candidate.cvPath !== "Not available" &&
+                                window.open(candidate.cvPath, "_blank")
+                              }
+                              className={`flex items-center gap-2 px-3 py-2 text-sm bg-white dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors w-full ${
+                                candidate.cvPath === "Not available"
+                                  ? "opacity-50 cursor-not-allowed"
+                                  : ""
+                              }`}
+                              disabled={candidate.cvPath === "Not available"}
+                            >
+                              <FileText
+                                size={16}
+                                className="text-blue-600 dark:text-blue-400"
+                              />
+                              <span>View CV</span>
+                            </button>
+
+                            <button
+                              onClick={() =>
+                                candidate.coverLetter !== "Not provided" &&
+                                window.open(candidate.coverLetter, "_blank")
+                              }
+                              className={`flex items-center gap-2 px-3 py-2 text-sm bg-white dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors w-full ${
+                                candidate.coverLetter === "Not provided"
+                                  ? "opacity-50 cursor-not-allowed"
+                                  : ""
+                              }`}
+                              disabled={
+                                candidate.coverLetter === "Not provided"
+                              }
+                            >
+                              <FileText
+                                size={16}
+                                className="text-green-600 dark:text-green-400"
+                              />
+                              <span>View Cover Letter</span>
+                            </button>
+
+                            <button
+                              onClick={() =>
+                                candidate.recommendationPath !==
+                                  "Not available" &&
+                                window.open(
+                                  candidate.recommendationPath,
+                                  "_blank"
+                                )
+                              }
+                              className={`flex items-center gap-2 px-3 py-2 text-sm bg-white dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors w-full ${
+                                candidate.recommendationPath === "Not available"
+                                  ? "opacity-50 cursor-not-allowed"
+                                  : ""
+                              }`}
+                              disabled={
+                                candidate.recommendationPath === "Not available"
+                              }
+                            >
+                              <Award
+                                size={16}
+                                className="text-purple-600 dark:text-purple-400"
+                              />
+                              <span>View AI Recommendation</span>
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* CV History */}
+                        {candidate.cvHistory &&
+                          candidate.cvHistory.length > 0 && (
+                            <div>
+                              <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                CV History
+                              </h5>
+                              <div className="space-y-2">
+                                {candidate.cvHistory.map((cv, index) => (
+                                  <div
+                                    key={index}
+                                    className="border border-gray-200 dark:border-gray-700 rounded-md p-2"
+                                  >
+                                    <div className="flex justify-between items-center">
+                                      <div className="flex items-center gap-2">
+                                        <FileText
+                                          size={14}
+                                          className="text-blue-600 dark:text-blue-400"
+                                        />
+                                        <span className="text-sm truncate max-w-[150px]">
+                                          {cv.fileName || "CV " + (index + 1)}
+                                        </span>
+                                      </div>
+                                      <span className="text-xs text-gray-500">
+                                        {cv.uploadDate
+                                          ? new Date(
+                                              cv.uploadDate
+                                            ).toLocaleDateString()
+                                          : "N/A"}
+                                      </span>
+                                    </div>
+                                    <div className="mt-2 flex justify-end">
+                                      <button
+                                        onClick={() =>
+                                          window.open(cv.fileUrl, "_blank")
+                                        }
+                                        disabled={!cv.fileUrl}
+                                        className="text-xs bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 px-2 py-1 rounded hover:bg-blue-100 dark:hover:bg-blue-800/30 transition-colors"
+                                      >
+                                        View
+                                      </button>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                        {/* Action buttons */}
+                        <div className="pt-2">
+                          <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Actions
+                          </h5>
+                          <div className="flex gap-2">
+                            <div className="flex gap-3">
+                              {/* Status update buttons - only show relevant ones based on current status */}
+                              {candidate.status && (
+                                <>
+                                  <button
+                                    className="flex items-center px-3 py-1.5  transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    onClick={() =>
+                                      updateApplicationStatus(
+                                        candidate.applicationId,
+                                        "Review"
+                                      )
+                                    }
+                                  >
+                                    Review
+                                  </button>
+                                  <button
+                                    className="flex items-center px-3 py-1.5 bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 rounded-lg hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500"
+                                    onClick={() =>
+                                      updateApplicationStatus(
+                                        candidate.applicationId,
+                                        "Approve"
+                                      )
+                                    }
+                                  >
+                                    Approve
+                                  </button>
+                                  <button
+                                    className="flex items-center px-3 py-1.5 bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500"
+                                    onClick={() =>
+                                      updateApplicationStatus(
+                                        candidate.applicationId,
+                                        "Reject"
+                                      )
+                                    }
+                                  >
+                                    Reject
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                            <button className="flex-1 px-3 py-2 text-sm text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors">
+                              Contact
                             </button>
                           </div>
                         </div>
@@ -1431,7 +1741,7 @@ const AppliedCandidatesContent = () => {
       )}
     </div>
   );
-}
+};
 
 const SidebarLayout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -1444,7 +1754,7 @@ const SidebarLayout = () => {
       current: false,
     },
     {
-      name: "Applied Candidates", 
+      name: "Applied Candidates",
       href: "/dashboard/recuiter/history",
       icon: Users,
       current: true,
@@ -1501,7 +1811,6 @@ const SidebarLayout = () => {
       );
 
       const text = await response.text();
-      console.log("Raw response text:", text);
 
       if (response.status === 404) {
         // Handle no candidates found
@@ -1516,7 +1825,6 @@ const SidebarLayout = () => {
 
       try {
         const data = JSON.parse(text);
-        console.log("Fetched applied candidates:", data);
         setCandidates(data);
       } catch (jsonError) {
         throw new Error("Invalid JSON response received.");

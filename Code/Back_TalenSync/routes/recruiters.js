@@ -583,7 +583,8 @@ router.get("/jobs/:id/applicants", auth, checkRole(["recruiter"]), async (req, r
         education,
         experience,
         coverLetter: candidate.coverLetter || "N/A",
-        pinnedJobs: candidate.pinnedJobs.map(job => job.toString()).join(", ") || "N/A"
+        pinnedJobs: candidate.pinnedJobs.map(job => job.toString()).join(", ") || "N/A",
+        status: application.status, // Include application status
       };
     });
 
@@ -709,6 +710,7 @@ router.get("/candidates/applied", auth, checkRole(["recruiter"]), async (req, re
       const candidate = application.candidateId;
       const job = application.jobId;
       return {
+        applicationId: application._id, // Use application._id to get the application ID
         id: candidate._id,
         name: candidate.personalInfo?.name || "N/A",
         email: candidate.personalInfo?.email || "N/A",
@@ -721,7 +723,8 @@ router.get("/candidates/applied", auth, checkRole(["recruiter"]), async (req, re
         coverLetter: candidate.coverLetter || "N/A",
         latestAnalysis: candidate.latestAnalysis || {},
         cvHistory: candidate.cvHistory || [],
-        cvPath: application.cvPath, // Include CV file path
+        cvPath: application.cvPath, 
+        status: application.status, // Include CV file path
         appliedJob: {
           id: job._id,
           title: job.title,

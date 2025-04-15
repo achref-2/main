@@ -791,7 +791,7 @@ router.get(
     }
 
     const applications = await Application.find({ candidateId: candidate._id })
-      .populate("jobId", "title companyName")
+      .populate("jobId", "title companyName location salary skills requirements jobType deadline description")
       .populate("recruiterId", "firstName lastName email");
 
     res.status(200).json({

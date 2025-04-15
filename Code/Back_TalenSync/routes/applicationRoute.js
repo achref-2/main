@@ -311,5 +311,45 @@ router.post('/apply-job', auth, checkRole(['candidate']), upload.single('cv'), a
   }
 });
 
+router.put('/applications/:applicationId/status',auth, checkRole(['recruiter']), async (req, res) => {
+  try {
+    const { applicationId } = req.params;
+    let { status } = req.body;
+
+    console.log('Received applicationId:', applicationId); // Debugging log
+    console.log('Received status:', status); // Debugging log
+
+    // Normalize status to match enum values (case-insensitive comparison)
+    const validStatuses = ['Pending', 'Accepted', 'Rejected', 'Review', 'Approve', 'Reject'];
+    const normalizedStatus = validStatuses.find(
+      (validStatus) => validStatus.toLowerCase() === status.toLowerCase()
+    );
+
+    if (!normalizedStatus) {
+      console.warn('Invalid status value:', status); // Debugging log
+      return res.status(400).json({ message: 'Invalid status value' });
+    }
+
+    const application = await Application.findById(applicationId);
+    if (!application) {
+      console.warn('Application not found for ID:', applicationId); // Debugging log
+      return res.status(404).json({ message: 'Application not found' });
+    }
+
+    console.log('Found application:', application); // Debugging log
+
+    application.status = normalizedStatus; // Use the normalized status
+    await application.save();
+
+    console.log('Updated application status to:', normalizedStatus); // Debugging log
+
+    return res.status(200).json({ message: 'Application status updated successfully', application });
+  } catch (error) {
+    console.error('Error updating application status:', error); // Debugging log
+    if (!res.headersSent) {
+      return res.status(500).json({ message: 'Internal Server Error' });
+    }
+  }
+});
 
 module.exports = router;
