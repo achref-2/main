@@ -18,6 +18,9 @@ import {
   Info,
   Loader,
   AlertCircle,
+  Briefcase,
+  FileClock,
+  LogOut
 } from "lucide-react";
 import { Dialog } from "@headlessui/react";
 import { Menu as HeadlessMenu } from "@headlessui/react";
@@ -150,6 +153,8 @@ const SearchBar = ({ navigationMenu, navigationOption }) => {
   );
 };
 const UserMenu = () => {
+  const { isDarkMode, toggleTheme } = useDarkMode();
+  
   const handleSignout = () => {
     localStorage.removeItem("token");
     fetch("http://localhost:5000/api/auth/logout", {
@@ -163,96 +168,192 @@ const UserMenu = () => {
   };
 
   const menuItems = [
-    { label: "Your History", href: "#profile" },
-    { label: "Settings", href: "/Settings" },
+    { 
+      label: "Your History", 
+      href: "#profile", 
+      icon: History,
+      description: "View your past activities"
+    },
+    { 
+      label: "Settings", 
+      href: "/Settings", 
+      icon: Settings,
+      description: "Manage your preferences"
+    },
   ];
-  const { isDarkMode, toggleTheme } = useDarkMode();
 
   return (
     <HeadlessMenu as="div" className="relative">
-      <MenuButton className="flex rounded-full ring-offset-gray-800 focus-visible:ring-2">
-        <span className="sr-only">Open user menu</span>
-        <img
-          className="h-8 w-8 rounded-full ring-2 ring-gray-700 hover:ring-blue-500 transition-all"
-          src="../../assets/images/avatar.jpg"
-          alt="User avatar"
-        />
-      </MenuButton>
-
-      <MenuItems
-        className={`absolute right-0 z-50 mt-2 w-48 rounded-md py-1 border-2 border-dashed  shadow-xl  focus:outline-none 
-    ${
-      isDarkMode
-        ? "bg-zinc-900 text-white bg-opacity-100 border-zinc-400"
-        : "bg-zinc-200 text-black bg-opacity-5  border-zinc-700"
-    } backdrop-blur-sm`}
-      >
-        {menuItems.map(({ label, href }) => (
-          <MenuItem key={label}>
-            {({ active }) => (
-              <a
-                href={href}
-                className={`block px-4 py-2 text-sm  border-b-2 border-dashed ${
-                  active
-                    ? isDarkMode
-                      ? "bg-zinc-900 text-white " // Dark mode: Different active bg color
-                      : "bg-zinc-300 text-black" // Light mode: Default active color
-                    : isDarkMode
-                    ? "bg-zinc-950 text-zinc-100 border-zinc-400" // Dark mode: Normal state
-                    : "text-black" // Light mode: Normal state
+      {({ open }) => (
+        <>
+          <MenuButton className="flex items-center focus:outline-none">
+            <div className="relative">
+              <img
+                className={`h-9 w-9 rounded-full object-cover ring-2 transition-all duration-200 ${
+                  open 
+                    ? 'ring-blue-500 ring-offset-2 ring-offset-white dark:ring-offset-zinc-900' 
+                    : 'ring-gray-200 dark:ring-gray-700 hover:ring-blue-400'
                 }`}
-              >
-                {label}
-              </a>
-            )}
-          </MenuItem>
-        ))}
+                src="../../assets/images/avatar.jpg"
+                alt="User avatar"
+              />
+              <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-green-500 ring-1 ring-white dark:ring-zinc-900"></span>
+            </div>
+          </MenuButton>
 
-        <MenuItem>
-          {({ active }) => (
-            <button
-              onClick={handleSignout}
-              className={`block w-full text-left px-4 py-2 text-sm border-b-2 border-dashed ${
-                active
-                  ? isDarkMode
-                    ? "bg-zinc-900 text-white " // Dark mode: Different active bg color
-                    : "bg-zinc-300 text-black" // Light mode: Default active color
-                  : isDarkMode
-                  ? "bg-zinc-950 text-zinc-100 border-zinc-400" // Dark mode: Normal state
-                  : "text-black" // Light mode: Normal state
-              }`}
-            >
-              Sign out
-            </button>
-          )}
-        </MenuItem>
-        <MenuItem>
-          {({ active }) => (
-            <button
-              onClick={toggleTheme}
-              className={` w-full text-left px-4 py-2 text-sm flex items-center justify-between ${
-                active
-                  ? isDarkMode
-                    ? "bg-zinc-900 text-white" // Dark mode: Active bg color
-                    : "bg-zinc-300 text-black" // Light mode: Active bg color
-                  : isDarkMode
-                  ? "bg-zinc-950 text-zinc-100 border-zinc-400" // Dark mode: Normal state
-                  : "text-black" // Light mode: Normal state
-              }`}
-              aria-label={
-                isDarkMode ? "Switch to light mode" : "Switch to dark mode"
-              }
-            >
-              <span>Theme</span>
-              {isDarkMode ? (
-                <Sun className="w-5 h-5 text-gray-600 dark:text-zinc-100" />
-              ) : (
-                <Moon className="w-5 h-5 text-gray-900 dark:text-gray-400" />
-              )}
-            </button>
-          )}
-        </MenuItem>
-      </MenuItems>
+          <MenuItems
+            className={`absolute right-0 z-50 mt-2 w-64 origin-top-right rounded-xl py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none transform transition-all duration-100 ${
+              open ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
+            } ${
+              isDarkMode
+                ? "bg-zinc-800 text-white border border-zinc-700"
+                : "bg-white text-gray-800 border border-gray-100"
+            }`}
+          >
+            {/* Header with user info */}
+            <div className="px-4 py-3 border-b border-gray-100 dark:border-zinc-700">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <img
+                    className="h-10 w-10 rounded-full"
+                    src="../../assets/images/avatar.jpg"
+                    alt=""
+                  />
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">
+                    John Doe
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                    john.doe@example.com
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="py-1">
+              {menuItems.map(({ label, href, icon: Icon, description }) => (
+                <MenuItem key={label}>
+                  {({ active }) => (
+                    <a
+                      href={href}
+                      className={`group flex items-center justify-between px-4 py-2 text-sm ${
+                        active
+                          ? "bg-gray-100 text-gray-900 dark:bg-zinc-700 dark:text-white"
+                          : "text-gray-700 dark:text-gray-200"
+                      }`}
+                    >
+                      <div className="flex items-center">
+                        <div className={`mr-3 p-1 rounded-md ${
+                          active 
+                            ? 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300' 
+                            : 'bg-gray-100 text-gray-500 dark:bg-zinc-700 dark:text-gray-400'
+                        }`}>
+                          <Icon className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <p className="font-medium">{label}</p>
+                          {description && (
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                              {description}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <ChevronRight className={`w-4 h-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity duration-150 ${
+                        active ? 'opacity-100' : ''
+                      }`} />
+                    </a>
+                  )}
+                </MenuItem>
+              ))}
+            </div>
+
+            <div className="border-t border-gray-100 dark:border-zinc-700 py-1">
+              <MenuItem>
+                {({ active }) => (
+                  <button
+                    onClick={toggleTheme}
+                    className={`w-full group flex items-center justify-between px-4 py-2 text-sm ${
+                      active
+                        ? "bg-gray-100 text-gray-900 dark:bg-zinc-700 dark:text-white"
+                        : "text-gray-700 dark:text-gray-200"
+                    }`}
+                  >
+                    <div className="flex items-center">
+                      <div className={`mr-3 p-1 rounded-md ${
+                        active 
+                          ? 'bg-amber-100 text-amber-600 dark:bg-indigo-900 dark:text-indigo-300' 
+                          : 'bg-gray-100 text-gray-500 dark:bg-zinc-700 dark:text-gray-400'
+                      }`}>
+                        {isDarkMode ? (
+                          <Sun className="w-4 h-4" />
+                        ) : (
+                          <Moon className="w-4 h-4" />
+                        )}
+                      </div>
+                      <div>
+                        <p className="font-medium">
+                          {isDarkMode ? "Light Mode" : "Dark Mode"}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          Switch appearance
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex h-5 items-center">
+                      <div
+                        className={`w-9 h-5 flex items-center rounded-full p-1 ${
+                          isDarkMode 
+                            ? "bg-indigo-600" 
+                            : "bg-gray-300"
+                        }`}
+                      >
+                        <div
+                          className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-300 ${
+                            isDarkMode ? "translate-x-3" : "translate-x-0"
+                          }`}
+                        />
+                      </div>
+                    </div>
+                  </button>
+                )}
+              </MenuItem>
+            </div>
+
+            <div className="border-t border-gray-100 dark:border-zinc-700 py-1">
+              <MenuItem>
+                {({ active }) => (
+                  <button
+                    onClick={handleSignout}
+                    className={`group flex items-center justify-between w-full px-4 py-2 text-sm ${
+                      active
+                        ? "bg-gray-100 text-red-600 dark:bg-zinc-700 dark:text-red-400"
+                        : "text-gray-700 dark:text-gray-200"
+                    }`}
+                  >
+                    <div className="flex items-center">
+                      <div className={`mr-3 p-1 rounded-md ${
+                        active 
+                          ? 'bg-red-100 text-red-600 dark:bg-red-900 dark:text-red-300' 
+                          : 'bg-gray-100 text-gray-500 dark:bg-zinc-700 dark:text-gray-400'
+                      }`}>
+                        <LogOut className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p className="font-medium">Sign out</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          End your current session
+                        </p>
+                      </div>
+                    </div>
+                  </button>
+                )}
+              </MenuItem>
+            </div>
+          </MenuItems>
+        </>
+      )}
     </HeadlessMenu>
   );
 };
@@ -285,13 +386,13 @@ const SidebarLayout = () => {
   const navigation_menu = [
     { name: "Dashboard", href: "/dashboard", icon: Menu, current: false },
     {
-      name: "History",
+      name: "Past Applications",
       href: "/dashboard/history",
-      icon: History,
+      icon: FileClock,
       current: false,
     },
-    { name: "Job List", href: "/Jobcandidate", icon: Menu, current: false },
-    { name: "Billing", href: "/Pricing", icon: PlusSquare, current: false },
+    { name: "Jobs", href: "/Jobcandidate", icon: Briefcase, current: false },
+    { name: "Billing", href: "/Pricing", icon: CreditCard, current: false },
   ];
   const navigation_option = [
     { name: "Settings", href: "/Settings", icon: Settings, current: false },
@@ -820,20 +921,7 @@ const SidebarLayout = () => {
   const [loading, setLoading] = useState(false);
   const [downloadUrl, setDownloadUrl] = useState(null);
 
-  // Handle form submission for application
- 
-
-  // Cover letter generator functions
-
-  // Handle cover letter generator form submission
- 
-  // Handle resume file selection
-
-  // Handle job details file selection
-
-  // Reset the form
-
-
+  
   // Loading animation component
   const LoadingAnimation = () => (
     <div className="inline-block mr-2">
@@ -1904,17 +1992,17 @@ const SidebarLayout = () => {
 
                         const formData = new FormData();
                         formData.append("cv", file);
-
-                        const response = await axios.post(
-                          "http://localhost:5000/api/TakeData",
-                          formData,
-                          {
-                            headers: {
-                              "Content-Type": "multipart/form-data",
-                            },
-                            timeout: 30000, // 30 second timeout
-                          }
-                        );
+                        const token = localStorage.getItem("token");
+                        if (!token) {
+                          console.error("Authentication token not found. Please log in again.");
+                          return;
+                        }
+                        const response = await axios.post("http://localhost:5000/api/TakeData", formData, {
+                          headers: {
+                            "Content-Type": "multipart/form-data",
+                            Authorization: `Bearer ${token}`, // Make sure this token format matches what your auth middleware expects
+                          },
+                        })
 
                         console.log("Backend Response:", response.data);
                         setBackendData(response.data);

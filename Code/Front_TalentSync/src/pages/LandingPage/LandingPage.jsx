@@ -25,9 +25,9 @@ const LandingPage = ({ user }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navigation = [
-    { name: "Pricing", href: "#" },
-    { name: "Blog", href: "#" },
-    { name: "About", href: "#" },
+    { name: "Pricing", href: "/Pricing" },
+    { name: "Blog", href: "/Blog" },
+    { name: "About", href: "#about" }, 
   ];
 
   const [isModalOneOpen, setIsModalOneOpen] = useState(false);
@@ -543,9 +543,9 @@ const LandingPage = ({ user }) => {
       </section>
       {showWarning && warning()}
 
-      <section className="py-20">
+      <section className="py-20 " id="about">
         <div className="container mx-auto px-6">
-          <h2 className="text-3xl font-bold mb-12 text-center">About Us</h2>
+          <h2  className="text-3xl font-bold mb-12 text-center">About Us</h2>
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div>
               <h3 className="text-3xl font-bold mb-6">Our Mission</h3>

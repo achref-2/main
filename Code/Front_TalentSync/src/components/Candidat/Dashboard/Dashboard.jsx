@@ -15,11 +15,13 @@ import {
   Upload,
   FileText,
   Wrench,
-  
+  Users,
   User, 
-   
+Briefcase,
   LogOut, 
-   
+  FileClock,
+  Mail,
+  Calendar
   
    
   
@@ -473,6 +475,98 @@ const UserMenu = () => {
     </HeadlessMenu>
   );
 };
+const UserMessage = () => {
+  const { isDarkMode, toggleTheme } = useDarkMode();
+  
+ 
+
+  
+  const notifications = [
+    {
+      message: "Your application has been reviewed.",
+      time: "2 hours ago",
+      icon: Users,
+    },
+    {
+      message: "You have a new message from the recruiter.",
+      time: "1 day ago",
+      icon: Mail,
+    },
+    {
+      message: "Your interview is scheduled for tomorrow.",
+      time: "3 days ago",
+      icon: Calendar,
+    },
+  ];
+  return (
+    <HeadlessMenu as="div" className="relative">
+      {({ open }) => (
+        <>
+          <MenuButton className="flex items-center focus:outline-none">
+            <div className="relative">
+            <button
+                  type="button"
+                  className="relative p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <span className="sr-only">View notifications</span>
+                  <BellIcon className="h-5 w-5" />
+                  <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white dark:ring-gray-900" />
+                </button>
+            </div>
+          </MenuButton>
+
+          <MenuItems
+            className={`absolute right-0 z-50 mt-2 w-64 origin-top-right rounded-xl py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none transform transition-all duration-100 ${
+              open ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
+            } ${
+              isDarkMode
+                ? "bg-zinc-800 text-white border border-zinc-700"
+                : "bg-white text-gray-800 border border-gray-100"
+            }`}
+          >
+            {/* Header with user info */}
+            <div className="px-4 py-3 border-b border-gray-100 dark:border-zinc-700">
+              <div className="flex items-center">
+               
+                <div className="ml-3">
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">
+                    Messages
+                  </p>
+                  
+                </div>
+              </div>
+            </div>
+
+          
+
+<div className="py-1">
+  {notifications.map(({ message, time, icon: Icon }, index) => (
+    <div
+      key={index}
+      className="group flex items-center justify-between px-4 py-2 text-sm bg-gray-100 dark:bg-zinc-800 rounded-lg mb-2"
+    >
+      <div className="flex items-center">
+        <div className="mr-3 p-1 rounded-md bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300">
+          <Icon className="w-4 h-4" />
+        </div>
+        <div>
+          <p className="font-medium text-gray-900 dark:text-white">{message}</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">{time}</p>
+        </div>
+      </div>
+    </div>
+  ))}
+</div>
+
+          
+
+           
+          </MenuItems>
+        </>
+      )}
+    </HeadlessMenu>
+  );
+};
 const Modal = ({ isOpen, onClose, children, title }) => {
   const { isDarkMode } = useDarkMode();
   const modalRef = React.useRef(null);
@@ -665,28 +759,40 @@ const UploadModal = ({ isOpen, onClose, children }) => {
         setUploadStatus("success");
 
         // Background axios request to /api/TakeInfo
-        axios
-          .post("http://localhost:5000/api/TakeInfo", formData, {
-            headers: {
-              "Content-Type": "multipart/form-data",
-            },
-          })
-          .then((axiosResponse) => {
-            console.log("TakeInfo response:", axiosResponse.data);
-          })
-          .catch((axiosError) => {
-            console.error("Error in TakeInfo request:", axiosError);
-          });
-
-        // Redirect to /dashboard/history
+        const token = localStorage.getItem("token");
+if (!token) {
+  console.error("Authentication token not found. Please log in again.");
+  return;
+}
+// In your client-side code (where handleFileUpload is defined), update the axios call:
+axios
+  .post("http://localhost:5000/api/TakeData", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+      Authorization: `Bearer ${token}`, // Make sure this token format matches what your auth middleware expects
+    },
+  })
+  .then((response) => {
+    console.log("TakeData response:", response.data);
+  })
+  .catch((error) => {
+    console.error("Error in TakeData request:", error);
+    // Add better error handling here
+    if (error.response && error.response.status === 401) {
+      // Handle authentication error specifically
+      console.log("Authentication failed. Please login again.");
+      // You might want to redirect to login page or refresh the token
+    }
+  });
       } else {
-        throw new Error(jsonData.message || "Failed to upload file");
+        console.error("Upload failed:", jsonData);
+        setUploadProgress(0);
+        setUploadStatus("error");
       }
     } catch (error) {
-      console.error("Error uploading file:", error);
-      setUploadStatus("error");
+      console.error("Error during upload:", error);
       setUploadProgress(0);
-      alert(error.message || "An error occurred while uploading");
+      setUploadStatus("error");
     } finally {
       setIsLoading(false);
     }
@@ -918,11 +1024,11 @@ const SidebarLayout = () => {
     {
       name: "Past Applications",
       href: "/dashboard/history",
-      icon: History,
+      icon: FileClock,
       current: false,
     },
-    { name: "Job List", href: "/Jobcandidate", icon: Menu, current: false },
-    { name: "Billing", href: "/Pricing", icon: PlusSquare, current: false },
+    { name: "Jobs", href: "/Jobcandidate", icon: Briefcase, current: false },
+    { name: "Billing", href: "/Pricing", icon: CreditCard, current: false },
   ];
   const navigation_option = [
     { name: "Settings", href: "/Settings", icon: Settings, current: false },
@@ -1032,15 +1138,8 @@ const SidebarLayout = () => {
                 navigationOption={navigation_option}
               />
               <div className="flex items-center gap-4">
-                <button
-                  type="button"
-                  className="relative p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg
-                    focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <span className="sr-only">View notifications</span>
-                  <BellIcon className="h-6 w-6" />
-                  <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white dark:ring-gray-900" />
-                </button>
+              <UserMessage/>
+               
                 <UserMenu />
               </div>
             </div>

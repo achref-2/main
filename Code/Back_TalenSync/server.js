@@ -201,7 +201,7 @@ app.use((err, req, res, next) => {
         message: err.message || "Internal Server Error",
     });
 });
-app.post('/api/TakeData', upload.single('cv'), async (req, res) => {
+app.post('/api/TakeData', auth, upload.single('cv'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({
@@ -250,12 +250,30 @@ app.post('/api/TakeData', upload.single('cv'), async (req, res) => {
 
         console.log('Parsed Extraction Result:', result);
 
-        // Store extracted data temporarily (e.g., in memory or a database)
-        req.session = req.session || {}; // Ensure session exists
-        req.session.extractedData = result; // Save extracted data for later use
+        // Save extracted data to the database for the current candidate
+        if (!req.user) {
+          return res.status(401).json({ error: 'Unauthorized' });
+        }
+
+        const candidate = await Candidate.findOne({ userId: req.user._id });
+        if (!candidate) {
+          return res.status(404).json({ error: 'Candidate not found' });
+        }
+
+        candidate.cvHistory = candidate.cvHistory || [];
+        candidate.cvHistory.push({
+          fileUrl: req.file.path, // Added fileUrl field
+          fileName: req.file.filename,
+          fileSize: req.file.size,
+          fileType: req.file.mimetype,
+          uploadDate: new Date(),
+          analysis: result,
+        });
+
+        await candidate.save();
 
         res.json({
-          message: 'Extraction completed successfully',
+          message: 'Extraction completed successfully and saved to database',
           result,
         });
       } catch (error) {

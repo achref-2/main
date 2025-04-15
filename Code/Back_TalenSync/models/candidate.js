@@ -44,7 +44,10 @@ const cvHistorySchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
-    analysis: cvAnalysisSchema,
+    analysis: {
+      type: Object, // Updated to store the analysis result as a generic object
+      default: null,
+    },
   },
   { timestamps: true } // Enables createdAt & updatedAt
 );

@@ -25,7 +25,9 @@ import {
   Briefcase,
   BookmarkPlus,
   ArrowRight,
-  LogOut
+  LogOut,
+   FileClock,
+
 } from "lucide-react";
 import { Menu as HeadlessMenu } from "@headlessui/react";
 import { BellIcon } from "@heroicons/react/24/outline";
@@ -267,7 +269,98 @@ const SearchBar = ({ navigationMenu, navigationOption }) => {
     </>
   );
 }
+const UserMessage = () => {
+  const { isDarkMode, toggleTheme } = useDarkMode();
+  
+  
 
+  
+  const notifications = [
+    {
+      message: "Your application has been reviewed.",
+      time: "2 hours ago",
+      icon: Users,
+    },
+    {
+      message: "You have a new message from the recruiter.",
+      time: "1 day ago",
+      icon: Mail,
+    },
+    {
+      message: "Your interview is scheduled for tomorrow.",
+      time: "3 days ago",
+      icon: Calendar,
+    },
+  ];
+  return (
+    <HeadlessMenu as="div" className="relative">
+      {({ open }) => (
+        <>
+          <MenuButton className="flex items-center focus:outline-none">
+            <div className="relative">
+            <button
+                  type="button"
+                  className="relative p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <span className="sr-only">View notifications</span>
+                  <BellIcon className="h-5 w-5" />
+                  <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white dark:ring-gray-900" />
+                </button>
+            </div>
+          </MenuButton>
+
+          <MenuItems
+            className={`absolute right-0 z-50 mt-2 w-64 origin-top-right rounded-xl py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none transform transition-all duration-100 ${
+              open ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
+            } ${
+              isDarkMode
+                ? "bg-zinc-800 text-white border border-zinc-700"
+                : "bg-white text-gray-800 border border-gray-100"
+            }`}
+          >
+            {/* Header with user info */}
+            <div className="px-4 py-3 border-b border-gray-100 dark:border-zinc-700">
+              <div className="flex items-center">
+               
+                <div className="ml-3">
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">
+                    Messages
+                  </p>
+                  
+                </div>
+              </div>
+            </div>
+
+          
+
+<div className="py-1">
+  {notifications.map(({ message, time, icon: Icon }, index) => (
+    <div
+      key={index}
+      className="group flex items-center justify-between px-4 py-2 text-sm bg-gray-100 dark:bg-zinc-800 rounded-lg mb-2"
+    >
+      <div className="flex items-center">
+        <div className="mr-3 p-1 rounded-md bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300">
+          <Icon className="w-4 h-4" />
+        </div>
+        <div>
+          <p className="font-medium text-gray-900 dark:text-white">{message}</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">{time}</p>
+        </div>
+      </div>
+    </div>
+  ))}
+</div>
+
+          
+
+           
+          </MenuItems>
+        </>
+      )}
+    </HeadlessMenu>
+  );
+};
  const UserMenu = () => {
   const { isDarkMode, toggleTheme } = useDarkMode();
   
@@ -484,27 +577,22 @@ const SidebarLayout = () => {
   const [savedJobs, setSavedJobs] = useState([]);
   const [pinnedJobs, setPinnedJobs] = useState([]);
 
-  const navigation_menu = [
-    { name: "Dashboard", href: "/dashboard", icon: Menu, current: false },
-    {
-      name: "Past Applications",
-      href: "/dashboard/history",
-      icon: History,
-      current: false,
-    },
-    { name: "Job List", href: "/Jobcandidate", icon: Menu, current: true },
-    { name: "Billing", href: "/Pricing", icon: PlusSquare, current: false },
-  ];
-  const navigation_option = [
-    { name: "Settings", href: "/Settings", icon: Settings, current: false },
-    { name: "Support", href: "/cv", icon: Wrench, current: false },
-    {
-      name: "CV Testing",
-      href: "/Testing",
-      icon: FlaskConical,
-      current: false,
-    },
-  ];
+    const navigation_menu = [
+      { name: "Dashboard", href: "/dashboard", icon: Menu, current: false },
+      {
+        name: "Past Applications",
+        href: "/dashboard/history",
+        icon: FileClock,
+        current: false,
+      },
+      { name: "Jobs", href: "/Jobcandidate", icon: Briefcase, current: true},
+      { name: "Billing", href: "/Pricing", icon: CreditCard, current: false },
+    ];
+    const navigation_option = [
+      { name: "Settings", href: "/Settings", icon: Settings, current: false },
+      { name: "Support", href: "/cv", icon: Wrench, current: false },
+     
+    ];
   const [showFilters, setShowFilters] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [sortOption, setSortOption] = useState("newest"); // State for sorting
@@ -543,12 +631,6 @@ const SidebarLayout = () => {
 
   // Handler function for job type change
 
-  const resetFilters = () => {
-    setSearchQuery("");
-    setJobType("all");
-    setSalaryRange("all");
-    setExperienceLevel("all");
-  };
   // Fetch jobs from the backend
   useEffect(() => {
     const fetchJobs = async () => {
@@ -597,16 +679,7 @@ const SidebarLayout = () => {
       [filterName]: !prev[filterName],
     }));
   };
-  const applyFilters = () => {
-    // Implement your filter application logic here
-    console.log("Applying filters:", {
-      searchQuery,
-      jobType,
-      salaryRange,
-      experienceLevel,
-    });
-  };
-  // Combined filtering function
+  
   // Update the `getFilteredJobs` function to include all filters, sorting, and search logic
   const getFilteredJobs = () => {
     let result = [...allJobs];
@@ -727,13 +800,6 @@ const SidebarLayout = () => {
     } else {
       return [];
     }
-  };
-  const getButtonStyle = (filter) => {
-    return `px-3 py-1 text-sm rounded-full ${
-      activeFilter === filter
-        ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
-        : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200"
-    } hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors`;
   };
 
  
@@ -926,21 +992,14 @@ const SidebarLayout = () => {
 
         <main className="flex-1 overflow-auto bg-gray-50  dark:bg-black transition-all duration-300 ease-in-out z-30">
           {/* Streamlined Header */}
-          <header className="bg-white dark:bg-black border-b border-gray-200 dark:border-gray-800 sticky top-0 z-40 transition-all duration-300 ease-in-out">
+          <header className="bg-white dark:bg-black  border-gray-200 dark:border-gray-800 sticky top-0 z-40 transition-all duration-300 ease-in-out">
             <div className="flex items-center justify-between px-4 py-3">
               <SearchBar
                 navigationMenu={navigation_menu}
                 navigationOption={navigation_option}
               />
               <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  className="relative p-1.5 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full focus:outline-none focus:ring-2 focus:ring-purple-500"
-                >
-                  <span className="sr-only">View notifications</span>
-                  <BellIcon className="h-5 w-5" />
-                  <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white dark:ring-gray-900" />
-                </button>
+                
                 <UserMenu />
               </div>
             </div>

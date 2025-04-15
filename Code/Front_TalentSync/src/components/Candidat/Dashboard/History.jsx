@@ -8,6 +8,16 @@ import {
   PenTool,
   Moon,
   Sun,
+  Clock,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+  Info,
+  TrendingDown,
+  Star,
+  StarHalf,
+  Stars,
+  Tag,
   ChevronLeft,
   ChevronRight,
   Search,
@@ -16,14 +26,18 @@ import {
   Loader2,
   Calendar,
   Wrench,
+  Briefcase,
   FlaskConical,
   Trash2, // Import the delete icon
   BadgeAlert, // Import the badge alert icon
   Filter,
   UserCheck, // Add the Filter icon here
    User, 
-     
+   FileClock,
+      Mail,
+      
     LogOut, 
+    Users
 } from "lucide-react";
 import { Menu as HeadlessMenu } from "@headlessui/react";
 import { BellIcon } from "@heroicons/react/24/outline";
@@ -501,38 +515,42 @@ function DeleteConfirmationModal({ isOpen, onClose, onConfirm }) {
 function ApplicationDetailsModal({ isOpen, onClose, application }) {
   if (!isOpen) return null;
 
-  // Define status badge styles based on application status
+  // Improved status badge styles with better semantic colors
   const getStatusBadge = (status) => {
     const statusStyles = {
-      Approved: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
-      Pending: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
-      Rejected: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
-      "In Review": "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
+      Approved: "bg-green-100 text-green-800 border border-green-200 dark:bg-green-900/40 dark:text-green-300 dark:border-green-800",
+      Pending: "bg-amber-100 text-amber-800 border border-amber-200 dark:bg-amber-900/40 dark:text-amber-300 dark:border-amber-800",
+      Rejected: "bg-red-100 text-red-800 border border-red-200 dark:bg-red-900/40 dark:text-red-300 dark:border-red-800",
+      "In Review": "bg-blue-100 text-blue-800 border border-blue-200 dark:bg-blue-900/40 dark:text-blue-300 dark:border-blue-800",
     };
 
-    return statusStyles[status] || "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200";
+    return statusStyles[status] || "bg-gray-100 text-gray-800 border border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700";
   };
 
   return (
     <div
-      className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-opacity animate-in fade-in"
       aria-labelledby="application-details-title"
       role="dialog"
       aria-modal="true"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="bg-white dark:bg-zinc-800 rounded-xl shadow-xl w-full max-w-lg overflow-hidden animate-fadeIn">
+      <div 
+        className="bg-white dark:bg-zinc-900 rounded-xl shadow-xl w-full max-w-lg overflow-hidden animate-in slide-in-from-bottom-4 duration-300"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
-        <div className="border-b border-gray-200 dark:border-zinc-700 p-4 sm:p-6">
+        <div className="border-b border-gray-200 dark:border-zinc-800 px-6 py-4">
           <div className="flex justify-between items-center">
             <h2
               id="application-details-title"
-              className="text-xl font-bold text-gray-900 dark:text-white"
+              className="text-xl font-semibold text-gray-900 dark:text-white"
             >
               Application Details
             </h2>
             <button
               onClick={onClose}
-              className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 focus:outline-none"
+              className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-600"
               aria-label="Close application details"
             >
               <svg
@@ -554,133 +572,550 @@ function ApplicationDetailsModal({ isOpen, onClose, application }) {
         </div>
 
         {/* Content */}
-        <div className="p-4 sm:p-6">
-          <div className="mb-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-              {application.title}
-            </h3>
-            <span
-              className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${getStatusBadge(
-                application.status
-              )}`}
-            >
-              {application.status}
-            </span>
+        <div className="p-6 max-h-[70vh] overflow-y-auto">
+          {/* Header Section with visual hierarchy */}
+          <div className="mb-6 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                {application.title || "No Title Provided"}
+              </h3>
+              <div className="flex flex-wrap gap-2 items-center">
+                <span
+                  className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${getStatusBadge(
+                    application.status
+                  )}`}
+                >
+                  {application.status || "Unknown Status"}
+                </span>
+                {application.deadline && (
+                  <span className="inline-flex items-center text-xs text-gray-500 dark:text-gray-400">
+                    <svg className="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    Deadline: {application.deadline}
+                  </span>
+                )}
+              </div>
+            </div>
+            
+            {/* Score displayed prominently with visual indicator */}
+            {application.score && (
+              <div className="flex items-center gap-2 bg-gray-50 dark:bg-zinc-800 rounded-full px-3 py-1">
+                <div className="relative w-8 h-8">
+                  <svg className="w-8 h-8" viewBox="0 0 36 36">
+                    <circle cx="18" cy="18" r="15.5" stroke="#e5e7eb" strokeWidth="3" fill="none" className="dark:stroke-zinc-700" />
+                    <circle 
+                      cx="18" cy="18" r="15.5" 
+                      stroke={
+                        application.score >= 0.8 ? "#10b981" : 
+                        application.score >= 0.6 ? "#6366f1" : 
+                        application.score >= 0.4 ? "#f59e0b" : "#ef4444"
+                      } 
+                      strokeWidth="3" 
+                      fill="none" 
+                      strokeDasharray={`${application.score * 100}, 100`}
+                      strokeDashoffset="25"
+                      strokeLinecap="round"
+                      transform="rotate(-90 18 18)"
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex items-center justify-center text-xs font-semibold">
+                    {Math.round(application.score * 100)}
+                  </div>
+                </div>
+                <span className="text-xs text-gray-500 dark:text-gray-400">Score</span>
+              </div>
+            )}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-            <div className="bg-gray-50 dark:bg-zinc-900 p-3 rounded-lg">
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Score</p>
-              <p className="text-lg font-medium text-gray-900 dark:text-white">
-                {application.score}
-              </p>
-            </div>
-            <div className="bg-gray-50 dark:bg-zinc-900 p-3 rounded-lg">
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Submitted On</p>
-              <p className="text-lg font-medium text-gray-900 dark:text-white">
-                {application.date}
-              </p>
+          {/* Company & Location */}
+          <div className="mb-6 bg-gray-50 dark:bg-zinc-800 rounded-lg p-4">
+            <div className="flex flex-col sm:flex-row justify-between">
+              <div className="mb-4 sm:mb-0">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Company</p>
+                <div className="flex items-center">
+                  <svg className="w-4 h-4 mr-1.5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                  </svg>
+                  <p className="font-medium text-gray-900 dark:text-white">
+                    {application.company || "No Company Provided"}
+                  </p>
+                </div>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Location</p>
+                <div className="flex items-center">
+                  <svg className="w-4 h-4 mr-1.5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                  </svg>
+                  <p className="font-medium text-gray-900 dark:text-white">
+                    {application.location || "No Location Provided"}
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
 
+          {/* Key Details Section - More organized and scannable */}
           <div className="mb-6">
-            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 flex items-center">
+              <svg className="w-4 h-4 mr-1.5 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+              </svg>
+              Key Details
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="bg-gray-50 dark:bg-zinc-800 p-3 rounded-lg flex flex-col">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Submitted On</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">
+                  {application.date || "No Date Provided"}
+                </p>
+              </div>
+              <div className="bg-gray-50 dark:bg-zinc-800 p-3 rounded-lg flex flex-col">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Job Type</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">
+                  {application.jobType || "Not Specified"}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Description Section */}
+          <div className="mb-6">
+            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 flex items-center">
+              <svg className="w-4 h-4 mr-1.5 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h7"></path>
+              </svg>
               Description
             </h4>
-            <div className="bg-gray-50 dark:bg-zinc-900 p-4 rounded-lg text-gray-700 dark:text-gray-300">
-              {application.description}
+            <div className="bg-gray-50 dark:bg-zinc-800 p-4 rounded-lg text-gray-700 dark:text-gray-300 text-sm">
+              {application.description || "No Description Provided"}
+            </div>
+          </div>
+
+          {/* Skills & Certifications */}
+          <div>
+            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 flex items-center">
+              <svg className="w-4 h-4 mr-1.5 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+              </svg>
+              Requirements
+            </h4>
+            <div className="grid grid-cols-1 gap-4">
+              <div className="bg-gray-50 dark:bg-zinc-800 p-3 rounded-lg">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Skills</p>
+                <div className="flex flex-wrap gap-2">
+                  {application.skills?.length ? (
+                    application.skills.map((skill, index) => (
+                      <span 
+                        key={index}
+                        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs bg-blue-100 text-blue-800 border border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800"
+                      >
+                        {skill}
+                      </span>
+                    ))
+                  ) : (
+                    <p className="text-sm text-gray-500 dark:text-gray-400">No Skills Provided</p>
+                  )}
+                </div>
+              </div>
+              <div className="bg-gray-50 dark:bg-zinc-800 p-3 rounded-lg">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Certifications</p>
+                <p className="text-sm text-gray-900 dark:text-white">
+                  {application.certifications || "No Certifications Provided"}
+                </p>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="bg-gray-50 dark:bg-zinc-900 px-4 py-3 sm:px-6 flex justify-end gap-3">
+        <div className="bg-gray-50 dark:bg-zinc-800 px-6 py-4 border-t border-gray-200 dark:border-zinc-800 flex justify-between items-center">
           <button
-            className="px-4 py-2 bg-gray-200 dark:bg-zinc-700 text-gray-800 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-zinc-600 transition-colors"
+            className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-gray-300 dark:focus:ring-gray-600 rounded-md px-3 py-1.5"
             onClick={onClose}
           >
             Close
           </button>
-          <button
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            onClick={() => window.open(application.detailsUrl, "_blank")}
-            aria-label="View full application details"
-          >
-            View Full Details
-          </button>
+          <div className="flex gap-3">
+            {/* Additional actions could go here */}
+            <button
+              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-zinc-900"
+              onClick={() => window.open(application.detailsUrl, "_blank")}
+              aria-label="View full application details"
+            >
+              View Full Details
+              <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
     </div>
   );
 }
+function Card({ application, children, className, onDelete, isDarkMode, onViewDetails }) {
+  const { id, score, status } = application || { id: null, score: 0, status: "Incomplete" };
+  
+  return (
+    <div
+      className={`group relative border rounded-lg shadow-sm p-6 transition-all duration-300 ease-in-out hover:shadow-md hover:-translate-y-1 
+      ${isDarkMode ? 'border-zinc-700 bg-zinc-800/50' : 'border-zinc-200 bg-white'} ${className}`}
+      data-testid={`application-card-${id}`}
+    >
+      {/* Content area */}
+      <div className="relative">
+        {children}
+      </div>
 
-function CardStatus({ status }) {
-  const statusColors = {
-    Pending: "bg-yellow-100 text-yellow-800 dark:bg-black dark:text-yellow-400",
-    Accepted: "bg-green-100 text-green-800 dark:bg-black dark:text-green-400",
-    Refused: "bg-red-100 text-red-800 dark:bg-black dark:text-red-400",
-    // Add fallback for unknown status
-    default: "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300",
+      {/* Action buttons - using a footer design */}
+      <div className="mt-6 pt-4 flex justify-between items-center gap-2 border-t border-zinc-200 dark:border-zinc-700">
+        <button
+          className="p-2 rounded-md text-zinc-400 hover:bg-zinc-100 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-all duration-200
+          dark:hover:bg-zinc-700 dark:focus:ring-offset-zinc-800"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete && onDelete(application);
+          }}
+          aria-label="Delete application"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
+        <button
+          className={`flex items-center gap-1 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 
+          ${isDarkMode
+            ? "bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-500 focus:ring-offset-zinc-800"
+            : "bg-blue-500 hover:bg-blue-600 text-white focus:ring-blue-500 focus:ring-offset-white"
+          } focus:outline-none focus:ring-2 focus:ring-offset-2`}
+          onClick={() => onViewDetails && onViewDetails(application)}
+        >
+          View Details
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-4 w-4 ml-1 transition-transform duration-200 transform group-hover:translate-x-1"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M13 7l5 5m0 0l-5 5m5-5H6"
+            />
+          </svg>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function CardContent({ children }) {
+  return <div className="mt-4">{children}</div>;
+}
+const UserMessage = () => {
+  const { isDarkMode, toggleTheme } = useDarkMode();
+  
+ 
+
+  
+  const notifications = [
+    {
+      message: "Your application has been reviewed.",
+      time: "2 hours ago",
+      icon: Users,
+    },
+    {
+      message: "You have a new message from the recruiter.",
+      time: "1 day ago",
+      icon: Mail,
+    },
+    {
+      message: "Your interview is scheduled for tomorrow.",
+      time: "3 days ago",
+      icon: Calendar,
+    },
+  ];
+  return (
+    <HeadlessMenu as="div" className="relative">
+      {({ open }) => (
+        <>
+          <MenuButton className="flex items-center focus:outline-none">
+            <div className="relative">
+            <button
+                  type="button"
+                  className="relative p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <span className="sr-only">View notifications</span>
+                  <BellIcon className="h-5 w-5" />
+                  <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white dark:ring-gray-900" />
+                </button>
+            </div>
+          </MenuButton>
+
+          <MenuItems
+            className={`absolute right-0 z-50 mt-2 w-64 origin-top-right rounded-xl py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none transform transition-all duration-100 ${
+              open ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
+            } ${
+              isDarkMode
+                ? "bg-zinc-800 text-white border border-zinc-700"
+                : "bg-white text-gray-800 border border-gray-100"
+            }`}
+          >
+            {/* Header with user info */}
+            <div className="px-4 py-3 border-b border-gray-100 dark:border-zinc-700">
+              <div className="flex items-center">
+               
+                <div className="ml-3">
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">
+                    Messages
+                  </p>
+                  
+                </div>
+              </div>
+            </div>
+
+          
+
+<div className="py-1">
+  {notifications.map(({ message, time, icon: Icon }, index) => (
+    <div
+      key={index}
+      className="group flex items-center justify-between px-4 py-2 text-sm bg-gray-100 dark:bg-zinc-800 rounded-lg mb-2"
+    >
+      <div className="flex items-center">
+        <div className="mr-3 p-1 rounded-md bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300">
+          <Icon className="w-4 h-4" />
+        </div>
+        <div>
+          <p className="font-medium text-gray-900 dark:text-white">{message}</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">{time}</p>
+        </div>
+      </div>
+    </div>
+  ))}
+</div>
+
+          
+
+           
+          </MenuItems>
+        </>
+      )}
+    </HeadlessMenu>
+  );
+};
+function Button({ children, variant = "outline", isActive, className, onClick }) {
+  const baseStyle = "px-3 py-2 text-sm rounded-md font-medium transition-all duration-200 flex items-center gap-2";
+
+  const styles = {
+    primary: "bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700 focus:ring-blue-500",
+    secondary: "bg-zinc-100 text-zinc-800 hover:bg-zinc-200 dark:bg-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-600 focus:ring-zinc-500",
+    outline: "border border-zinc-300 bg-white text-zinc-800 hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-white dark:hover:bg-zinc-700 focus:ring-zinc-500",
+    ghost: "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800 focus:ring-zinc-500",
+    link: "text-blue-600 underline hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 focus:ring-blue-500",
+    danger: "bg-red-600 text-white hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700 focus:ring-red-500",
+    filter: `px-3 py-1 text-sm rounded-full ${
+      isActive
+        ? "bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-200"
+        : "bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-300"
+    } hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors focus:ring-blue-500`,
   };
 
-  const colorClass = statusColors[status] || statusColors.default;
+  const variantStyle = styles[variant] || styles.outline;
 
   return (
-    <span
-      className={`absolute top-4 left-4 px-2 py-1 text-xs rounded-full font-medium ${colorClass}`}
+    <button
+      className={`${baseStyle} ${variantStyle} focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-zinc-800 ${className}`}
+      onClick={onClick}
     >
+      {children}
+    </button>
+  );
+}
+
+function CardStatus({ status }) {
+  const statusConfig = {
+    Pending: {
+      color: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-400",
+      icon: <Clock className="w-3 h-3" />
+    },
+    Accepted: {
+      color: "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-400",
+      icon: <CheckCircle className="w-3 h-3" />
+    },
+    Refused: {
+      color: "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-400",
+      icon: <XCircle className="w-3 h-3" />
+    },
+    Incomplete: {
+      color: "bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-400",
+      icon: <AlertCircle className="w-3 h-3" />
+    },
+    default: {
+      color: "bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-400",
+      icon: <Info className="w-3 h-3" />
+    }
+  };
+
+  const config = statusConfig[status] || statusConfig.default;
+
+  return (
+    <div
+      className={`absolute -top-3   py-1 px-2 text-xs rounded-full font-medium flex items-center gap-1 ${config.color}`}
+    >
+      {config.icon}
       {status}
-    </span>
+    </div>
   );
 }
 
 function CardScore({ score }) {
-  const getScoreColor = (score) => {
-    if (score >= 8)
-      return "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-400";
-    if (score >= 5)
-      return "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-400";
-    return "bg-red-50 text-red-800  dark:bg-black dark:text-red-400";
+  const getScoreConfig = (score) => {
+    if (score >= 8) return {
+      color: "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-400",
+      icon: <TrendingUp className="w-3 h-3" />
+    };
+    if (score >= 5) return {
+      color: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-400",
+      icon: <MinusCircle className="w-3 h-3" />
+    };
+    return {
+      color: "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-400",
+      icon: <TrendingDown className="w-3 h-3" />
+    };
   };
+
+  const config = getScoreConfig(score);
 
   return (
     <div
-      className={`absolute top-4 right-4 flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getScoreColor(
-        score
-      )}`}
+      className={`absolute  -top-3   py-1 px-3 right-1 flex items-center gap-1  rounded-full text-xs font-medium ${config.color}`}
     >
-      <BadgeAlert className="w-3 h-3" />
-      {score} Score
+      {config.icon}
+      <span>{score}</span>
     </div>
   );
 }
 
-function CardInfo({ icon, text }) {
+function CardInfo({ icon, text, tooltip }) {
   return (
-    <div className="mt-2 flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 truncate">
-      {icon} <span className="truncate">{text}</span>
+    <div className="mt-2 flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400 truncate" title={tooltip || text}>
+      <span className="text-zinc-400 dark:text-zinc-500 flex-shrink-0">{icon}</span> 
+      <span className="truncate">{text}</span>
     </div>
   );
 }
 
-function Badge({ level }) {
-  const levelColors = {
-    JUNIOR: "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-400",
-    MID: "bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-400",
-    SENIOR:
-      "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-400",
-    // Add fallback for unknown level
-    default: "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300",
+function Badge({ level, size = "default" }) {
+  const levelConfig = {
+    JUNIOR: {
+      color: "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-400",
+      icon: <Star className="w-3 h-3" />
+    },
+    MID: {
+      color: "bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-400",
+      icon: <StarHalf className="w-3 h-3" />
+    },
+    SENIOR: {
+      color: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-400",
+      icon: <Stars className="w-3 h-3" />
+    },
+    default: {
+      color: "bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-300",
+      icon: <Tag className="w-3 h-3" />
+    }
   };
 
-  const colorClass = levelColors[level] || levelColors.default;
+  const config = levelConfig[level] || levelConfig.default;
+  const sizeClass = size === "small" ? "text-xs px-1.5 py-0.5" : "text-xs px-2 py-1";
 
   return (
     <span
-      className={`text-xs px-2 py-1 rounded-full font-medium ${colorClass}`}
+      className={`rounded-full font-medium flex items-center gap-1 ${sizeClass} ${config.color}`}
     >
+      {config.icon}
       {level}
     </span>
+  );
+}
+
+// Example usage
+function ApplicationCardList({ filteredApplications, handleDeleteClick, handleViewDetails, isDarkMode }) {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      {filteredApplications.map((application, index) => (
+        <Card
+          key={application.id || index}
+          application={application}
+          onDelete={() => handleDeleteClick(application)}
+          onViewDetails={() => handleViewDetails(application)}
+          isDarkMode={isDarkMode}
+          className="cursor-pointer hover:border-blue-500 dark:hover:border-blue-400"
+          onClick={() => handleViewDetails(application)}
+        >
+          <div className="mb-6 pt-4"> {/* Add padding top to avoid overlapping with status badges */}
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white truncate">
+              {application.title}
+            </h2>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 line-clamp-2">
+              {application.description || "No description provided"}
+            </p>
+            
+            <div className="flex flex-wrap gap-2 mt-3">
+              <Badge level={application.level} />
+              {application.tags?.map(tag => (
+                <Badge key={tag} level={tag} size="small" />
+              ))}
+              
+            </div>
+          </div>
+          
+          <CardContent>
+            <CardInfo
+              icon={<FileText size={16} />}
+              text={application.file}
+              tooltip={`File: ${application.file}`}
+            />
+            <CardInfo
+              icon={<Calendar size={16} />}
+              text={application.date}
+              tooltip={`Date: ${application.date}`}
+            />
+            
+            {application.location && (
+              <CardInfo
+                icon={<MapPin size={16} />}
+                text={application.location}
+                tooltip={`Location: ${application.location}`}
+              />
+            )}
+          </CardContent>
+          
+        </Card>
+      ))}
+    </div>
+  );
+}
+
+// Empty state component for when there are no applications
+function EmptyState({ message = "No applications found", actionText = "Add New Application", onAction }) {
+  return (
+    <div className="flex flex-col items-center justify-center p-8 text-center bg-white dark:bg-zinc-800 rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700">
+      <FolderOpenDot className="w-12 h-12 text-zinc-400 dark:text-zinc-500 mb-4" />
+      <h3 className="text-lg font-medium text-zinc-900 dark:text-zinc-100">{message}</h3>
+      <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+        No applications match your current filters.
+      </p>
+      {onAction && (
+        <Button variant="primary" className="mt-4" onClick={onAction}>
+          <Plus className="w-4 h-4" />
+          {actionText}
+        </Button>
+      )}
+    </div>
   );
 }
 
@@ -728,95 +1163,6 @@ function filterApplications(applications, activeFilter, searchQuery) {
 }
 
 // Improved Card component with proper score display
-function Card({ application, children, className, onDelete, isDarkMode, onViewDetails }) {
-  const { score, status } = application || { score: 0, status: "Incomplete" };
-
-  return (
-    <div
-      className={`group relative border dark:border-zinc-600 rounded-lg shadow-md p-9 transition-transform duration-300 ease-in-out hover:shadow-lg hover:scale-105 ${className}`}
-    >
-      {/* Status in the top-left corner */}
-      {status && <CardStatus status={status} />}
-
-      {/* Score in the top-right corner */}
-      <CardScore score={score} />
-
-      {children}
-
-      {/* Bottom section with Delete and View Details buttons */}
-      <div className="mt-4 flex justify-between items-center gap-1">
-        <button
-          className="p-2 rounded-md text-zinc-400 hover:bg-zinc-200 hover:text-red-600 focus:outline-none focus:ring-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 dark:hover:bg-zinc-700"
-          onClick={() => onDelete && onDelete(application)}
-          aria-label="Delete application"
-        >
-          <Trash2 className="w-4 h-4" />
-        </button>
-        <button
-          className={`group flex items-center gap-1 px-4 py-2 rounded-full text-xs font-medium transition-all duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-            isDarkMode
-              ? "bg-zinc-800 text-white hover:bg-zinc-700 focus:ring-offset-black"
-              : "bg-gray-200 text-gray-800 hover:bg-gray-300 focus:ring-offset-white"
-          }`}
-          onClick={() => onViewDetails && onViewDetails(application)}
-        >
-          View Details
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-4 w-4 ml-2 transition-transform duration-300 transform group-hover:translate-x-1"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M17 8l4 4m0 0l-4 4m4-4H3"
-            />
-          </svg>
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function CardContent({ children }) {
-  return <div className="mt-4 p-2">{children}</div>;
-}
-
-// Enhanced Button component with primary variant
-function Button({ children, variant = "outline", isActive, className, onClick }) {
-  const baseStyle =
-    "px-3 py-1 text-sm rounded-full  transition-all duration-300";
-
-  const styles = {
-    primary:
-      "bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600",
-    outline:
-      "border border-zinc-300 bg-white text-zinc-800 hover:bg-zinc-200 dark:border-zinc-600 dark:bg-zinc-800 dark:text-white dark:hover:bg-zinc-700",
-    ghost:
-      "text-zinc-600 hover:bg-zinc-200 dark:text-zinc-400 dark:hover:bg-zinc-700 dark:hover:text-zinc-200",
-    link: "text-blue-600 underline hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300",
-    filter: `px-3 py-1 text-sm rounded-full ${
-      isActive
-        ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
-        : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200"
-    } hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors`,
-  };
-
-
-  const variantStyle = styles[variant] || styles.outline;
-
-  return (
-    <button
-      className={`${baseStyle} ${variantStyle} ${className}`}
-      onClick={onClick}
-    >
-      {children}
-    </button>
-  );
-}
 
 const SidebarLayout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -904,21 +1250,16 @@ const SidebarLayout = () => {
     {
       name: "Past Applications",
       href: "/dashboard/history",
-      icon: History,
+      icon: FileClock,
       current: true,
     },
-    { name: "Job List", href: "/Jobcandidate", icon: Menu, current: false },
-    { name: "Billing", href: "/Pricing", icon: PlusSquare, current: false },
+    { name: "Jobs", href: "/Jobcandidate", icon: Briefcase, current: false },
+    { name: "Billing", href: "/Pricing", icon: CreditCard, current: false },
   ];
   const navigation_option = [
     { name: "Settings", href: "/Settings", icon: Settings, current: false },
     { name: "Support", href: "/cv", icon: Wrench, current: false },
-    {
-      name: "cv testing",
-      href: "/Testing",
-      icon: FlaskConical,
-      current: false,
-    },
+   
   ];
 
   useEffect(() => {
@@ -1028,15 +1369,7 @@ const SidebarLayout = () => {
                 navigationOption={navigation_option}
               />
               <div className="flex items-center gap-4">
-                <button
-                  type="button"
-                  className="relative p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg
-                    focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <span className="sr-only">View notifications</span>
-                  <BellIcon className="h-6 w-6" />
-                  <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white dark:ring-gray-900" />
-                </button>
+                <UserMessage />
                 <UserMenu />
               </div>
             </div>
@@ -1115,32 +1448,59 @@ const SidebarLayout = () => {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredApplications.map((application, index) => (
-                  <Card
-                    key={application.id || index} // Use application.id if available, otherwise fallback to index
-                    application={application}
-                    onDelete={() => handleDeleteClick(application)}
-                    onViewDetails={handleViewDetails}
-                  >
-                    <CardStatus status={application.status} />
-                    <CardScore score={application.score} />
-                    <CardContent>
-                      <h2 className="mb-2 text-lg font-semibold text-gray-900 dark:text-white truncate">
-                        {application.title}
-                      </h2>
-                      <div className="flex flex-wrap gap-2 mb-3">
-                        <Badge level={application.level} />
-                      </div>
-                      <CardInfo
-                        icon={<FileText size={16} />}
-                        text={application.file}
-                      />
-                      <CardInfo
-                        icon={<Calendar size={16} />}
-                        text={application.date}
-                      />
-                    </CardContent>
-                  </Card>
-                ))}
+  <Card
+    key={application.id || index}
+    application={application}
+    onDelete={() => handleDeleteClick(application)}
+    onViewDetails={() => handleViewDetails(application)}
+    isDarkMode={isDarkMode} // Add this prop, you'll need to pass it from a parent component
+    className="cursor-pointer hover:border-blue-500 dark:hover:border-blue-400"
+  >
+    {/* No need to manually add CardStatus and CardScore here as they're handled in the Card component */}
+    <div className="mb-6 pt-4"> {/* Add padding to avoid overlapping with status badges */}
+      <h2 className="text-lg font-semibold text-gray-900 dark:text-white truncate">
+        {application.title}
+      </h2>
+      
+      <div className="flex flex-wrap gap-2 mt-3">
+        <Badge level={application.level} />
+        
+        {/* Optional: If you have tags, you can map them here */}
+        {application.tags?.map(tag => (
+          <Badge key={tag} level={tag} size="small" />
+        ))}
+        
+      </div>
+      
+    </div>
+    
+    <CardContent>
+      
+      <CardInfo
+        icon={<FileText size={16} />}
+        text={application.file}
+        tooltip={`File: ${application.file}`}
+      />
+       <CardStatus status={application.status} />
+       <CardScore score={application.score} />
+      <CardInfo
+        icon={<Calendar size={16} />}
+        text={application.date}
+        tooltip={`Date: ${application.date}`}
+      />
+      
+      {/* Optional: Add location if available */}
+      {application.location && (
+        <CardInfo
+          icon={<MapPin size={16} />}
+          text={application.location}
+          tooltip={`Location: ${application.location}`}
+        />
+      )}
+     
+    </CardContent>
+  </Card>
+))}
               </div>
             )}
           </div>

@@ -28,7 +28,7 @@ export const AuthWrapper = ({ children }) => {
                         location.pathname.includes('/candidate/signup');
       
       // Public routes that don't need authentication
-      const publicRoutes = ['/', '/Pricing', '/JobList','/admin'];
+      const publicRoutes = ['/', '/Pricing', '/JobList','/admin', '/Blog', '/Testing', '/Application', '/cv'];
       
       if (!isAuthenticated && !isAuthPage && !publicRoutes.includes(location.pathname)) {
         navigate('/');
