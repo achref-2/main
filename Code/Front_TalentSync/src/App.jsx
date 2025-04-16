@@ -7,29 +7,26 @@ import {
 } from "react-router-dom";
 import SmoothScroll from "smooth-scroll";
 import "./App.css";
-import Dashboard from "./components/Candidat/Dashboard/Dashboard";
-import Candidat_Signup from "./components/Candidat/Singup";
-import Candidat_Login from "./components/Candidat/Login";
-import CVcomponent from "./components/Candidat/Dashboard/CVcomponent";
-import CVBuilder from "./old/create";
-import History from "./components/Candidat/Dashboard/History";
-import LandingPage from "./pages/LandingPage/LandingPage";
-import JobList from "./components/Recruiter/JOB_LIST/Job";
-import Jobcandidate from "./components/Candidat/JOB_LIST/Job";
-import Settings from "./components/Candidat/Dashboard/Settings";
-import Pricing from "./pages/Pricing/Prising";
+import Dashboard from "./pages/candidat/Pages/Dashboard";
+import CandidatSignup from "./pages/candidat/Singup/Signup";
+import CandidatLogin from "./pages/candidat/Login/Login";
+import CVcomponent from "./pages/candidat/Pages/CVcomponent";
+import PastApplications from "./pages/candidat/Pages/PastApplications";
+import LandingPage from "./pages/landingPage/LandingPage";
+import Jobs from "./pages/candidat/Pages/Jobs/Jobs";
+import Settings from "./pages/candidat/Pages/Settings";
+import Pricing from "./pages/landingPage/Prising";
 import { DarkModeProvider } from "./components/DarkModeProvider";
-import RecruiterDashboard from "./components/Recruiter/Dashboard/Dashboard";
+import RecruiterDashboard from "./pages/recruiter/Dashboard";
 import { AuthWrapper } from "./components/AuthWrapper"; // Add this import
 import Admin from "./components/admin";
-import RecruiterHistory from "./components/Recruiter/Dashboard/History";
-import RecruiterJobList from "./components/Recruiter/JOB_LIST/Job";
-import RecruiterSettings from "./components/Recruiter/Dashboard/Settings";
-import JOBBuilder from "./components/Recruiter/JOB_LIST/JobBuilder";
-import TestingPage from "./components/Candidat/Dashboard/Testing";
-import Application from "./components/Candidat/Dashboard/Application";
-import NotFoundPage from "./components/404";
-import Blog from "./pages/LandingPage/Blog";
+import AppliedCandidates from "./pages/recruiter/AppliedCandidates";
+import RecruiterJobs from "./pages/recruiter/Jobs";
+import RecruiterSettings from "./pages/recruiter/Settings";
+import TestingPage from "./pages/candidat/Pages/Testing";
+import Application from "./pages/candidat/Pages/Application";
+import NotFoundPage from "./pages/404";
+import Blog from "./pages/landingPage/Blog";
 export const scroll = new SmoothScroll('a[href*="#"]', {
   speed: 1000,
   speedAsDuration: true,
@@ -40,52 +37,53 @@ const App = () => {
 
   return (
     <DarkModeProvider>
-     
-        <Router>
+      <Router>
         <AuthWrapper>
           <Routes>
-            <Route path="/Testing" element={<TestingPage />} />
+            <Route path="/" element={<LandingPage />} />
+
+            {/* Candidat Routes */}
+            <Route path="/candidate/signup" element={<CandidatSignup />} />
+            <Route path="/candidate/login" element={<CandidatLogin />} />
             <Route path="/Application" element={<Application />} />
             <Route path="/Pricing" element={<Pricing />} />
-            <Route path="/JobList" element={<JobList />} />
-            <Route path="/Jobcandidate" element={<Jobcandidate />} />
-            <Route path="/Settings" element={<Settings />} />
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/cv" element={<CVcomponent />} />
-            <Route path="/admin" element={<Admin />} />
             <Route path="/Blog" element={<Blog />} />
+            <Route path="/Jobs" element={<Jobs />} />
             <Route path="*" element={<NotFoundPage />} />
-            {!user ? <Route path="/" element={<Navigate to="/" />} /> : <Route path="/dashboard" element={<Dashboard />} />}
+            {!user ? (
+              <Route path="/" element={<Navigate to="/" />} />
+            ) : (
+              <Route path="/dashboard" element={<Dashboard />} />
+            )}
 
-            <Route path="/candidate/signup" element={<Candidat_Signup />} />
-            <Route path="/candidate/login" element={<Candidat_Login />} />
-            <Route path="/create" element={<CVBuilder />} />
-            <Route path="/dashboard/history" element={<History />} />
+            <Route path="/dashboard/PastApplications" element={<PastApplications />}/>
+            <Route path="/Settings" element={<Settings />} />
 
+            {/** Recruiter Routes */}
             <Route
               path="/dashboard/recuiter"
               element={<RecruiterDashboard />}
             />
             <Route
-              path="/dashboard/recuiter/history"
-              element={<RecruiterHistory />}
+              path="/dashboard/AppliedCandidates"
+              element={<AppliedCandidates />}
             />
             <Route
               path="/dashboard/recuiter/joblist"
-              element={<RecruiterJobList />}
+              element={<RecruiterJobs />}
             />
             <Route
               path="/dashboard/recuiter/settings"
               element={<RecruiterSettings />}
             />
-            <Route
-              path="/dashboard/recuiter/jobbuilder"
-              element={<JOBBuilder />}
-            />
+
+            {/** Other Routes */}
+            <Route path="/admin" element={<Admin />} />
+            <Route path="/Testing" element={<TestingPage />} />
+            <Route path="/cv" element={<CVcomponent />} />
           </Routes>
-          </AuthWrapper>
-        </Router>
-     
+        </AuthWrapper>
+      </Router>
     </DarkModeProvider>
   );
 };

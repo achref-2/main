@@ -16,10 +16,10 @@ import {
   ArrowLeft
 } from "lucide-react";
 import { useDarkMode } from "../../components/DarkModeProvider";
-import CandidateLogin from "../../components/Candidat/Login/Login";
-import CandidateSignup from "../../components/Candidat/Singup/Signup";
-import RecruiterLogin from "../../components/Recruiter/Login/Login";
-import RecruiterSignup from "../../components/Recruiter/Signup/Signup";
+import CandidateLogin from "../candidat/Login/Login";
+import CandidateSignup from "../candidat/Singup/Signup";
+import RecruiterLogin from "../recruiter/Login/Login";
+import RecruiterSignup from "../recruiter/Signup/Signup";
 import { Dialog, DialogPanel } from "@headlessui/react";
 
 import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";

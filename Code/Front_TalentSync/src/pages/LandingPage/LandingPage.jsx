@@ -5,18 +5,18 @@ import { useState } from "react";
 import { Dialog, DialogPanel } from "@headlessui/react";
 import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
 import "../LandingPage.css";
-import { BlurText } from "./BlurText";
-import { ShinyText } from "./Shiny";
-import { Squares } from "./Squares";
+import { BlurText } from "../../components/BlurText";
+import { ShinyText } from "../../components/Shiny";
+import { Squares } from "../../components/Squares";
 import { X } from "lucide-react";
 import { ChevronDown, LogIn, UserPlus, Users, Shield } from "lucide-react";
 import { useDarkMode } from "../../components/DarkModeProvider";
 import styled from "styled-components";
 
-import CandidateLogin from "../../components/Candidat/Login/Login";
-import CandidateSignup from "../../components/Candidat/Singup/Signup";
-import RecruiterLogin from "../../components/Recruiter/Login/Login";
-import RecruiterSignup from "../../components/Recruiter/Signup/Signup";
+import CandidateLogin from "../candidat/Login/Login";
+import CandidateSignup from "../candidat/Singup/Signup";
+import RecruiterLogin from "../recruiter/Login/Login";
+import RecruiterSignup from "../recruiter/Signup/Signup";
 
 const LandingPage = ({ user }) => {
   const { isDarkMode, toggleTheme } = useDarkMode();
