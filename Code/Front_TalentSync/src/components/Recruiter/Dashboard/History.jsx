@@ -37,6 +37,7 @@ import { BellIcon } from "@heroicons/react/24/outline";
 import { MenuButton, MenuItem, MenuItems } from "@headlessui/react";
 import { useDarkMode } from "../../DarkModeProvider"; // Import the hook
 import { Link } from "react-router-dom";
+import GoogleMeetIntegration from './GoogleMeetIntegration';
 
 const NavLink = ({ href, icon: Icon, children, isActive }) => (
   <Link
@@ -1030,7 +1031,28 @@ const filteredCandidates = candidates.filter((candidate) => {
       alert("Failed to update status. Please try again.");
     }
   };
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [reason, setReason] = useState('');
+  const [interviewDate, setInterviewDate] = useState('');
+  const [interviewTime, setInterviewTime] = useState('');
+  const [meetLink, setMeetLink] = useState('');
 
+  const openModal = () => setIsModalOpen(true);
+  const closeModal = () => setIsModalOpen(false);
+
+  const handleStatusUpdate = (status) => {
+    updateApplicationStatus(candidate.applicationId, status);
+    // Optionally close the modal after status update
+    // closeModal();
+  };
+
+  const handleSubmitInterview = (e) => {
+    e.preventDefault();
+    // Process interview planning
+    console.log('Interview scheduled for:', interviewDate, interviewTime);
+    console.log('Reason:', reason);
+    closeModal();
+  };
   return (
     <div className="space-y-6">
       {/* Header with title and export button */}
@@ -1389,6 +1411,26 @@ const filteredCandidates = candidates.filter((candidate) => {
 
                     {/* Analysis and Job details */}
                     <div className="space-y-5">
+                    <button
+  className="ml-auto px-5 py-3 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg shadow-md hover:shadow-lg transition-all flex items-center justify-center"
+  onClick={openModal}
+>
+  <svg 
+    xmlns="http://www.w3.org/2000/svg" 
+    className="h-4 w-4 mr-2" 
+    fill="none" 
+    viewBox="0 0 24 24" 
+    stroke="currentColor"
+  >
+    <path 
+      strokeLinecap="round" 
+      strokeLinejoin="round" 
+      strokeWidth={2} 
+      d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" 
+    />
+  </svg>
+  Contact
+</button>
                       {/* Resume Analysis */}
                       <div>
                         <h4 className="font-medium text-gray-900 dark:text-white mb-3">
@@ -1684,51 +1726,137 @@ const filteredCandidates = candidates.filter((candidate) => {
                           <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Actions
                           </h5>
-                          <div className="flex gap-2">
-                            <div className="flex gap-3">
-                              {/* Status update buttons - only show relevant ones based on current status */}
-                              {candidate.status && (
-                                <>
-                                  <button
-                                    className="flex items-center px-3 py-1.5  transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    onClick={() =>
-                                      updateApplicationStatus(
-                                        candidate.applicationId,
-                                        "Review"
-                                      )
-                                    }
-                                  >
-                                    Review
-                                  </button>
-                                  <button
-                                    className="flex items-center px-3 py-1.5 bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 rounded-lg hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500"
-                                    onClick={() =>
-                                      updateApplicationStatus(
-                                        candidate.applicationId,
-                                        "Approve"
-                                      )
-                                    }
-                                  >
-                                    Approve
-                                  </button>
-                                  <button
-                                    className="flex items-center px-3 py-1.5 bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500"
-                                    onClick={() =>
-                                      updateApplicationStatus(
-                                        candidate.applicationId,
-                                        "Reject"
-                                      )
-                                    }
-                                  >
-                                    Reject
-                                  </button>
-                                </>
-                              )}
-                            </div>
-                            <button className="flex-1 px-3 py-2 text-sm text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors">
-                              Contact
-                            </button>
-                          </div>
+                         
+
+      {/* Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-semibold">Contact {candidate.name}</h2>
+              <button 
+                onClick={closeModal}
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Reason for Contact
+              </label>
+              <textarea
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                rows="3"
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                placeholder="Specify the reason for contacting the candidate..."
+              ></textarea>
+            </div>
+
+            <div className="mb-6">
+              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Interview Planning
+              </h3>
+              <div className="grid grid-cols-2 gap-3 mb-3">
+                <div>
+                  <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">
+                    Date
+                  </label>
+                  <input
+                    type="date"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                    value={interviewDate}
+                    onChange={(e) => setInterviewDate(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">
+                    Time
+                  </label>
+                  <input
+                    type="time"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                    value={interviewTime}
+                    onChange={(e) => setInterviewTime(e.target.value)}
+                  />
+                </div>
+              </div>
+              
+              {/* Google Meet Link Field */}
+              <div>
+                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">
+                  Google Meet Link
+                </label>
+                <div className="flex">
+                  <input
+                    type="url"
+                    className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-l-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                    value={meetLink}
+                    onChange={(e) => setMeetLink(e.target.value)}
+                    placeholder="https://meet.google.com/xxx-xxxx-xxx"
+                  />
+                  
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Enter a Google Meet link or generate a placeholder
+                </p>
+              </div>
+              <h1>Schedule a Meeting</h1>
+    <GoogleMeetIntegration />
+            </div>
+
+            {/* Status actions */}
+            <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mb-4">
+              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Update Application Status
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {candidate.status && (
+                  <>
+                    <button
+                      className="flex items-center px-3 py-1.5 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      onClick={() => handleStatusUpdate("Review")}
+                    >
+                      Review
+                    </button>
+                    <button
+                      className="flex items-center px-3 py-1.5 bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 rounded-lg hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500"
+                      onClick={() => handleStatusUpdate("Approve")}
+                    >
+                      Approve
+                    </button>
+                    <button
+                      className="flex items-center px-3 py-1.5 bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500"
+                      onClick={() => handleStatusUpdate("Reject")}
+                    >
+                      Reject
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={closeModal}
+                className="px-4 py-2 text-sm text-gray-700 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSubmitInterview}
+                className="px-4 py-2 text-sm text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600 rounded-lg transition-colors"
+              >
+                Schedule & Contact
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
                         </div>
                       </div>
                     </div>

@@ -530,7 +530,7 @@ function ApplicationDetailsModal({ isOpen, onClose, application }) {
   // Improved status badge styles with better semantic colors
   const getStatusBadge = (status) => {
     const statusStyles = {
-      Approved: "bg-green-100 text-green-800 border border-green-200 dark:bg-green-900/40 dark:text-green-300 dark:border-green-800",
+      Approved: "bg-green-700 text-green-800 border border-green-200 dark:bg-green-900/40 dark:text-green-300 dark:border-green-800",
       Pending: "bg-amber-100 text-amber-800 border border-amber-200 dark:bg-amber-900/40 dark:text-amber-300 dark:border-amber-800",
       Rejected: "bg-red-100 text-red-800 border border-red-200 dark:bg-red-900/40 dark:text-red-300 dark:border-red-800",
       "In Review": "bg-blue-100 text-blue-800 border border-blue-200 dark:bg-blue-900/40 dark:text-blue-300 dark:border-blue-800",
@@ -1002,8 +1002,8 @@ function CardStatus({ status }) {
       color: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-400",
       icon: <Clock className="w-3 h-3" />
     },
-    Accepted: {
-      color: "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-400",
+    approve: {
+      color: "bg-green-900 text-green-800 dark:bg-green-900/40 dark:text-green-400",
       icon: <CheckCircle className="w-3 h-3" />
     },
     Refused: {
@@ -1015,7 +1015,7 @@ function CardStatus({ status }) {
       icon: <AlertCircle className="w-3 h-3" />
     },
     default: {
-      color: "bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-400",
+      color: "bg-zinc-900 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-400",
       icon: <Info className="w-3 h-3" />
     }
   };
@@ -1066,16 +1066,30 @@ function ApplicationGrid({ filteredApplications, handleDeleteClick, handleViewDe
 
 function Card({ application, onDelete, isDarkMode, onViewDetails }) {
   const { id, score, status, title, level, tags, file, appliedAt, location, company } = application || {};
-  
+  /***bg of card status */
   const getStatusColor = (status) => {
     const statusMap = {
-      pending: "border-yellow-500 bg-yellow-50 dark:bg-yellow-900/10",
-      interview: "border-blue-500 bg-blue-50 dark:bg-blue-900/10",
-      offer: "border-green-500 bg-green-50 dark:bg-green-900/10",
-      rejected: "border-red-500 bg-red-50 dark:bg-red-900/10",
-      applied: "border-purple-500 bg-purple-50 dark:bg-purple-900/10",
+      // Pending state - waiting for action
+      pending: "bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300",
+      
+      // Positive states - showing success/approval
+      accepted: "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300",
+      approved: "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300",
+      
+      // Negative states - showing rejection/failure
+      rejected: "bg-red-200 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-300",
+      
+      // Process states - in progress
+      review: "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300",
+      
+      // Action states - available actions
+      approve: "bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300",
+      reject: "bg-red-200 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-300",
+      
+      // Default fallback state
+      default: "bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800/80 dark:text-gray-300",
     };
-    return statusMap[status?.toLowerCase()] || "border-zinc-300 dark:border-zinc-700";
+    return statusMap[status?.toLowerCase()] || "";
   };
 
   const formatDate = (dateString) => {
@@ -1448,10 +1462,10 @@ function ApplicationCardList({ filteredApplications, handleDeleteClick, handleVi
 // Helper functions
 function getStatusColor(status) {
   const statusMap = {
-    pending: 'bg-yellow-400',
+    pending: 'bg-yellow-100',
     interview: 'bg-blue-500',
     offer: 'bg-green-500',
-    rejected: 'bg-red-500',
+    reject: 'bg-red-500',
     applied: 'bg-purple-500',
     // Add more statuses as needed
   };
@@ -1487,15 +1501,16 @@ function formatDate(dateString) {
     return dateString; // Fallback to original string if parsing fails
   }
 }
-
+/*** Colores for status text **/
 function StatusBadge({ status }) {
   const statusClasses = {
-    pending: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
-    interview: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-    offer: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-    rejected: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
-    applied: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
-    // Add more statuses as needed
+    pending: "text-yellow-800 border-yellow-300 dark:text-yellow-300",
+    accepted: " text-green-800 border-green-200  dark:text-green-300",
+    rejected: " text-red-800 border-red-200  dark:text-red-300",
+    review: " text-blue-800 border-blue-200  dark:text-blue-300",
+    approve: " text-green-800 border-green-300  dark:text-green-300",
+    reject: " text-red-800 border-red-200  dark:text-red-300",
+    default: " text-gray-800 border-gray-200  dark:text-gray-300",
   };
   
   const className = statusClasses[status?.toLowerCase()] || 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
