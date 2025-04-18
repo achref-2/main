@@ -885,7 +885,7 @@ function CardContent({ children }) {
   return <div className="mt-4">{children}</div>;
 }
 const UserMessage = () => {
-  const { isDarkMode, toggleTheme } = useDarkMode();
+  const { isDarkMode } = useDarkMode();
   
  
 
@@ -977,10 +977,10 @@ const UserMessage = () => {
   );
 };
 function Button({ children, variant = "outline", isActive, className, onClick }) {
-  const baseStyle = "px-3 py-2 text-sm rounded-md font-medium transition-all duration-200 flex items-center gap-2";
+  const baseStyle = "text-sm px-3 py-1.5 rounded-full border transition-colors whitespace-nowrap";
 
   const styles = {
-    primary: "bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700 focus:ring-blue-500",
+    primary: "bg-zinc-200 text-blue-600 dark:bg-blue-900/30 dark:text-blue-300 border-zinc-200 dark:border-zinc-800",
     secondary: "bg-zinc-100 text-zinc-800 hover:bg-zinc-200 dark:bg-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-600 focus:ring-zinc-500",
     outline: "border border-zinc-300 bg-white text-zinc-800 hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-white dark:hover:bg-zinc-700 focus:ring-zinc-500",
     ghost: "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800 focus:ring-zinc-500",
@@ -1041,37 +1041,6 @@ function CardStatus({ status }) {
   );
 }
 
-function ApplicationGrid({ filteredApplications, handleDeleteClick, handleViewDetails, isDarkMode }) {
-  // Empty state handling
-  if (!filteredApplications || filteredApplications.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center py-12 px-4 text-center bg-zinc-50 dark:bg-zinc-800/30 rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700">
-        <FolderSearch className="h-12 w-12 text-zinc-400 dark:text-zinc-500 mb-4" />
-        <h3 className="text-xl font-medium text-zinc-800 dark:text-zinc-200 mb-2">No applications found</h3>
-        <p className="text-zinc-500 dark:text-zinc-400 max-w-md">
-          Try adjusting your filters or create a new application to get started.
-        </p>
-        <button className="mt-6 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-zinc-800">
-          Create New Application
-        </button>
-      </div>
-    );
-  }
-
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {filteredApplications.map((application, index) => (
-        <Card
-          key={application.id || index}
-          application={application}
-          onDelete={() => handleDeleteClick(application)}
-          onViewDetails={() => handleViewDetails(application)}
-          isDarkMode={isDarkMode}
-        />
-      ))}
-    </div>
-  );
-}
 
 function Card({ application, onDelete, isDarkMode, onViewDetails }) {
   const { id, score, status, title, level, tags, file, appliedAt, location, company } = application || {};
@@ -1079,24 +1048,24 @@ function Card({ application, onDelete, isDarkMode, onViewDetails }) {
   const getStatusColor = (status) => {
     const statusMap = {
       // Pending state - waiting for action
-      pending: "bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300",
+      pending: "bg-yellow-200/30 text-yellow-800 border-yellow-200 dark:bg-yellow-950/30 dark:text-yellow-300",
       
       // Positive states - showing success/approval
       accepted: "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300",
       approved: "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300",
       
       // Negative states - showing rejection/failure
-      rejected: "bg-red-200 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-300",
+      rejected: "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-300",
       
       // Process states - in progress
       review: "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300",
       
       // Action states - available actions
-      approve: "bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300",
-      reject: "bg-red-200 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-300",
+      approve: "bg-emerald-200/20 text-emerald-800 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300",
+      reject: "bg-red-200/20 text-red-800 border-red-200 dark:bg-red-950/30 dark:text-red-300",
       
       // Default fallback state
-      default: "bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800/80 dark:text-gray-300",
+      default: "bg-gray-100 text-gray-800 border-gray-200 dark:bg-zinc-950 dark:text-gray-300",
     };
     return statusMap[status?.toLowerCase()] || "";
   };
@@ -1122,7 +1091,7 @@ function Card({ application, onDelete, isDarkMode, onViewDetails }) {
     <div
       className={`group relative border-l-4 rounded-lg shadow-sm transition-all duration-300 ease-in-out
         ${getStatusColor(status)}
-        ${isDarkMode ? 'bg-zinc-800/90 border-t border-r border-b border-zinc-700' : 'bg-white border-t border-r border-b border-zinc-200'}`}
+        ${isDarkMode ? 'bg-zinc-950/10 border-t border-r border-b border-zinc-950' : 'bg-white border-t border-r border-b border-zinc-100'}`}
       data-testid={`application-card-${id}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -1190,11 +1159,11 @@ function Card({ application, onDelete, isDarkMode, onViewDetails }) {
       </div>
       
       {/* Action buttons footer */}
-      <div className={`px-6 py-3 bg-zinc-50 dark:bg-zinc-800/50 border-t border-zinc-200 dark:border-zinc-700 rounded-b-lg flex justify-between items-center
+      <div className={`px-6 py-3 bg-zinc-50 dark:bg-zinc-950/50 border-t border-zinc-200 dark:border-zinc-700 rounded-b-lg flex justify-between items-center
         ${isHovered ? 'opacity-100' : 'opacity-0 md:opacity-0 sm:opacity-100'} transition-opacity duration-200`}>
         <button
-          className="p-2 rounded-md text-zinc-500 hover:bg-zinc-200 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-all duration-200
-          dark:text-zinc-400 dark:hover:bg-zinc-700 dark:focus:ring-offset-zinc-800"
+          className="p-2 rounded-md text-zinc-500  hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-all duration-200
+           dark:hover:text-red-500 dark:focus:ring-offset-zinc-800"
           onClick={(e) => {
             e.stopPropagation();
             onDelete(application);
@@ -1218,9 +1187,10 @@ function Card({ application, onDelete, isDarkMode, onViewDetails }) {
           </button>
           
           <button
+         
             className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 
             ${isDarkMode
-              ? "bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-500 focus:ring-offset-zinc-800"
+              ? "bg-zinc-100 group-hover:bg-zinc-300 dark:group-hover:bg-zinc-700 hover:bg-zinc-200 active:bg-zinc-300 text-zinc-700 rounded-md text-sm font-medium transition-all duration-200 flex items-center gap-2 shadow-sm border border-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:active:bg-zinc-600 dark:text-zinc-200 dark:border-zinc-700"
               : "bg-blue-500 hover:bg-blue-600 text-white focus:ring-blue-500 focus:ring-offset-white"
             } focus:outline-none focus:ring-2 focus:ring-offset-2`}
             onClick={(e) => {
@@ -1317,156 +1287,6 @@ function Badge({ level, size = "default" }) {
 
 
 // Example usage
-function ApplicationCardList({ filteredApplications, handleDeleteClick, handleViewDetails, isDarkMode }) {
-  // For empty state
-  if (filteredApplications.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-        <div className="bg-gray-100 dark:bg-gray-800 rounded-full p-4 mb-4">
-          <FileSearch size={32} className="text-gray-500 dark:text-gray-400" />
-        </div>
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No applications found</h3>
-        <p className="text-sm text-gray-500 dark:text-gray-400 max-w-md">
-          Try adjusting your filters or adding a new application to get started.
-        </p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-fadeIn">
-      {filteredApplications.map((application, index) => (
-        <Card
-          key={application.id || index}
-          application={application}
-          onDelete={() => handleDeleteClick(application)}
-          onViewDetails={() => handleViewDetails(application)}
-          isDarkMode={isDarkMode}
-          className={`transform transition-all duration-200 hover:translate-y-px hover:shadow-md 
-            ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}
-        >
-          {/* Status indicator bar */}
-          <div className={`h-1 w-full rounded-t-lg ${getStatusColor(application.status)}`}></div>
-          
-          <div className="p-4">
-            {/* Header section with title and actions */}
-            <div className="flex justify-between items-start mb-2">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white truncate flex-1 pr-2">
-                {application.title}
-              </h2>
-              
-              <div className="flex items-center space-x-1">
-                {/* Status badge */}
-                <StatusBadge status={application.status} />
-                
-                {/* Score indicator if available */}
-                {application.score !== undefined && (
-                  <span className={`inline-flex items-center justify-center h-6 w-6 rounded-full text-xs font-medium 
-                    ${getScoreColor(application.score)}`}>
-                    {application.score}
-                  </span>
-                )}
-              </div>
-            </div>
-            
-            {/* Description - limited to 2 lines */}
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 line-clamp-2 mb-3 min-h-8">
-              {application.description || "No description provided"}
-            </p>
-            
-            {/* Company name if available */}
-            {application.company && (
-              <div className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                <Building size={14} className="mr-1 flex-shrink-0" />
-                <span className="truncate">{application.company}</span>
-              </div>
-            )}
-            
-            {/* Tags and skill level */}
-            <div className="flex flex-wrap gap-1.5 mt-2">
-              {application.level && (
-                <Badge 
-                  level={application.level} 
-                  className={`${getBadgeColorByLevel(application.level)}`}
-                />
-              )}
-              
-              {application.tags?.slice(0, 3).map(tag => (
-                <Badge 
-                  key={tag} 
-                  level={tag} 
-                  size="small"
-                  className="bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300"
-                />
-              ))}
-              
-              {/* Show count of additional tags if more than 3 */}
-              {application.tags && application.tags.length > 3 && (
-                <span className="text-xs px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
-                  +{application.tags.length - 3}
-                </span>
-              )}
-            </div>
-          </div>
-          
-          {/* Footer with metadata */}
-          <div className="px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-100 dark:border-gray-700 
-            rounded-b-lg grid grid-cols-2 gap-y-2 text-sm">
-            <CardInfo
-              icon={<FileText size={14} />}
-              text={application.file}
-              tooltip={`File: ${application.file}`}
-              className="text-gray-600 dark:text-gray-400"
-            />
-            <CardInfo
-              icon={<Calendar size={14} />}
-              text={formatDate(application.date)}
-              tooltip={`Applied on: ${formatDate(application.date)}`}
-              className="text-gray-600 dark:text-gray-400"
-            />
-            
-            {application.location && (
-              <CardInfo
-                icon={<MapPin size={14} />}
-                text={application.location}
-                tooltip={`Location: ${application.location}`}
-                className="text-gray-600 dark:text-gray-400 col-span-2"
-              />
-            )}
-          </div>
-          
-          {/* Action buttons */}
-          <div className="absolute bottom-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
-            <div className="flex space-x-1">
-              <button 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleViewDetails(application);
-                }}
-                className="p-1 rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 
-                  text-gray-600 dark:text-gray-300"
-                aria-label="View details"
-              >
-                <Eye size={16} />
-              </button>
-              <button 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDeleteClick(application);
-                }}
-                className="p-1 rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-red-100 dark:hover:bg-red-900
-                  text-gray-600 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400"
-                aria-label="Delete application"
-              >
-                <Trash2 size={16} />
-              </button>
-            </div>
-          </div>
-        </Card>
-      ))}
-    </div>
-  );
-}
 
 // Helper functions
 function getStatusColor(status) {
@@ -1532,23 +1352,6 @@ function StatusBadge({ status }) {
 }
 
 // Empty state component for when there are no applications
-function EmptyState({ message = "No applications found", actionText = "Add New Application", onAction }) {
-  return (
-    <div className="flex flex-col items-center justify-center p-8 text-center bg-white dark:bg-zinc-800 rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700">
-      <FolderOpenDot className="w-12 h-12 text-zinc-400 dark:text-zinc-500 mb-4" />
-      <h3 className="text-lg font-medium text-zinc-900 dark:text-zinc-100">{message}</h3>
-      <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
-        No applications match your current filters.
-      </p>
-      {onAction && (
-        <Button variant="primary" className="mt-4" onClick={onAction}>
-          <Plus className="w-4 h-4" />
-          {actionText}
-        </Button>
-      )}
-    </div>
-  );
-}
 
 function filterApplications(applications, activeFilter, searchQuery) {
   return applications.filter((app) => {
@@ -1599,7 +1402,7 @@ const PastApplications = () => {
   
   const { profilePic, firstName, lastName, email } = useContext(UserContext);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const { isDarkMode, toggleTheme } = useDarkMode(); // Use the hook
+  const { isDarkMode } = useDarkMode(); // Use the hook
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isModalTwoOpen, setIsModalTwoOpen] = useState(false);
   const [selectedApplication, setSelectedApplication] = useState(null);
@@ -1608,7 +1411,6 @@ const PastApplications = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate(); // If using react-router-dom
  
-      const requestMade = useRef(false);
       const [isLoading, setIsLoading] = useState(true);
 
   const handleViewDetails = (application) => {
@@ -1718,7 +1520,7 @@ const PastApplications = () => {
     { name: "Dashboard", href: "/dashboard", icon: Menu, current: false },
     {
       name: "Past Applications",
-      href: "/dashboard/history",
+      href: "/dashboard/PastApplications",
       icon: FileClock,
       current: true,
     },
@@ -1869,7 +1671,7 @@ const PastApplications = () => {
                   <input
                     type="text"
                     placeholder="Search applications..."
-                    className="w-full sm:w-64 pl-10 pr-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full sm:w-64 pl-10 pr-4 py-2 rounded-lg border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
@@ -1897,19 +1699,26 @@ const PastApplications = () => {
                 variant={activeFilter === "complete" ? "primary" : "outline"}
                 onClick={() => setActiveFilter("complete")}
               >
-                Complete
+                Approved
               </Button>
               <Button
-                variant={activeFilter === "incomplete" ? "primary" : "outline"}
-                onClick={() => setActiveFilter("incomplete")}
+                variant={activeFilter === "Pending" ? "primary" : "outline"}
+                onClick={() => setActiveFilter("Pending")}
               >
-                Incomplete
+              Pending
               </Button>
+              <Button
+                variant={activeFilter === "Rejected" ? "primary" : "outline"}
+                onClick={() => setActiveFilter("Rejected")}
+              >
+               Rejected
+              </Button>
+              
               
             </div>
 
             {filteredApplications.length === 0 ? (
-              <div className="text-center py-12 bg-gray-50 dark:bg-zinc-900 rounded-lg">
+              <div className="text-center py-12 bg-gray-50 dark:bg-black rounded-lg">
                 <UserCheck className="h-12 w-12 mx-auto text-gray-400" />
                 <h3 className="mt-4 text-lg font-medium text-gray-900 dark:text-white">
                   No applications found

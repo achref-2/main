@@ -65,9 +65,13 @@ export const UserProvider = ({ children }) => {
     <UserContext.Provider
       value={{
         profilePic,
+        setProfilePic,
         firstName,
+        setFirstName,
         lastName,
+        setLastName,
         email,
+        setEmail,
         isLoading,
       }}
     >

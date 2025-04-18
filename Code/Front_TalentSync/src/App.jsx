@@ -28,7 +28,6 @@ import Application from "./pages/candidat/Pages/Application";
 import NotFoundPage from "./pages/404";
 import Blog from "./pages/landingPage/Blog";
 import CvPreview from "./components/Cvpreview";
-import SinglePage from "./pages/candidat/Pages/SinglePage";
 import { UserProvider } from "./components/UserContext"
 export const scroll = new SmoothScroll('a[href*="#"]', {
   speed: 1000,

@@ -273,7 +273,6 @@ const SearchBar = ({ navigationMenu, navigationOption }) => {
 
 const UserMenu = ({ profilePic, firstName, lastName, email }) => {
   const { isDarkMode, toggleTheme } = useDarkMode();
-  console.log("UserMenu received props:", { profilePic, firstName, lastName, email });
 
 
   const handleSignout = () => {
@@ -1030,7 +1029,6 @@ const Dashboard  = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isModalTwoOpen, setIsModalTwoOpen] = useState(false);
-  console.log("UserMenu received props:", { profilePic, firstName, lastName, email });
 
   const { isDarkMode } = useDarkMode();
 

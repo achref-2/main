@@ -274,7 +274,7 @@ const SearchBar = ({ navigationMenu, navigationOption }) => {
   );
 }
 const UserMessage = () => {
-  const { isDarkMode, toggleTheme } = useDarkMode();
+  const { isDarkMode } = useDarkMode();
   
  
 
@@ -367,7 +367,6 @@ const UserMessage = () => {
 };
 const UserMenu = ({ profilePic, firstName, lastName, email }) => {
   const { isDarkMode, toggleTheme } = useDarkMode();
-  console.log("UserMenu received props:", { profilePic, firstName, lastName, email });
 
 
   const handleSignout = () => {
@@ -589,7 +588,7 @@ const Jobs = () => {
   const [salaryRange, setSalaryRange] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [experienceLevel, setExperienceLevel] = useState("all");
-  const [activeTab, setActiveTab] = useState("all");
+  const [ setActiveTab] = useState("all");
   const [savedJobs, setSavedJobs] = useState([]);
   const [pinnedJobs, setPinnedJobs] = useState([]);
 
@@ -629,7 +628,6 @@ const Jobs = () => {
   };
   const [selectedJob, setSelectedJob] = useState(null);
   const [jobs, setJobs] = useState([]); // Your original jobs from API/source
-const requestMade = useRef(false);
       const [isLoading, setIsLoading] = useState(true);
   const [allJobs, setAllJobs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -652,13 +650,11 @@ const requestMade = useRef(false);
   useEffect(() => {
     const fetchJobs = async () => {
       try {
-        console.log("Fetching jobs...");
         const response = await fetch("http://localhost:5000/api/jobs");
         if (!response.ok) {
           throw new Error("Failed to fetch jobs");
         }
         const data = await response.json();
-        console.log("Jobs fetched:", data);
         setAllJobs(data);
         setLoading(false);
       } catch (err) {
@@ -1008,14 +1004,15 @@ const requestMade = useRef(false);
 
         <main className="flex-1 overflow-auto bg-gray-50  dark:bg-black transition-all duration-300 ease-in-out z-30">
           {/* Streamlined Header */}
-          <header className="bg-white dark:bg-black  border-gray-200 dark:border-gray-800 sticky top-0 z-40 transition-all duration-300 ease-in-out">
-            <div className="flex items-center justify-between px-4 py-3">
+          <header className="bg-white dark:bg-black  border-gray-200 dark:border-gray-800 sticky top-0 transition-all duration-300 ease-in-out z-30">
+            <div className="flex items-center justify-between px-6 py-4">
               <SearchBar
                 navigationMenu={navigation_menu}
                 navigationOption={navigation_option}
               />
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-4">
               <UserMessage/>
+               
               <UserMenu
   profilePic={profilePic || "../../assets/images/avatar.jpg"}
   firstName={firstName || "First Name"}
@@ -1098,7 +1095,7 @@ const requestMade = useRef(false);
                   <button
                     className={`${
                       activeFilter === "all"
-                        ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 border-purple-200 dark:border-purple-800"
+                        ? "bg-zinc-200 text-blue-600 dark:bg-blue-900/30 dark:text-blue-300 border-zinc-200 dark:border-zinc-800"
                         : "bg-white dark:bg-zinc-900 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-zinc-800"
                     } text-sm px-3 py-1.5 rounded-full border transition-colors whitespace-nowrap`}
                     onClick={() => setActiveFilter("all")}
@@ -1108,7 +1105,7 @@ const requestMade = useRef(false);
                   <button
                     className={`${
                       activeFilter === "suggested"
-                        ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 border-purple-200 dark:border-purple-800"
+                      ? "bg-zinc-200 text-blue-600 dark:bg-blue-900/30 dark:text-blue-300 border-zinc-200 dark:border-zinc-800"
                         : "bg-white dark:bg-zinc-900 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-zinc-800"
                     } text-sm px-3 py-1.5 rounded-full border transition-colors whitespace-nowrap`}
                     onClick={() => setActiveFilter("suggested")}
@@ -1118,7 +1115,7 @@ const requestMade = useRef(false);
                   <button
                     className={`${
                       activeFilter === "pinned"
-                        ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 border-purple-200 dark:border-purple-800"
+                      ? "bg-zinc-200 text-blue-600 dark:bg-blue-900/30 dark:text-blue-300 border-zinc-200 dark:border-zinc-800"
                         : "bg-white dark:bg-zinc-900 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-zinc-800"
                     } text-sm px-3 py-1.5 rounded-full border transition-colors whitespace-nowrap`}
                     onClick={() => setActiveFilter("pinned")}
@@ -1382,8 +1379,8 @@ const requestMade = useRef(false);
                                     className={`p-2.5 rounded-full transition-colors flex items-center justify-center
           ${
             isJobPinned(job._id)
-              ? "bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400"
-              : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
+              ? " text-blue-600 dark:bg-zinc-900 dark:text-blue-400"
+              : " text-zinc-500 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-300 hover:text-zinc-950 dark:hover:bg-zinc-900"
           }`}
                                     aria-label={
                                       isJobPinned(job._id)
@@ -1400,15 +1397,15 @@ const requestMade = useRef(false);
                                   </button>
 
                                   <button
-                                    className="px-4 py-2 bg-purple-100 hover:bg-purple-200 active:bg-purple-300 text-purple-700 rounded-md text-sm font-medium transition-all duration-200 flex items-center gap-2 shadow-sm border border-purple-200 dark:bg-purple-900/40 dark:hover:bg-purple-900/60 dark:active:bg-purple-900/80 dark:text-purple-200 dark:border-purple-800"
-                                    aria-label="View Details"
-                                  >
-                                    <span>View Details</span>
-                                    <ArrowRight
-                                      size={14}
-                                      className="transform group-hover:translate-x-1 transition-transform"
-                                    />
-                                  </button>
+      className="px-4 py-2 bg-zinc-100 group-hover:bg-zinc-300 dark:group-hover:bg-zinc-700 hover:bg-zinc-200 active:bg-zinc-300 text-zinc-700 rounded-md text-sm font-medium transition-all duration-200 flex items-center gap-2 shadow-sm border border-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:active:bg-zinc-600 dark:text-zinc-200 dark:border-zinc-700 group"
+      aria-label="View Details"
+    >
+      <span>View Details</span>
+      <ArrowRight
+        size={14}
+        className="transform group-hover:translate-x-1 transition-transform"
+      />
+    </button>
                                 </div>
                               </div>
                             </div>
@@ -1423,7 +1420,7 @@ const requestMade = useRef(false);
                             <button className="p-1.5 rounded border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                               <ChevronLeft size={16} />
                             </button>
-                            <button className="w-8 h-8 flex items-center justify-center rounded bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 font-medium">
+                            <button className="w-8 h-8 flex items-center justify-center rounded bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 font-medium">
                               1
                             </button>
                             <button className="w-8 h-8 flex items-center justify-center rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 transition-colors">
@@ -1945,7 +1942,7 @@ const requestMade = useRef(false);
                               pathname: "/Application",
                             }}
                             state={{ job: selectedJob }}
-                            className="flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 active:from-blue-800 active:to-blue-900 text-white font-medium transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 active:translate-y-0 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
+                            className="px-4 py-2 bg-zinc-100 hover:bg-zinc-200 active:bg-zinc-300 text-zinc-700 rounded-md text-sm font-medium transition-all duration-200 flex items-center gap-2 shadow-sm border border-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:active:bg-zinc-600 dark:text-zinc-200 dark:border-zinc-700 group"
                             aria-label="Apply for this job"
                           >
                             <span className="text-base">Apply Now</span>

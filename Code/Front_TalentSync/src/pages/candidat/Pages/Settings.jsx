@@ -573,13 +573,20 @@ const SettingsComp = () => {
   
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const { isDarkMode } = useDarkMode();
-  const { profilePic: contextProfilePic, firstName: contextFirstName, lastName: contextLastName, email: contextEmail } = useContext(UserContext);
-
-  const [profilePic, setProfilePic] = useState(contextProfilePic || ""); // Initialize with context value
-  const [firstName, setFirstName] = useState(contextFirstName || ""); // Initialize with context value
-  const [lastName, setLastName] = useState(contextLastName || ""); // Initialize with context value
-  const [email, setEmail] = useState(contextEmail || ""); // Initialize with context value
-
+  const {
+    profilePic: contextProfilePic,
+    setProfilePic,
+    firstName: contextFirstName,
+    setFirstName,
+    lastName: contextLastName,
+    setLastName,
+    email: contextEmail,
+    setEmail,
+  } = useContext(UserContext);
+  const [profilePic, setLocalProfilePic] = useState(contextProfilePic || "");
+  const [firstName, setLocalFirstName] = useState(contextFirstName || "");
+  const [lastName, setLocalLastName] = useState(contextLastName || "");
+  const [email, setLocalEmail] = useState(contextEmail || "");
  
  
   const navigation_menu = [
@@ -660,7 +667,23 @@ const SettingsComp = () => {
 
       if (response.status === 200) {
         toast.success("Profile updated successfully!");
-        // Optionally update context values here if needed
+
+        // Update context values
+        setProfilePic(profilePicFile ? URL.createObjectURL(profilePicFile) : profilePic);
+        setFirstName(firstName);
+        setLastName(lastName);
+        setEmail(email);
+
+        // Optionally update sessionStorage
+        sessionStorage.setItem(
+          "userData",
+          JSON.stringify({
+            profilePic: profilePicFile ? URL.createObjectURL(profilePicFile) : profilePic,
+            firstName,
+            lastName,
+            email,
+          })
+        );
       } else {
         toast.error("Failed to update profile. Please try again.");
       }
@@ -881,7 +904,7 @@ const SettingsComp = () => {
                         id="firstName"
                         type="text"
                         value={firstName} // Bind the state to the input
-                        onChange={(e) => setFirstName(e.target.value)} // Update state on change
+                        onChange={(e) => setLocalFirstName(e.target.value)}
                         placeholder="Enter your first name"
                         className={`w-full px-3 py-2 border rounded-lg focus:ring-2 transition-all duration-300 ease-in-out z-30 ${
                           isDarkMode
@@ -901,7 +924,7 @@ const SettingsComp = () => {
                         id="lastName"
                         type="text"
                         value={lastName} // Bind the state to the input
-                        onChange={(e) => setLastName(e.target.value)} // Update state on change
+                        onChange={(e) => setLocalLastName(e.target.value)}
                         placeholder="Enter your last name"
                         className={`w-full px-3 py-2 border rounded-lg focus:ring-2 transition-all duration-300 ease-in-out z-30 ${
                           isDarkMode
@@ -929,7 +952,7 @@ const SettingsComp = () => {
                       id="email"
                       type="email"
                       value={email} // Bind the state to the input
-                      onChange={(e) => setEmail(e.target.value)} // Update state on change
+                      onChange={(e) => setLocalEmail(e.target.value)}
                       placeholder="your.email@domain.com"
                       className={`w-full px-3 py-2 border rounded-lg focus:ring-2 transition-all duration-300 ease-in-out z-30 ${
                         isDarkMode
