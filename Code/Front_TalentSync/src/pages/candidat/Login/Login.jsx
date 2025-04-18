@@ -26,16 +26,17 @@ const Login = () => {
       // Add role to data if not already included
       const dataWithRole = {
         ...data,
-        role: "candidate" // Set default role to candidate
+        role: "candidate", // Set default role to candidate
       };
-      
+  
       const url = "http://localhost:5000/api/candidates/login";
       const { data: res } = await axios.post(url, dataWithRole);
-      
-      // Store token and user info
+  
+      // Store token, user role, and candidateId
       localStorage.setItem("token", res.token);
       localStorage.setItem("userRole", "candidate");
-      
+      localStorage.setItem("candidateId", res.candidateId); // Store candidateId
+  
       window.location = "/dashboard";
     } catch (error) {
       if (error.response && error.response.status >= 400 && error.response.status <= 500) {

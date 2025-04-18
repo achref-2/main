@@ -1,4 +1,4 @@
-import React, { useState,useRef, useEffect,useContext } from "react";
+import React, { useState, useRef, useEffect, useContext } from "react";
 import {
   Menu,
   History,
@@ -26,11 +26,10 @@ import {
   BookmarkPlus,
   ArrowRight,
   LogOut,
-   FileClock,
-   Users,
-   Mail,
-   Calendar
-
+  FileClock,
+  Users,
+  Mail,
+  Calendar,
 } from "lucide-react";
 import { Menu as HeadlessMenu } from "@headlessui/react";
 import { BellIcon } from "@heroicons/react/24/outline";
@@ -62,24 +61,26 @@ const SearchBar = ({ navigationMenu, navigationOption }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
   const inputRef = useRef(null);
-  
+
   // Filter menu items based on search query
   const filteredMenu = navigationMenu.filter((item) =>
     item.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
-  
+
   const filteredOption = navigationOption.filter((item) =>
     item.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
-  
+
   // Combine filtered items for keyboard navigation
   const allFilteredItems = [...filteredMenu, ...filteredOption];
-  
+
   // Handle keyboard navigation
   const handleKeyDown = (e) => {
     if (e.key === "ArrowDown") {
       e.preventDefault();
-      setActiveIndex((prev) => (prev < allFilteredItems.length - 1 ? prev + 1 : prev));
+      setActiveIndex((prev) =>
+        prev < allFilteredItems.length - 1 ? prev + 1 : prev
+      );
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
       setActiveIndex((prev) => (prev > 0 ? prev - 1 : prev));
@@ -90,25 +91,25 @@ const SearchBar = ({ navigationMenu, navigationOption }) => {
       setIsModalOpen(false);
     }
   };
-  
+
   // Close modal when clicking outside
   useEffect(() => {
     if (isModalOpen && inputRef.current) {
       inputRef.current.focus();
     }
-    
+
     const handleClickOutside = (event) => {
-      if (isModalOpen && event.target.classList.contains('modal-backdrop')) {
+      if (isModalOpen && event.target.classList.contains("modal-backdrop")) {
         setIsModalOpen(false);
       }
     };
-    
-    document.addEventListener('mousedown', handleClickOutside);
+
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [isModalOpen]);
-  
+
   // Reset active index when search changes
   useEffect(() => {
     setActiveIndex(0);
@@ -119,11 +120,13 @@ const SearchBar = ({ navigationMenu, navigationOption }) => {
       {/* Search Input Trigger */}
       <div className="relative max-w-md w-full group">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500 dark:text-zinc-400" />
-        <div 
+        <div
           onClick={() => setIsModalOpen(true)}
           className="w-full md:w-80 pl-10 pr-4 py-2.5 flex items-center bg-zinc-100 dark:bg-zinc-800 rounded-xl border border-zinc-200 dark:border-zinc-700 cursor-pointer group-hover:bg-zinc-200 dark:group-hover:bg-zinc-700 transition-colors"
         >
-          <span className="text-gray-500 dark:text-gray-400 text-sm">Search...</span>
+          <span className="text-gray-500 dark:text-gray-400 text-sm">
+            Search...
+          </span>
           <div className="ml-auto flex items-center gap-1 text-xs bg-zinc-200 dark:bg-zinc-700 px-1.5 py-0.5 rounded text-gray-500 dark:text-gray-400">
             <kbd className="font-sans">⌘</kbd>
             <kbd className="font-sans">K</kbd>
@@ -133,17 +136,15 @@ const SearchBar = ({ navigationMenu, navigationOption }) => {
 
       {/* Modal */}
       {isModalOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-start justify-center pt-16 sm:pt-24 px-4 z-50 modal-backdrop"
           onClick={(e) => {
-            if (e.target.classList.contains('modal-backdrop')) {
+            if (e.target.classList.contains("modal-backdrop")) {
               setIsModalOpen(false);
             }
           }}
         >
-          <div 
-            className="bg-white dark:bg-zinc-900 rounded-xl shadow-2xl w-full max-w-lg border border-zinc-200 dark:border-zinc-700 overflow-hidden animate-fadeIn"
-          >
+          <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-2xl w-full max-w-lg border border-zinc-200 dark:border-zinc-700 overflow-hidden animate-fadeIn">
             {/* Search Input Inside Modal */}
             <div className="relative border-b border-zinc-200 dark:border-zinc-800">
               <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500 dark:text-zinc-400" />
@@ -169,16 +170,22 @@ const SearchBar = ({ navigationMenu, navigationOption }) => {
             {/* Results container with max height and scrolling */}
             <div className="max-h-96 overflow-y-auto p-2">
               {/* Show no results message if both arrays are empty */}
-              {filteredMenu.length === 0 && filteredOption.length === 0 && searchQuery && (
-                <div className="flex flex-col items-center justify-center py-8">
-                  <div className="bg-zinc-100 dark:bg-zinc-800 p-3 rounded-full mb-3">
-                    <Search className="w-6 h-6 text-gray-400 dark:text-gray-500" />
+              {filteredMenu.length === 0 &&
+                filteredOption.length === 0 &&
+                searchQuery && (
+                  <div className="flex flex-col items-center justify-center py-8">
+                    <div className="bg-zinc-100 dark:bg-zinc-800 p-3 rounded-full mb-3">
+                      <Search className="w-6 h-6 text-gray-400 dark:text-gray-500" />
+                    </div>
+                    <p className="text-gray-500 dark:text-gray-400">
+                      No results found
+                    </p>
+                    <p className="text-sm text-gray-400 dark:text-gray-500">
+                      Try different keywords
+                    </p>
                   </div>
-                  <p className="text-gray-500 dark:text-gray-400">No results found</p>
-                  <p className="text-sm text-gray-400 dark:text-gray-500">Try different keywords</p>
-                </div>
-              )}
-              
+                )}
+
               {/* Menu Section */}
               {filteredMenu.length > 0 && (
                 <div className="mb-2">
@@ -191,9 +198,9 @@ const SearchBar = ({ navigationMenu, navigationOption }) => {
                         key={item.name}
                         href={item.href}
                         className={`flex items-center gap-3 px-3 py-2.5 rounded-lg ${
-                          index === activeIndex 
-                            ? 'bg-zinc-200 dark:bg-zinc-700 text-gray-900 dark:text-white' 
-                            : 'text-gray-700 dark:text-gray-300 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                          index === activeIndex
+                            ? "bg-zinc-200 dark:bg-zinc-700 text-gray-900 dark:text-white"
+                            : "text-gray-700 dark:text-gray-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                         } transition-colors duration-75`}
                         onMouseEnter={() => setActiveIndex(index)}
                       >
@@ -213,7 +220,7 @@ const SearchBar = ({ navigationMenu, navigationOption }) => {
                   </div>
                 </div>
               )}
-              
+
               {/* Options Section */}
               {filteredOption.length > 0 && (
                 <div>
@@ -226,11 +233,13 @@ const SearchBar = ({ navigationMenu, navigationOption }) => {
                         key={item.name}
                         href={item.href}
                         className={`flex items-center gap-3 px-3 py-2.5 rounded-lg ${
-                          index + filteredMenu.length === activeIndex 
-                            ? 'bg-zinc-200 dark:bg-zinc-700 text-gray-900 dark:text-white' 
-                            : 'text-gray-700 dark:text-gray-300 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                          index + filteredMenu.length === activeIndex
+                            ? "bg-zinc-200 dark:bg-zinc-700 text-gray-900 dark:text-white"
+                            : "text-gray-700 dark:text-gray-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                         } transition-colors duration-75`}
-                        onMouseEnter={() => setActiveIndex(index + filteredMenu.length)}
+                        onMouseEnter={() =>
+                          setActiveIndex(index + filteredMenu.length)
+                        }
                       >
                         <div className="bg-zinc-100 dark:bg-zinc-800 p-2 rounded-md">
                           <item.icon className="w-4 h-4" />
@@ -249,7 +258,7 @@ const SearchBar = ({ navigationMenu, navigationOption }) => {
                 </div>
               )}
             </div>
-            
+
             {/* Footer with keyboard shortcuts */}
             <div className="border-t border-zinc-200 dark:border-zinc-800 p-3 bg-zinc-50 dark:bg-zinc-900 text-xs text-gray-500 dark:text-gray-400 flex justify-between">
               <div className="flex items-center gap-4">
@@ -272,13 +281,10 @@ const SearchBar = ({ navigationMenu, navigationOption }) => {
       )}
     </>
   );
-}
+};
 const UserMessage = () => {
   const { isDarkMode } = useDarkMode();
-  
- 
 
-  
   const notifications = [
     {
       message: "Your application has been reviewed.",
@@ -302,20 +308,20 @@ const UserMessage = () => {
         <>
           <MenuButton className="flex items-center focus:outline-none">
             <div className="relative">
-            <button
-                  type="button"
-                  className="relative p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <span className="sr-only">View notifications</span>
-                  <BellIcon className="h-5 w-5" />
-                  <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white dark:ring-gray-900" />
-                </button>
+              <button
+                type="button"
+                className="relative p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <span className="sr-only">View notifications</span>
+                <BellIcon className="h-5 w-5" />
+                <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white dark:ring-gray-900" />
+              </button>
             </div>
           </MenuButton>
 
           <MenuItems
             className={`absolute right-0 z-50 mt-2 w-64 origin-top-right rounded-xl py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none transform transition-all duration-100 ${
-              open ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
+              open ? "scale-100 opacity-100" : "scale-95 opacity-0"
             } ${
               isDarkMode
                 ? "bg-zinc-800 text-white border border-zinc-700"
@@ -325,40 +331,36 @@ const UserMessage = () => {
             {/* Header with user info */}
             <div className="px-4 py-3 border-b border-gray-100 dark:border-zinc-700">
               <div className="flex items-center">
-               
                 <div className="ml-3">
                   <p className="text-sm font-medium text-gray-900 dark:text-white">
                     Messages
                   </p>
-                  
                 </div>
               </div>
             </div>
 
-          
-
-<div className="py-1">
-  {notifications.map(({ message, time, icon: Icon }, index) => (
-    <div
-      key={index}
-      className="group flex items-center justify-between px-4 py-2 text-sm bg-gray-100 dark:bg-zinc-800 rounded-lg mb-2"
-    >
-      <div className="flex items-center">
-        <div className="mr-3 p-1 rounded-md bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300">
-          <Icon className="w-4 h-4" />
-        </div>
-        <div>
-          <p className="font-medium text-gray-900 dark:text-white">{message}</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">{time}</p>
-        </div>
-      </div>
-    </div>
-  ))}
-</div>
-
-          
-
-           
+            <div className="py-1">
+              {notifications.map(({ message, time, icon: Icon }, index) => (
+                <div
+                  key={index}
+                  className="group flex items-center justify-between px-4 py-2 text-sm bg-gray-100 dark:bg-zinc-800 rounded-lg mb-2"
+                >
+                  <div className="flex items-center">
+                    <div className="mr-3 p-1 rounded-md bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300">
+                      <Icon className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900 dark:text-white">
+                        {message}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {time}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </MenuItems>
         </>
       )}
@@ -367,7 +369,6 @@ const UserMessage = () => {
 };
 const UserMenu = ({ profilePic, firstName, lastName, email }) => {
   const { isDarkMode, toggleTheme } = useDarkMode();
-
 
   const handleSignout = () => {
     localStorage.removeItem("token");
@@ -402,15 +403,15 @@ const UserMenu = ({ profilePic, firstName, lastName, email }) => {
         <>
           <MenuButton className="flex items-center focus:outline-none">
             <div className="relative">
-            <img
-  className={`h-9 w-9 rounded-full object-cover ring-2 transition-all duration-200 ${
-    open
-      ? "ring-blue-500 ring-offset-2 ring-offset-white dark:ring-offset-zinc-900"
-      : "ring-gray-200 dark:ring-gray-700 hover:ring-blue-400"
-  }`}
-  src={profilePic} // Use the profilePic prop
-  alt="User avatar"
-/>
+              <img
+                className={`h-9 w-9 rounded-full object-cover ring-2 transition-all duration-200 ${
+                  open
+                    ? "ring-blue-500 ring-offset-2 ring-offset-white dark:ring-offset-zinc-900"
+                    : "ring-gray-200 dark:ring-gray-700 hover:ring-blue-400"
+                }`}
+                src={profilePic} // Use the profilePic prop
+                alt="User avatar"
+              />
               <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-green-500 ring-1 ring-white dark:ring-zinc-900"></span>
             </div>
           </MenuButton>
@@ -430,13 +431,14 @@ const UserMenu = ({ profilePic, firstName, lastName, email }) => {
                 <div className="flex-shrink-0">
                   <img
                     className="h-10 w-10 rounded-full"
-                    src={profilePic } // Use the profilePic prop
+                    src={profilePic} // Use the profilePic prop
                     alt="User avatar"
                   />
                 </div>
                 <div className="ml-3">
                   <p className="text-sm font-medium text-gray-900 dark:text-white">
-                    {`${firstName} ${lastName}`} {/* Use the firstName and lastName props */}
+                    {`${firstName} ${lastName}`}{" "}
+                    {/* Use the firstName and lastName props */}
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                     {email} {/* Use the email prop */}
@@ -580,39 +582,37 @@ const UserMenu = ({ profilePic, firstName, lastName, email }) => {
 // Improved Card component with proper score display
 
 const Jobs = () => {
-    const { profilePic, firstName, lastName, email } = useContext(UserContext);
-  
+  const { profilePic, firstName, lastName, email } = useContext(UserContext);
+
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const { isDarkMode } = useDarkMode();
   const [jobType, setJobType] = useState("all");
   const [salaryRange, setSalaryRange] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [experienceLevel, setExperienceLevel] = useState("all");
-  const [ setActiveTab] = useState("all");
+  const [setActiveTab] = useState("all");
   const [savedJobs, setSavedJobs] = useState([]);
   const [pinnedJobs, setPinnedJobs] = useState([]);
 
-    const navigation_menu = [
-      { name: "Dashboard", href: "/dashboard", icon: Menu, current: false },
-      {
-        name: "Past Applications",
-        href: "/dashboard/PastApplications",
-        icon: FileClock,
-        current: false,
-      },
-      { name: "Jobs", href: "/Jobs", icon: Briefcase, current: true},
-      { name: "Billing", href: "/Pricing", icon: CreditCard, current: false },
-    ];
-    const navigation_option = [
-      { name: "Settings", href: "/Settings", icon: Settings, current: false },
-      { name: "Support", href: "/cv", icon: Wrench, current: false },
-     
-    ];
+  const navigation_menu = [
+    { name: "Dashboard", href: "/dashboard", icon: Menu, current: false },
+    {
+      name: "Past Applications",
+      href: "/dashboard/PastApplications",
+      icon: FileClock,
+      current: false,
+    },
+    { name: "Jobs", href: "/Jobs", icon: Briefcase, current: true },
+    { name: "Billing", href: "/Pricing", icon: CreditCard, current: false },
+  ];
+  const navigation_option = [
+    { name: "Settings", href: "/Settings", icon: Settings, current: false },
+    { name: "Support", href: "/cv", icon: Wrench, current: false },
+  ];
   const [showFilters, setShowFilters] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [sortOption, setSortOption] = useState("newest"); // State for sorting
- 
-       
+
   const clearFilters = () => {
     setFilters({
       fullTime: false,
@@ -628,7 +628,7 @@ const Jobs = () => {
   };
   const [selectedJob, setSelectedJob] = useState(null);
   const [jobs, setJobs] = useState([]); // Your original jobs from API/source
-      const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [allJobs, setAllJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -644,7 +644,6 @@ const Jobs = () => {
     salary150Plus: false,
   });
   const [activeFilter, setActiveFilter] = useState("all");
-
 
   // Fetch jobs from the backend
   useEffect(() => {
@@ -692,7 +691,7 @@ const Jobs = () => {
       [filterName]: !prev[filterName],
     }));
   };
-  
+
   // Update the `getFilteredJobs` function to include all filters, sorting, and search logic
   const getFilteredJobs = () => {
     let result = [...allJobs];
@@ -788,7 +787,6 @@ const Jobs = () => {
     return result;
   };
 
-
   {
   }
 
@@ -813,7 +811,6 @@ const Jobs = () => {
     }
   };
 
- 
   const [pinnedJobIds, setPinnedJobIds] = useState([]); // Only store IDs of pinned jobs
 
   const getPinnedJobs = () => {
@@ -907,7 +904,6 @@ const Jobs = () => {
     setFilteredJobs(filtered);
   }, [searchQuery, filters, activeFilter, sortOption, allJobs, pinnedJobIds]); // Add pinnedJobIds as a dependency
   // Update the JSX for Quick Filters, Sort, and Advanced Filters
-
 
   return (
     <div
@@ -1011,14 +1007,14 @@ const Jobs = () => {
                 navigationOption={navigation_option}
               />
               <div className="flex items-center gap-4">
-              <UserMessage/>
-               
-              <UserMenu
-  profilePic={profilePic || "../../assets/images/avatar.jpg"}
-  firstName={firstName || "First Name"}
-  lastName={lastName || "Last Name"}
-  email={email || "example@example.com"}
-/>
+                <UserMessage />
+
+                <UserMenu
+                  profilePic={profilePic || "../../assets/images/avatar.jpg"}
+                  firstName={firstName || "First Name"}
+                  lastName={lastName || "Last Name"}
+                  email={email || "example@example.com"}
+                />
               </div>
             </div>
           </header>
@@ -1047,14 +1043,7 @@ const Jobs = () => {
                     </span>
                   </div>
                   <div className="w-px h-4 bg-gray-300 dark:bg-gray-700"></div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-gray-500 dark:text-gray-400">
-                      Active:
-                    </span>
-                    <span className="font-medium text-gray-900 dark:text-white">
-                      {filteredJobs.filter((job) => job.isActive).length} jobs
-                    </span>
-                  </div>
+                 
                 </div>
               </div>
 
@@ -1075,7 +1064,7 @@ const Jobs = () => {
                   </div>
                   <button
                     onClick={() => setIsFilterOpen(!isFilterOpen)}
-                    className="sm:hidden inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
+                    className="sm:hidden inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
                   >
                     <Filter size={16} />
                     <span>Filters</span>
@@ -1092,36 +1081,66 @@ const Jobs = () => {
                   <span className="text-sm font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">
                     Quick filters:
                   </span>
-                  <button
-                    className={`${
-                      activeFilter === "all"
-                        ? "bg-zinc-200 text-blue-600 dark:bg-blue-900/30 dark:text-blue-300 border-zinc-200 dark:border-zinc-800"
-                        : "bg-white dark:bg-zinc-900 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-zinc-800"
-                    } text-sm px-3 py-1.5 rounded-full border transition-colors whitespace-nowrap`}
-                    onClick={() => setActiveFilter("all")}
-                  >
-                    All Jobs
-                  </button>
-                  <button
-                    className={`${
-                      activeFilter === "suggested"
-                      ? "bg-zinc-200 text-blue-600 dark:bg-blue-900/30 dark:text-blue-300 border-zinc-200 dark:border-zinc-800"
-                        : "bg-white dark:bg-zinc-900 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-zinc-800"
-                    } text-sm px-3 py-1.5 rounded-full border transition-colors whitespace-nowrap`}
-                    onClick={() => setActiveFilter("suggested")}
-                  >
-                    Suggested For You
-                  </button>
-                  <button
-                    className={`${
-                      activeFilter === "pinned"
-                      ? "bg-zinc-200 text-blue-600 dark:bg-blue-900/30 dark:text-blue-300 border-zinc-200 dark:border-zinc-800"
-                        : "bg-white dark:bg-zinc-900 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-zinc-800"
-                    } text-sm px-3 py-1.5 rounded-full border transition-colors whitespace-nowrap`}
-                    onClick={() => setActiveFilter("pinned")}
-                  >
-                    Pinned
-                  </button>
+                  <div className="inline-flex p-1 bg-gray-50 dark:bg-zinc-900 rounded-lg shadow-sm">
+                    <button
+                      className={`relative px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-zinc-500 ${
+                        activeFilter === "all"
+                          ? "text-zinc-700 dark:text-zinc-200 shadow-sm"
+                          : " text-zinc-200 hover:text-zinc-900 dark:hover:text-white"
+                      }`}
+                      onClick={() => setActiveFilter("all")}
+                      aria-current={activeFilter === "all" ? "page" : undefined}
+                    >
+                      {activeFilter === "all" && (
+                        <span
+                          className="absolute  bg-zinc-100  inset-0 group-hover:bg-zinc-300 dark:group-hover:bg-zinc-700 hover:bg-zinc-200 active:bg-zinc-300 text-zinc-700 rounded-md text-sm font-medium transition-all duration-200 flex items-center gap-2 shadow-sm border border-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:active:bg-zinc-600 dark:text-zinc-200 dark:border-zinc-700 group"
+
+                          aria-hidden="true"
+                        ></span>
+                      )}
+                      <span className="relative">All Jobs</span>
+                    </button>
+
+                    <button
+                      className={`relative px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-zinc-500 ${
+                        activeFilter === "suggested"
+                          ? "text-white shadow-sm"
+                          : "text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+                      }`}
+                      onClick={() => setActiveFilter("suggested")}
+                      aria-current={
+                        activeFilter === "suggested" ? "page" : undefined
+                      }
+                    >
+                      {activeFilter === "suggested" && (
+                        <span
+                          className="absolute inset-0 bg-zinc-600 dark:bg-zinc-700 rounded-md"
+                          aria-hidden="true"
+                        ></span>
+                      )}
+                      <span className="relative">Suggested For You</span>
+                    </button>
+
+                    <button
+                      className={`relative px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-zinc-500 ${
+                        activeFilter === "pinned"
+                          ? "text-white shadow-sm"
+                          : "text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+                      }`}
+                      onClick={() => setActiveFilter("pinned")}
+                      aria-current={
+                        activeFilter === "pinned" ? "page" : undefined
+                      }
+                    >
+                      {activeFilter === "pinned" && (
+                        <span
+                          className="absolute inset-0 bg-zinc-600 dark:bg-zinc-700 rounded-md"
+                          aria-hidden="true"
+                        ></span>
+                      )}
+                      <span className="relative">Pinned</span>
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -1137,7 +1156,7 @@ const Jobs = () => {
                         <h2 className="font-medium text-gray-900 dark:text-white">
                           Job Listings
                         </h2>
-                        <div className="ml-2 px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded-full text-xs font-medium text-gray-700 dark:text-gray-300">
+                        <div className="ml-2 px-2 py-0.5 bg-zinc-50 dark:bg-zinc-900 rounded-full text-xs font-medium text-gray-700 dark:text-gray-300">
                           {filteredJobs.length}
                         </div>
                       </div>
@@ -1397,15 +1416,15 @@ const Jobs = () => {
                                   </button>
 
                                   <button
-      className="px-4 py-2 bg-zinc-100 group-hover:bg-zinc-300 dark:group-hover:bg-zinc-700 hover:bg-zinc-200 active:bg-zinc-300 text-zinc-700 rounded-md text-sm font-medium transition-all duration-200 flex items-center gap-2 shadow-sm border border-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:active:bg-zinc-600 dark:text-zinc-200 dark:border-zinc-700 group"
-      aria-label="View Details"
-    >
-      <span>View Details</span>
-      <ArrowRight
-        size={14}
-        className="transform group-hover:translate-x-1 transition-transform"
-      />
-    </button>
+                                    className="px-4 py-2 bg-zinc-100 group-hover:bg-zinc-300 dark:group-hover:bg-zinc-700 hover:bg-zinc-200 active:bg-zinc-300 text-zinc-700 rounded-md text-sm font-medium transition-all duration-200 flex items-center gap-2 shadow-sm border border-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:active:bg-zinc-600 dark:text-zinc-200 dark:border-zinc-700 group"
+                                    aria-label="View Details"
+                                  >
+                                    <span>View Details</span>
+                                    <ArrowRight
+                                      size={14}
+                                      className="transform group-hover:translate-x-1 transition-transform"
+                                    />
+                                  </button>
                                 </div>
                               </div>
                             </div>
@@ -1580,7 +1599,8 @@ const Jobs = () => {
                         >
                           Clear all
                         </button>
-                        <button className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-lg text-sm transition-colors">
+                        <button                                     className="px-4 py-2 bg-zinc-100 group-hover:bg-zinc-300 dark:group-hover:bg-zinc-700 hover:bg-zinc-200 active:bg-zinc-300 text-zinc-700 rounded-md text-sm font-medium transition-all duration-200 flex items-center gap-2 shadow-sm border border-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:active:bg-zinc-600 dark:text-zinc-200 dark:border-zinc-700 group"
+                        >
                           Apply
                         </button>
                       </div>
@@ -1904,7 +1924,7 @@ const Jobs = () => {
                         <div className="flex items-center gap-4">
                           {/* Share Button */}
                           <button
-                            className="p-2.5 rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 transition-colors flex items-center justify-center text-gray-700 dark:text-gray-300"
+                            className="text-zinc-500 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-300 hover:text-zinc-950 dark:hover:bg-zinc-900"
                             aria-label="Share job"
                           >
                             <Share2 size={18} />
@@ -1919,8 +1939,8 @@ const Jobs = () => {
                             className={`p-2.5 rounded-full transition-colors flex items-center justify-center
           ${
             isJobPinned(selectedJob._id)
-              ? "bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400"
-              : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
+              ? "text-blue-600 dark:bg-zinc-900 dark:text-blue-400"
+              : "text-zinc-500 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-300 hover:text-zinc-950 dark:hover:bg-zinc-900"
           }`}
                             aria-label={
                               isJobPinned(selectedJob._id)

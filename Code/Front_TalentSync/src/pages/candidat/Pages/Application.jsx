@@ -32,7 +32,9 @@ import axios from "axios";
 import LoadingAnimation from './LoginAnimation'; // Adjust the path if needed
 import { useDarkMode } from "../../../components/DarkModeProvider";
 import { useNavigate } from "react-router-dom"; // Import useNavigate
-
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { ToastContainer } from "react-toastify";
 const NavLink = ({ href, icon: Icon, children, isActive }) => (
   <Link
     to={href}
@@ -378,7 +380,9 @@ const SidebarLayout = () => {
   const [useExistingData, setUseExistingData] = useState(null);
   const [isAddCvModalOpen, setIsAddCvModalOpen] = useState(false);
     const [profilePicFile, setProfilePicFile] = useState(null);
-  
+    const [isLoading, setIsLoading] = useState(false);
+    const [activeSection, setActiveSection] = useState(null);
+
       const [profilePic, setProfilePic] = useState(""); // Default to an empty string
      const [firstName, setFirstName] = useState(""); // Default to an empty string
       const [lastName, setLastName] = useState(""); // Default to an empty string
@@ -396,6 +400,9 @@ const SidebarLayout = () => {
   const [uploadError, setUploadError] = useState("");
   const handleAddCvModalOpen = () => setIsAddCvModalOpen(true);
   const handleAddCvModalClose = () => setIsAddCvModalOpen(false);
+  const toggleSection = (section) => {
+    setActiveSection(activeSection === section ? null : section);
+  };
 
   const navigation_menu = [
     { name: "Dashboard", href: "/dashboard", icon: Menu, current: false },
@@ -429,7 +436,6 @@ const SidebarLayout = () => {
     
           const { candidate } = response.data;
     
-          console.log("Fetched profilePic:", candidate.profilePic); // Debugging
           setProfilePic(candidate.profilePic || "../../assets/images/avatar.jpg");
           setFirstName(candidate.name?.split(" ")[0] || "");
           setLastName(candidate.name?.split(" ").slice(1).join(" ") || "");
@@ -549,11 +555,50 @@ const SidebarLayout = () => {
   
 
 
+ 
+  const renderEditableField = (label, field, value, isTextarea = false) => {
+    return (
+      <div className="mb-4">
+        <label htmlFor={field} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          {label}
+        </label>
+        {isTextarea ? (
+          <textarea
+            id={field}
+            name={field}
+            value={value}
+            onChange={(e) => handleInputChange(field, e.target.value)}
+            rows={5}
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white"
+          />
+        ) : (
+          <input
+            type="text"
+            id={field}
+            name={field}
+            value={value}
+            onChange={(e) => handleInputChange(field, e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white"
+          />
+        )}
+      </div>
+    );
+  };
+  const handleInputChange = (field, value) => {
+    setFormData({
+      ...formData,
+      [field]: value
+    });
+  };
+
   const handleSave = () => {
-    if (onUpdate) {
-      onUpdate(formData);
-    }
-    setEditMode(false);
+    setIsLoading(true);
+    // Simulating API call
+    setTimeout(() => {
+      setIsLoading(false);
+      setEditMode(false);
+      // Here you would typically send data to backend
+    }, 1000);
   };
   // Helper function to parse and display experience section
   const parseExperienceSection = (rawAnalysis, asPlainText = false) => {
@@ -861,11 +906,13 @@ const SidebarLayout = () => {
     e.preventDefault();
     setMessage("");
     setError("");
+    setIsUploading(true); // Set loading state to true
   
     try {
       const token = localStorage.getItem("token");
       if (!token) {
         setError("Authentication token is missing. Please log in again.");
+        setIsUploading(false); // Reset loading state
         return;
       }
   
@@ -881,12 +928,16 @@ const SidebarLayout = () => {
       formData.append("cv", file); // Attach the CV file
   
       // Make the API request
-      const response = await axios.post("http://localhost:5000/api/applications/apply-job", formData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "multipart/form-data", // Required for file uploads
-        },
-      });
+      const response = await axios.post(
+        "http://localhost:5000/api/applications/apply-job",
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data", // Required for file uploads
+          },
+        }
+      );
   
       console.log("Application submitted successfully:", response.data);
       setMessage(response.data.message);
@@ -899,22 +950,40 @@ const SidebarLayout = () => {
   
       if (err.response) {
         console.error("Backend response:", err.response.data);
-        setError(err.response.data.message || "An error occurred");
+  
+        // Handle specific error for already applied
+        if (err.response.status === 409) {
+          toast.error("You have already applied for this job.", {
+            position: "bottom-right",
+            autoClose: 5000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+            theme: "colored",
+          });
+          setError("You have already applied for this job.");
+        } else {
+          setError(err.response.data.message || "An error occurred");
+        }
       } else {
         setError("An error occurred while submitting your application.");
       }
+    } finally {
+      setIsUploading(false); // Reset loading state
     }
   };
   const [coverLetter, setCoverLetter] = useState("");
 
-  const generateCoverLetter = async () => {
+ const generateCoverLetter = async () => {
   setLoading(true);
   setError(null);
 
   try {
     const formDataToSend = new FormData();
 
-    // Fix field name to match backend (jobDetailsText)
+    // Ensure job details are provided
     if (selectedJob) {
       const jobDetails = `Job Title: ${selectedJob.title}\nCompany: ${selectedJob.companyName}\nDescription: ${selectedJob.description}`;
       formDataToSend.append("jobDetailsText", jobDetails);
@@ -922,9 +991,17 @@ const SidebarLayout = () => {
       throw new Error("Job details are missing.");
     }
 
+    // Convert resume analysis to a file
     const resumeAnalysis = JSON.stringify(formData);
     const blob = new Blob([resumeAnalysis], { type: "application/json" });
-    formDataToSend.append("resumeAnalysis", blob);
+    formDataToSend.append("resumeAnalysis", blob, "resumeAnalysis.json");
+
+    // Retrieve candidateId from localStorage
+    const candidateId = localStorage.getItem("candidateId");
+    if (!candidateId) {
+      throw new Error("Candidate ID is missing. Please log in again.");
+    }
+    formDataToSend.append("candidateId", candidateId);
 
     const response = await axios.post(
       "http://localhost:5000/api/applications/generate-cover-letter",
@@ -936,7 +1013,7 @@ const SidebarLayout = () => {
       }
     );
 
-    const generatedLetter = response.data.coverLetter || response.data.result?.coverLetter;
+    const generatedLetter = response.data.result?.coverLetter || response.data.coverLetter;
     setCoverLetter(generatedLetter);
 
     const blobResponse = new Blob([generatedLetter], { type: "text/plain" });
@@ -946,7 +1023,7 @@ const SidebarLayout = () => {
     setLoading(false);
   } catch (err) {
     console.error("Error in cover letter generation process:", err);
-    setError(err.response?.data?.error || "Failed to generate cover letter");
+    setError(err.message || "Failed to generate cover letter");
     setLoading(false);
   }
 };
@@ -982,497 +1059,752 @@ const SidebarLayout = () => {
   // Handle form submission
   
   // Reset form
-  
+  const [coverLetterGenerated, setCoverLetterGenerated] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [uploadedFile, setUploadedFile] = useState(null);
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setUploadedFile(file);
+      setCoverLetterGenerated(true); // Consider uploaded file as cover letter present
+    }
+  };
   const renderPage = () => {
     switch (currentPage) {
       case 1:
         return (
-          <div className="max-w-4xl mx-auto px-0 py-1">
-            <h1 className="text-2xl font-bold text-center mb-4 text-gray-900 dark:text-white">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
+          <div className="mb-8">
+            <h1 className="text-2xl font-bold text-center text-gray-900 dark:text-white">
               Application Session
             </h1>
-
-            <div className="mb-8">
-              <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-                Step 1 of 4 (Data)
+            
+            <div className="mt-6 relative">
+              <div className="overflow-hidden h-2 mb-4 flex rounded bg-gray-200 dark:bg-zinc-950">
+                <div className="shadow-none flex flex-col justify-center bg-blue-500 w-1/4"></div>
+              </div>
+              <div className="flex justify-between">
+                <div className="text-xs font-medium text-blue-600 dark:text-blue-400">Step 1: Data</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">Step 1 of 4</div>
               </div>
             </div>
-
-            <div className="bg-gray-50 dark:bg-zinc-900 rounded-lg p-6 mb-6">
-              <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
-                Step 1
-              </h2>
-              <p className="text-gray-700 dark:text-gray-300">
-                Do you want to use your saved data or add new CV?
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-              <div className="bg-gray-50 dark:bg-zinc-900 rounded-lg p-6">
-                <h3 className="text-lg font-medium mb-4 text-gray-900 dark:text-white">
-                  Options
-                </h3>
+          </div>
+        
+          <div className="bg-white dark:bg-zinc-950 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
+            <h2 className="text-lg font-semibold mb-2 text-gray-900 dark:text-white">
+              Choose Your Application Method
+            </h2>
+            <p className="text-gray-600 dark:text-gray-300 mb-4">
+              You can either use your previously saved data or upload a new CV for this application.
+            </p>
+            
+            <div className="mt-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
-                  <button
-                    className={`w-full py-3 px-4 ${
-                      useExistingData === true
-                        ? "bg-blue-600"
-                        : "bg-blue-500 hover:bg-blue-600"
-                    } text-white rounded-lg transition-colors font-medium`}
-                    onClick={() => handleSelection(true)}
-                  >
-                    Use Saved Data
-                  </button>
-                  <button
-                    className={`w-full py-3 px-4 ${
-                      useExistingData === false
-                        ? "bg-gray-300 dark:bg-gray-600"
-                        : "bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600"
-                    } text-gray-800 dark:text-white rounded-lg transition-colors font-medium`}
-                    onClick={handleAddCvModalOpen}
-                  >
-                    Add New CV
-                  </button>
+                  <div className="flex flex-col space-y-4">
+                    <button
+                      className={`relative w-full py-4 px-6 rounded-lg transition-all duration-200 flex items-center ${
+                        useExistingData === true 
+                          ? "bg-blue-50 dark:bg-zinc-950/20 border-2 border-blue-500 dark:border-blue-500" 
+                          : "bg-white dark:bg-zinc-950 border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-zinc-800"
+                      }`}
+                      onClick={() => handleSelection(true)}
+                    >
+                      <div className="mr-4">
+                        <div className={`w-5 h-5 rounded-full flex items-center justify-center border-2 ${
+                          useExistingData === true
+                            ? "border-blue-500 bg-blue-500"
+                            : "border-gray-400 dark:border-gray-400"
+                        }`}>
+                          {useExistingData === true && (
+                            <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"></path>
+                            </svg>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex-1 text-left">
+                        <span className="block font-medium text-gray-900 dark:text-white">Use Saved Data</span>
+                        <span className="text-sm text-gray-500 dark:text-gray-300">Continue with your existing profile information</span>
+                      </div>
+                    </button>
+        
+                    <button
+                      className={`relative w-full py-4 px-6 rounded-lg transition-all duration-200 flex items-center ${
+                        useExistingData === false
+                          ? "bg-blue-50 dark:bg-zinc-950/20 border-2 border-blue-500 dark:border-blue-500"
+                          : "bg-white dark:bg-zinc-950 border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-zinc-800"
+                      }`}
+                      onClick={handleAddCvModalOpen}
+                    >
+                      <div className="mr-4">
+                        <div className={`w-5 h-5 rounded-full flex items-center justify-center border-2 ${
+                          useExistingData === false
+                            ? "border-blue-500 bg-blue-500"
+                            : "border-gray-400 dark:border-gray-400"
+                        }`}>
+                          {useExistingData === false && (
+                            <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"></path>
+                            </svg>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex-1 text-left">
+                        <span className="block font-medium text-gray-900 dark:text-white">Add New CV</span>
+                        <span className="text-sm text-gray-500 dark:text-gray-300">Upload a new resume for this application</span>
+                      </div>
+                    </button>
+                  </div>
                 </div>
-              </div>
-
-              <div className="bg-gray-50 dark:bg-zinc-900 rounded-lg p-6">
-                <h3 className="text-lg font-medium mb-4 text-gray-900 dark:text-white">
-                  Your Selection
-                </h3>
-                <div className="h-40 flex items-center justify-center text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-zinc-950 rounded-lg">
-                  {useExistingData === null ? (
-                    selectedJob ? (
-                      <div>
-                        <p className="text-center text-gray-700 dark:text-gray-300">
-                          Job Title: {selectedJob.title}
-                        </p>
-                        <p className="text-center text-gray-700 dark:text-gray-300">
-                          Description: {selectedJob.description}
-                        </p>
-                        <p className="text-center text-gray-700 dark:text-gray-300">
-                          Company: {selectedJob.companyName}
-                        </p>
+        
+                <div className="bg-gray-50 dark:bg-zinc-950 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+                  <h3 className="text-sm font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-3">
+                    Current Selection
+                  </h3>
+                  
+                  <div className="bg-white dark:bg-zinc-900 rounded-lg border border-gray-200 dark:border-gray-600 p-4 h-40 flex flex-col justify-center">
+                    {useExistingData === null ? (
+                      selectedJob ? (
+                        <div className="space-y-2">
+                          <div className="flex items-center space-x-2">
+                            <span className="w-24 text-xs text-gray-500 dark:text-gray-400">Job Title:</span>
+                            <span className="text-sm font-medium text-gray-900 dark:text-white">{selectedJob.title}</span>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <span className="w-24 text-xs text-gray-500 dark:text-gray-400">Company:</span>
+                            <span className="text-sm font-medium text-gray-900 dark:text-white">{selectedJob.companyName}</span>
+                          </div>
+                          <div className="flex items-start space-x-2">
+                            <span className="w-24 text-xs text-gray-500 dark:text-gray-400">Description:</span>
+                            <span className="text-sm text-gray-700 dark:text-gray-300 line-clamp-2">{selectedJob.description}</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-center text-gray-500 dark:text-gray-400">
+                          <svg className="mx-auto h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <p className="mt-2 text-sm font-medium">Please select an option</p>
+                        </div>
+                      )
+                    ) : useExistingData ? (
+                      <div className="text-center">
+                        <svg className="mx-auto h-8 w-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <p className="mt-2 text-sm font-medium text-gray-900 dark:text-white">Using your saved CV data</p>
                       </div>
                     ) : (
-                      "Please select an option"
-                    )
-                  ) : useExistingData ? (
-                    "You have chosen to use your saved CV data"
-                  ) : (
-                    "You have chosen to add a new CV"
-                  )}
+                      <div className="text-center">
+                        <svg className="mx-auto h-8 w-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                        </svg>
+                        <p className="mt-2 text-sm font-medium text-gray-900 dark:text-white">Adding a new CV</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
+          
+          
+        </div>
         );
 
       case 2:
         return (
-          <div className="max-w-4xl mx-auto px-0 py-1">
-            <h1 className="text-2xl font-bold text-center mb-4 text-gray-900 dark:text-white">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
+            <h1 className="text-2xl font-bold text-center text-gray-900 dark:text-white">
               Application Session
             </h1>
-
-            <div className="mb-8">
-              <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-                Step 2 of 4 (Data review)
+          <div className="flex items-center justify-center mt-6 mb-8">
+            <div className="relative w-full max-w-2xl">
+              <div className="overflow-hidden h-2 mb-4 flex rounded bg-gray-200 dark:bg-gray-700">
+                <div className="shadow-none flex flex-col justify-center bg-blue-500 w-1/2"></div>
+              </div>
+              <div className="flex justify-between">
+                <div className="text-xs font-medium text-blue-600 dark:text-blue-400">Step 2: Data Review</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">Step 2 of 4</div>
               </div>
             </div>
-
-            <div className="bg-gray-50 dark:bg-zinc-900 rounded-lg p-6 mb-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  Step 2: Review your data
-                </h2>
-                <button
-                  onClick={() => (editMode ? handleSave() : setEditMode(true))}
-                  className={`px-4 py-2 rounded-md ${
-                    editMode
+          </div>
+    
+          <div className="bg-white dark:bg-zinc-950 rounded-lg shadow-sm border border-gray-200 dark:border-zinc-800 p-6 mb-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                Review Your Profile Information
+              </h2>
+              <button
+                onClick={() => (editMode ? handleSave() : setEditMode(true))}
+                disabled={isLoading}
+                className={`inline-flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  isLoading 
+                    ? "bg-gray-400 text-gray-200 cursor-not-allowed" 
+                    : editMode
                       ? "bg-green-600 text-white hover:bg-green-700"
                       : "bg-blue-600 text-white hover:bg-blue-700"
-                  } transition-colors duration-200`}
-                >
-                  {editMode ? "Save Changes" : "Edit Data"}
-                </button>
-              </div>
-              <p className="text-gray-700 dark:text-gray-300 mb-4">
-                {editMode
-                  ? "Edit your information below. Click 'Save Changes' when you're done."
-                  : "Please review your CV information below. This data was extracted from your uploaded file or saved data."}
-              </p>
+                }`}
+              >
+                {isLoading ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Saving...
+                  </>
+                ) : editMode ? (
+                  <>
+                    <svg className="mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    Save Changes
+                  </>
+                ) : (
+                  <>
+                    <svg className="mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                    </svg>
+                    Edit Profile
+                  </>
+                )}
+              </button>
             </div>
-
-            <div className="space-y-6 mb-8">
-              {/* Personal Info */}
-              <div className="bg-gray-50 dark:bg-zinc-900 rounded-lg p-6">
-                <h3 className="text-lg font-medium mb-4 text-gray-900 dark:text-white">
-                  Personal Information
-                </h3>
-                <div className={editMode ? "" : "space-y-2"}>
+            <p className="text-gray-600 dark:text-gray-400">
+              {editMode
+                ? "Make any necessary changes to your information before proceeding to the next step."
+                : "This information was extracted from your uploaded CV. Review it for accuracy before continuing."}
+            </p>
+          </div>
+    
+          <div className="space-y-4 mb-8">
+            {/* Personal Info */}
+            <div className="bg-white dark:bg-zinc-950 rounded-lg shadow-sm border border-gray-200 dark:border-zinc-800 overflow-hidden">
+              <button 
+                className="w-full px-6 py-4 flex justify-between items-center text-left focus:outline-none"
+                onClick={() => toggleSection('personal')}
+              >
+                <div className="flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                    Personal Information
+                  </h3>
+                </div>
+                <svg 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  className={`h-5 w-5 text-gray-500 transform transition-transform ${activeSection === 'personal' ? 'rotate-180' : ''}`} 
+                  fill="none" 
+                  viewBox="0 0 24 24" 
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              
+              {(activeSection === 'personal' || activeSection === null) && (
+                <div className="px-6 py-4 border-t border-gray-200 dark:border-zinc-800">
                   {editMode ? (
                     <>
-                      {renderEditableField("Name", "name", formData.name)}
-                      {renderEditableField("Email", "email", formData.email)}
-                      {renderEditableField("Phone", "phone", formData.phone)}
-                      {formData.linkedIn &&
-                        renderEditableField(
-                          "LinkedIn",
-                          "linkedIn",
-                          formData.linkedIn
-                        )}
-                      {formData.github &&
-                        renderEditableField(
-                          "GitHub",
-                          "github",
-                          formData.github
-                        )}
+                      {renderEditableField("Full Name", "name", formData.name)}
+                      {renderEditableField("Email Address", "email", formData.email)}
+                      {renderEditableField("Phone Number", "phone", formData.phone)}
+                      {renderEditableField("LinkedIn Profile", "linkedIn", formData.linkedIn)}
+                      {renderEditableField("GitHub Profile", "github", formData.github)}
                     </>
                   ) : (
-                    <>
+                    <div className="space-y-3">
+                      <div className="flex flex-col sm:flex-row sm:justify-between">
+                        <p className="text-gray-700 dark:text-gray-300">
+                          <span className="inline-block w-24 font-medium">Name:</span> {formData.name}
+                        </p>
+                        <div className="mt-2 sm:mt-0">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                            Verified
+                          </span>
+                        </div>
+                      </div>
                       <p className="text-gray-700 dark:text-gray-300">
-                        <span className="font-medium">Name:</span> {formData.name}
+                        <span className="inline-block w-24 font-medium">Email:</span> 
+                        <a href={`mailto:${formData.email}`} className="text-blue-600 hover:underline dark:text-blue-400">
+                          {formData.email}
+                        </a>
                       </p>
                       <p className="text-gray-700 dark:text-gray-300">
-                        <span className="font-medium">Email:</span> {formData.email}
-                      </p>
-                      <p className="text-gray-700 dark:text-gray-300">
-                        <span className="font-medium">Phone:</span> {formData.phone}
+                        <span className="inline-block w-24 font-medium">Phone:</span> {formData.phone}
                       </p>
                       {formData.linkedIn && (
                         <p className="text-gray-700 dark:text-gray-300">
-                          <span className="font-medium">LinkedIn:</span>{" "}
+                          <span className="inline-block w-24 font-medium">LinkedIn:</span>{" "}
                           <a
                             href={formData.linkedIn}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-blue-600 hover:underline"
+                            className="text-blue-600 hover:underline dark:text-blue-400 inline-flex items-center"
                           >
-                            {formData.linkedIn}
+                            {formData.linkedIn.replace('https://', '')}
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
                           </a>
                         </p>
                       )}
                       {formData.github && (
                         <p className="text-gray-700 dark:text-gray-300">
-                          <span className="font-medium">GitHub:</span>{" "}
+                          <span className="inline-block w-24 font-medium">GitHub:</span>{" "}
                           <a
                             href={formData.github}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-blue-600 hover:underline"
+                            className="text-blue-600 hover:underline dark:text-blue-400 inline-flex items-center"
                           >
-                            {formData.github}
+                            {formData.github.replace('https://', '')}
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
                           </a>
                         </p>
                       )}
-                    </>
+                    </div>
                   )}
                 </div>
-              </div>
-
-              {/* Experience */}
-              <div className="bg-gray-50 dark:bg-zinc-900 rounded-lg p-6">
-                <h3 className="text-lg font-medium mb-4 text-gray-900 dark:text-white">
-                  Work Experience
-                </h3>
-                {editMode ? (
-                  renderEditableField(
-                    "Experience",
-                    "experience",
-                    formData.experience,
-                    true
-                  )
-                ) : (
-                  <p className="text-gray-700 dark:text-gray-300">{formData.experience}</p>
-                )}
-              </div>
-
-              {/* Skills */}
-              {/* Experience */}
-              <div className="bg-gray-50 dark:bg-zinc-900 rounded-lg p-6">
-                <h3 className="text-lg font-medium mb-4 text-gray-900 dark:text-white">
-                  Work Experience
-                </h3>
-                {editMode ? (
-                  renderEditableField(
-                    "Experience",
-                    "experience",
-                    formData.experience,
-                    true
-                  )
-                ) : backendData?.result?.raw_analysis ? (
-                  <div className="prose dark:prose-invert max-w-none">
-                    {parseExperienceSection(backendData.result.raw_analysis)}
-                  </div>
-                ) : (
-                  <p className="text-gray-500 dark:text-gray-400">
-                    No work experience data available
-                  </p>
-                )}
-              </div>
-
-              {/* Skills */}
-              <div className="bg-gray-50 dark:bg-zinc-900 rounded-lg p-6">
-                <h3 className="text-lg font-medium mb-4 text-gray-900 dark:text-white">
-                  Skills
-                </h3>
-                {editMode ? (
-                  renderEditableField("Skills", "skills", formData.skills, true)
-                ) : backendData?.result?.raw_analysis ? (
-                  <div className="prose dark:prose-invert max-w-none">
-                    {parseSkillsSection(backendData.result.raw_analysis)}
-                  </div>
-                ) : (
-                  <p className="text-gray-500 dark:text-gray-400">
-                    No skills data available
-                  </p>
-                )}
-              </div>
-              
-              {/* Languages */}
-              <div className="bg-gray-50 dark:bg-zinc-900 rounded-lg p-6">
-  <h3 className="text-lg font-medium mb-4 text-gray-900 dark:text-white">
-    Languages
-  </h3>
-  {editMode ? (
-    renderEditableField(
-      "Languages",
-      "languages",
-      formData.languages,
-      true
-    )
-  ) : backendData?.result?.raw_analysis ? (
-    <div className="prose dark:prose-invert max-w-none">
-      {parseLanguagesSection(backendData.result.raw_analysis)}
-    </div>
-  ) : (
-    <p className="text-gray-500 dark:text-gray-400">
-      No language information available
-    </p>
-  )}
-</div>
-            
+              )}
             </div>
-
-            {editMode && (
-              <div className="flex justify-end space-x-4 mb-6">
-                <button
-                  onClick={() => {
-                    setEditMode(false);
-                    // Reset form data to original values
-                    if (backendData?.result) {
-                      setFormData({
-                        name:
-                          backendData.result.contacts?.name?.replace(
-                            /^\*\*\s*/,
-                            ""
-                          ) || "",
-                        email:
-                          backendData.result.contacts?.email?.replace(
-                            /^\*\*\s*/,
-                            ""
-                          ) || "",
-                        phone:
-                          backendData.result.contacts?.phone?.replace(
-                            /^\*\*\s*/,
-                            ""
-                          ) || "",
-                        linkedIn:
-                          backendData.result.contacts?.linkedIn?.replace(
-                            /^\*\*\s*/,
-                            ""
-                          ) || "",
-                        github:
-                          backendData.result.contacts?.github?.replace(
-                            /^\*\*\s*/,
-                            ""
-                          ) || "",
-
-                        experience:
-                          parseExperienceSection(
-                            backendData.result.raw_analysis,
-                            true
-                          ) || "",
-                        skills:
-                          parseSkillsSection(
-                            backendData.result.raw_analysis,
-                            true
-                          ) || "",
-                        
-                        languages:
-                          parseLanguagesSection(
-                            backendData.result.raw_analysis,
-                            true
-                          ) || "",
-                      });
-                    }
-                  }}
-                  className="px-4 py-2 rounded-md bg-gray-200 dark:bg-zinc-700 text-gray-800 dark:text-white hover:bg-gray-300 dark:hover:bg-zinc-600 transition-colors duration-200"
+    
+            {/* Experience */}
+            <div className="bg-white dark:bg-zinc-950 rounded-lg shadow-sm border border-gray-200 dark:border-zinc-800 overflow-hidden">
+              <button 
+                className="w-full px-6 py-4 flex justify-between items-center text-left focus:outline-none" 
+                onClick={() => toggleSection('experience')}
+              >
+                <div className="flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                    Work Experience
+                  </h3>
+                </div>
+                <svg 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  className={`h-5 w-5 text-gray-500 transform transition-transform ${activeSection === 'experience' ? 'rotate-180' : ''}`} 
+                  fill="none" 
+                  viewBox="0 0 24 24" 
+                  stroke="currentColor"
                 >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSave}
-                  className="px-4 py-2 rounded-md bg-green-600 text-white hover:bg-green-700 transition-colors duration-200"
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              
+              {(activeSection === 'experience' || activeSection === null) && (
+                <div className="px-6 py-4 border-t border-gray-200 dark:border-zinc-800">
+                  {editMode ? (
+                    renderEditableField(
+                      "Experience Details",
+                      "experience",
+                      formData.experience,
+                      true
+                    )
+                  ) : backendData?.result?.raw_analysis ? (
+                    <div className="prose dark:prose-invert max-w-none">
+                      {parseExperienceSection(backendData.result.raw_analysis)}
+                    </div>
+                  ) : (
+                    <p className="text-gray-500 dark:text-gray-400">
+                      No work experience data available
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+    
+            {/* Skills */}
+            <div className="bg-white dark:bg-zinc-950 rounded-lg shadow-sm border border-gray-200 dark:border-zinc-800 overflow-hidden">
+              <button 
+                className="w-full px-6 py-4 flex justify-between items-center text-left focus:outline-none"
+                onClick={() => toggleSection('skills')}
+              >
+                <div className="flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                  </svg>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                    Skills
+                  </h3>
+                </div>
+                <svg 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  className={`h-5 w-5 text-gray-500 transform transition-transform ${activeSection === 'skills' ? 'rotate-180' : ''}`} 
+                  fill="none" 
+                  viewBox="0 0 24 24" 
+                  stroke="currentColor"
                 >
-                  Save Changes
-                </button>
-              </div>
-            )}
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              
+              {(activeSection === 'skills' || activeSection === null) && (
+                <div className="px-6 py-4 border-t border-gray-200 dark:border-zinc-800">
+                  {editMode ? (
+                    renderEditableField("Skills", "skills", formData.skills, true)
+                  ) : backendData?.result?.raw_analysis ? (
+                    <div className="prose dark:prose-invert max-w-none">
+                      {parseSkillsSection(backendData.result.raw_analysis)}
+                    </div>
+                  ) : (
+                    <p className="text-gray-500 dark:text-gray-400">
+                      No skills data available
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+            
+            {/* Languages */}
+            <div className="bg-white dark:bg-zinc-950 rounded-lg shadow-sm border border-gray-200 dark:border-zinc-800 overflow-hidden">
+              <button 
+                className="w-full px-6 py-4 flex justify-between items-center text-left focus:outline-none"
+                onClick={() => toggleSection('languages')}
+              >
+                <div className="flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+                  </svg>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                    Languages
+                  </h3>
+                </div>
+                <svg 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  className={`h-5 w-5 text-gray-500 transform transition-transform ${activeSection === 'languages' ? 'rotate-180' : ''}`} 
+                  fill="none" 
+                  viewBox="0 0 24 24" 
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              
+              {(activeSection === 'languages' || activeSection === null) && (
+                <div className="px-6 py-4 border-t border-gray-200 dark:border-zinc-800">
+                  {editMode ? (
+                    renderEditableField("Languages", "languages", formData.languages, true)
+                  ) : backendData?.result?.raw_analysis ? (
+                    <div className="prose dark:prose-invert max-w-none">
+                      {parseLanguagesSection(backendData.result.raw_analysis)}
+                    </div>
+                  ) : (
+                    <p className="text-gray-500 dark:text-gray-400">
+                      No language information available
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
+    
+          
+        </div>
         );
 
-      case 3:
-        return (
-          <div className="max-w-4xl mx-auto px-0 py-1">
-            <h1 className="text-2xl font-bold text-center mb-8 text-gray-900 dark:text-white">
+        case 3:
+          return (
+            <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
+            <h1 className="text-2xl font-bold text-center text-gray-900 dark:text-white">
               Application Session
             </h1>
-  
-            <div className="mb-8">
-              <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-                Step 3 of 4 (Recommendations)
+              <div className="flex items-center justify-center mt-6 mb-8">
+                <div className="relative w-full max-w-2xl">
+                  <div className="overflow-hidden h-2 mb-4 flex rounded bg-gray-200 dark:bg-gray-700">
+                    <div className="shadow-none flex flex-col justify-center bg-blue-500 w-3/4"></div>
+                  </div>
+                  <div className="flex justify-between">
+                    <div className="text-xs font-medium text-blue-600 dark:text-blue-400">Step 3: Recommendations</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">Step 3 of 4</div>
+                  </div>
+                </div>
               </div>
-            </div>
-  
-            <div className="space-y-6 mb-8">
-              {/* Resume Feedback Section */}
-              {resumeStrengths.length > 0 && (
-                <div className="bg-gray-50 dark:bg-zinc-900 rounded-lg p-6">
-                  <h3 className="text-lg font-medium mb-4 text-gray-900 dark:text-white">
-                    Resume Feedback
-                  </h3>
-                  <div className="space-y-4">
-                    <h4 className="font-medium text-gray-800 dark:text-gray-200">
-                      Strengths:
-                    </h4>
+        
+              <div className="space-y-6 mb-8">
+                {/* Resume Feedback Section */}
+                {resumeStrengths.length > 0 && (
+                  <div className="bg-white dark:bg-zinc-950 rounded-lg shadow-sm border border-gray-200 dark:border-zinc-800 p-6">
+                    <h3 className="text-lg font-medium mb-4 text-gray-900 dark:text-white">Resume Feedback</h3>
+                    <div className="space-y-4">
+                      <h4 className="font-medium text-gray-800 dark:text-gray-200">Strengths:</h4>
+                      <ul className="list-disc pl-5 text-gray-700 dark:text-gray-300">
+                        {resumeStrengths.map((strength, index) => (
+                          <li key={index}>{strength}</li>
+                        ))}
+                      </ul>
+        
+                      {areasForImprovement.length > 0 && (
+                        <>
+                          <h4 className="font-medium text-gray-800 dark:text-gray-200 mt-4">Areas for Improvement:</h4>
+                          <ul className="list-disc pl-5 text-gray-700 dark:text-gray-300">
+                            {areasForImprovement.map((area, index) => (
+                              <li key={index}>{area}</li>
+                            ))}
+                          </ul>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )}
+        
+                {/* LinkedIn Profile Suggestions Section */}
+                {linkedinSuggestions.length > 0 && (
+                  <div className="bg-white dark:bg-zinc-950 rounded-lg shadow-sm border border-gray-200 dark:border-zinc-800 p-6">
+                    <h3 className="text-lg font-medium mb-4 text-gray-900 dark:text-white">LinkedIn Profile Suggestions</h3>
                     <ul className="list-disc pl-5 text-gray-700 dark:text-gray-300">
-                      {resumeStrengths.map((strength, index) => (
-                        <li key={index}>{strength}</li>
+                      {linkedinSuggestions.map((suggestion, index) => (
+                        <li key={index}>{suggestion}</li>
                       ))}
                     </ul>
-  
-                    {areasForImprovement.length > 0 && (
-                      <>
-                        <h4 className="font-medium text-gray-800 dark:text-gray-200 mt-4">
-                          Areas for Improvement:
-                        </h4>
-                        <ul className="list-disc pl-5 text-gray-700 dark:text-gray-300">
-                          {areasForImprovement.map((area, index) => (
-                            <li key={index}>{area}</li>
-                          ))}
-                        </ul>
-                      </>
-                    )}
                   </div>
-                </div>
-              )}
-  
-              {/* LinkedIn Profile Suggestions Section */}
-              {linkedinSuggestions.length > 0 && (
-                <div className="bg-gray-50 dark:bg-zinc-900 rounded-lg p-6">
-                  <h3 className="text-lg font-medium mb-4 text-gray-900 dark:text-white">
-                    LinkedIn Profile Suggestions
-                  </h3>
-                  <ul className="list-disc pl-5 text-gray-700 dark:text-gray-300">
-                    {linkedinSuggestions.map((suggestion, index) => (
-                      <li key={index}>{suggestion}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-  
-              {/* Projects Section */}
-              {backendData?.result?.raw_analysis && (
-                <div className="bg-gray-50 dark:bg-zinc-900 rounded-lg p-6">
-                  <h3 className="text-lg font-medium mb-4 text-gray-900 dark:text-white">
-                    Key Projects
-                  </h3>
-                  <div className="prose dark:prose-invert max-w-none">
-                    {parseProjectsSection(backendData.result.raw_analysis)}
+                )}
+        
+                {/* Projects Section */}
+                {backendData?.result?.raw_analysis && (
+                  <div className="bg-white dark:bg-zinc-950 rounded-lg shadow-sm border border-gray-200 dark:border-zinc-800 p-6">
+                    <h3 className="text-lg font-medium mb-4 text-gray-900 dark:text-white">Key Projects</h3>
+                    <div className="prose dark:prose-invert max-w-none">
+                      {parseProjectsSection(backendData.result.raw_analysis)}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
+        
+              
             </div>
-          </div>
-        );
+          );
 
       case 4:
        
           return (
-            <div className="max-w-4xl mx-auto px-0 py-5">
-              <h1 className="text-2xl font-bold text-center mb-8 text-gray-900 dark:text-white">
-                Application Session
-              </h1>
-  
-              <div className="mb-8">
-                <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-                  Step 4 of 4 (Submitting)
-                </div>
+            <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
+            <h1 className="text-2xl font-bold text-center text-gray-900 dark:text-white">
+              Application Session
+            </h1>
+            
+            <div className="mt-6 relative">
+              <div className="overflow-hidden h-2 mb-4 flex rounded bg-gray-200 dark:bg-gray-700">
+                <div className="shadow-none flex flex-col justify-center bg-blue-500 w-full"></div>
               </div>
-  
-              <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-6 mb-6">
-                <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
-                  Submit Application
-                </h2>
-                <p className="text-gray-700 dark:text-gray-300">
-                  Please review all your information before submitting your
-                  application.
-                </p>
+              <div className="flex justify-between">
+                <div className="text-xs font-medium text-blue-600 dark:text-blue-400">Step 4: Final Review</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">Step 4 of 4</div>
               </div>
-              
-           
-              
-              <div className="space-y-6 mb-8">
-                <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-6">
-                  <div className="flex items-center gap-4">
-                    <div className="flex-shrink-0 w-12 h-12 bg-green-100 dark:bg-green-800 rounded-full flex items-center justify-center text-green-600 dark:text-green-300">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        strokeWidth={2}
-                        stroke="currentColor"
-                        className="w-8 h-8"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                        />
-                      </svg>
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-medium text-gray-800 dark:text-gray-200">
-                        Ready to Submit
-                      </h3>
-                      <p className="text-gray-700 dark:text-gray-300 mt-1">
-                        Your application is ready to be submitted with all the
-                        information provided.
-                      </p>
-                    </div>
+            </div>
+            
+            <div className="bg-white dark:bg-zinc-950 rounded-lg shadow-sm border border-gray-200 dark:border-zinc-800 p-6 mt-8 mb-6">
+              <h2 className="text-lg font-semibold mb-2 text-gray-900 dark:text-white">
+                Submit Your Application
+              </h2>
+              <p className="text-gray-600 dark:text-gray-400">
+                Please review all your information before submitting. Once submitted, you won't be able to make changes.
+              </p>
+            </div>
+            
+            <div className="space-y-6 mb-8">
+              <div className="bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-900/30 rounded-lg p-6">
+                <div className="flex items-start gap-4">
+                  <div className="flex-shrink-0 w-12 h-12 bg-green-100 dark:bg-green-800/50 rounded-full flex items-center justify-center text-green-600 dark:text-green-400 shadow-sm">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth={2}
+                      stroke="currentColor"
+                      className="w-6 h-6"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-800 dark:text-gray-200">
+                      Ready to Submit
+                    </h3>
+                   
+                    <p className="text-gray-600 dark:text-gray-400 mt-1">
+                      All information has been provided and your application is ready to be submitted.
+                    </p>
+                    <ul className="mt-3 space-y-1 text-sm text-gray-500 dark:text-gray-400">
+                      <li className="flex items-center gap-2">
+                        <svg className="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span>Personal Information</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <svg className="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span>Resume/CV</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <svg className="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span>Job Matching</span>
+                      </li>
+                    </ul>
                   </div>
                 </div>
-  <button className="bg-slate-100" onClick={generateCoverLetter}>Generate </button>
-                <div className="flex justify-center">
-                  {isUploading && <LoadingAnimation />}
-                  <button 
-                    onClick={handleSubmitApplication}
-                    disabled={isUploading}
-                    className={`px-4 py-2 rounded-md ${
-                      isUploading 
-                        ? "bg-gray-400 cursor-not-allowed" 
-                        : "bg-blue-500 hover:bg-blue-600 text-white"
-                    }`}
-                  >
-                    {isUploading ? "Processing..." : "Submit Application"}
-                  </button>
-                </div>
               </div>
               
-            
+              <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-900/30 rounded-lg p-6">
+      <h3 className="text-md font-medium text-gray-800 dark:text-gray-200 mb-3">
+        Enhance Your Application
+      </h3>
+      <p className="text-gray-600 dark:text-gray-400 mb-4">
+        A personalized cover letter can increase your chances of getting noticed by up to 50%.
+      </p>
+      
+      {coverLetterGenerated && (
+        <div className="mb-4 p-3 bg-green-100 dark:bg-green-800/20 border border-green-200 dark:border-green-800/30 rounded-md">
+          <div className="flex items-center">
+            <svg className="w-5 h-5 text-green-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+            </svg>
+            <span className="text-sm text-green-700 dark:text-green-400">
+              {uploadedFile ? `Cover letter uploaded: ${uploadedFile.name}` : 'Cover letter generated successfully'}
+            </span>
+          </div>
+        </div>
+      )}
+      
+      <div className="flex items-center space-x-4">
+  {/* Generate Cover Letter Button */}
+  <button
+    onClick={generateCoverLetter}
+    disabled={isGenerating || coverLetterGenerated}
+    className={`inline-flex items-center px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
+      (isGenerating || coverLetterGenerated) ? 'opacity-60 cursor-not-allowed' : ''
+    }`}
+  >
+    {isGenerating ? (
+      <>
+        <svg className="animate-spin h-5 w-5 mr-2 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        Generating...
+      </>
+    ) : (
+      <>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-5 w-5 mr-2 text-blue-500"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2"
+            d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+          />
+        </svg>
+        Generate Cover Letter
+      </>
+    )}
+  </button>
+
+
+        <div>
+    <label
+      htmlFor="cover-letter-upload"
+      className={`inline-flex items-center px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors cursor-pointer ${
+        coverLetterGenerated && !uploadedFile ? 'opacity-60 cursor-not-allowed' : ''
+      }`}
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        className="h-5 w-5 mr-2 text-blue-500"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="2"
+          d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1M4 8v8m16-8v8M4 8l8-4 8 4M4 8h16"
+        />
+      </svg>
+      Upload Cover Letter
+    </label>
+    <input
+      id="cover-letter-upload"
+      type="file"
+      accept=".pdf,.doc,.docx"
+      className="hidden"
+      onChange={handleFileUpload}
+      disabled={coverLetterGenerated && !uploadedFile}
+    />
+  </div>
+        
+        {coverLetterGenerated && (
+          <div className="flex space-x-3 mt-2">
+            <button 
+              className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center"
+              onClick={() => window.open('#', '_blank')}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+              Preview
+            </button>
+            <button 
+              className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center"
+              onClick={() => setCoverLetterGenerated(false)}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+              Remove
+            </button>
+            <button 
+              className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center"
+              onClick={() => {/* Implement edit functionality */}}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+              Edit
+            </button>
+          </div>
+        )}
+      </div>
+      
+      {!coverLetterGenerated && (
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-4">
+          Our AI will create a personalized cover letter based on your resume and the job description.
+        </p>
+      )}
+    </div>
             </div>
+            
+            <div className="border-t border-gray-200 dark:border-gray-700 pt-6 pb-2">
+              <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+               
+              </div>
+              
+              <p className="text-xs text-center text-gray-500 dark:text-gray-400 mt-6">
+                By submitting this application, you agree to our Terms of Service and Privacy Policy.
+              </p>
+            </div>
+          </div>
         );
         case 5:
           return (
@@ -1843,7 +2175,18 @@ const SidebarLayout = () => {
           </header>
 
           {renderPage()}
-
+          <ToastContainer
+                              position="bottom-right"
+                              autoClose={5000}
+                              hideProgressBar={false}
+                              newestOnTop={false}
+                              closeOnClick
+                              rtl={false}
+                              pauseOnFocusLoss
+                              draggable
+                              pauseOnHover
+                              theme={isDarkMode ? "dark" : "light"}
+                            />{" "}
           <Dialog
             open={isAddCvModalOpen}
             onClose={handleAddCvModalClose}
@@ -2070,70 +2413,107 @@ const SidebarLayout = () => {
             </div>
           </Dialog>
 
-          <div className="max-w-4xl mx-auto  py-1 mb-2">
-            <div className="flex justify-between">
-              <button
-                className={`py-2 px-4 ${
-                  currentPage === 1
-                    ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                    : "bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-white"
-                } rounded-lg`}
-                onClick={handlePrevious}
-                disabled={currentPage === 1}
-              >
-                Previous
-              </button>
-              <div className="flex space-x-4">
-                <span
-                  className={`flex items-center justify-center w-8 h-8 ${
-                    currentPage === 1
-                      ? "bg-blue-500 text-white"
-                      : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
-                  } rounded-full`}
-                >
-                  1
-                </span>
-                <span
-                  className={`flex items-center justify-center w-8 h-8 ${
-                    currentPage === 2
-                      ? "bg-blue-500 text-white"
-                      : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
-                  } rounded-full`}
-                >
-                  2
-                </span>
-                <span
-                  className={`flex items-center justify-center w-8 h-8 ${
-                    currentPage === 3
-                      ? "bg-blue-500 text-white"
-                      : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
-                  } rounded-full`}
-                >
-                  3
-                </span>
-                <span
-                  className={`flex items-center justify-center w-8 h-8 ${
-                    currentPage === 4
-                      ? "bg-blue-500 text-white"
-                      : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
-                  } rounded-full`}
-                >
-                  4
-                </span>
-              </div>
-              <button
-                className={`py-2 px-4 ${
-                  currentPage === 4
-                    ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                    : "bg-blue-500 hover:bg-blue-600 text-white"
-                } rounded-lg`}
-                onClick={handleNext}
-                disabled={currentPage === 4}
-              >
-                Next
-              </button>
-            </div>
-          </div>
+          <div className="max-w-4xl mx-auto py-4 mb-6">
+  <div className="flex items-center justify-between">
+    {/* Previous Button */}
+    <button
+      className={`py-2 px-6 rounded-lg font-medium transition-all ${
+        currentPage === 1
+          ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+          : "bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-800 dark:text-white"
+      }`}
+      onClick={handlePrevious}
+      disabled={currentPage === 1}
+    >
+      Previous
+    </button>
+
+    {/* Pagination Indicators */}
+    <div className="flex items-center space-x-2">
+      {[1, 2, 3, 4].map((page) => (
+        <span
+          key={page}
+          className={`flex items-center justify-center w-10 h-10 rounded-full font-medium transition-all ${
+            currentPage === page
+              ? "bg-blue-600 text-white"
+              : "bg-gray-100 dark:bg-zinc-700 text-zinc-800 dark:text-zinc-300 hover:bg-gray-200 dark:hover:bg-gray-600"
+          }`}
+        >
+          {page}
+        </span>
+      ))}
+    </div>
+
+  {/* Next/Submit Button */}
+{currentPage === 4 ? (
+  <button
+    className={`w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-3 text-white rounded-lg transition-colors ${
+      isUploading
+        ? "bg-blue-400 cursor-not-allowed"
+        : "bg-blue-600 hover:bg-blue-700"
+    }`}
+    onClick={handleSubmitApplication}
+    disabled={isUploading} // Disable the button while uploading
+  >
+    {isUploading ? (
+      <span className="flex items-center justify-center">
+        <svg
+          className="animate-spin h-5 w-5 text-white mr-2"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <circle
+            className="opacity-25"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            strokeWidth="4"
+          ></circle>
+          <path
+            className="opacity-75"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8v8H4z"
+          ></path>
+        </svg>
+        Processing...
+      </span>
+    ) : (
+      <>
+        Submit Application
+        <svg
+          className="ml-1 h-5 w-5"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2"
+            d="M14 5l7 7m0 0l-7 7m7-7H3"
+          />
+        </svg>
+      </>
+    )}
+  </button>
+) : (
+  <button
+    className={`px-6 py-2 rounded-lg font-medium shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+      currentPage === 4
+        ? "bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-500"
+        : "bg-zinc-300 dark:bg-zinc-800 text-black dark:text-white hover:bg-blue-600 dark:hover:bg-blue-800 focus:ring-gray-400"
+    }`}
+    onClick={handleNext}
+    disabled={currentPage === 4}
+  >
+    Next
+  </button>
+)}
+  </div>
+</div>
         </main>
       </div>
     </div>

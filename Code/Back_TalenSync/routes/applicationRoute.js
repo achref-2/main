@@ -108,19 +108,20 @@ router.post('/generate-cover-letter', upload.single('resumeAnalysis'), async (re
 
         // Save the cover letter to the candidate's profile
         const candidateId = req.body.candidateId; // Assuming candidateId is sent in the request body
-        const candidate = await Candidate.findById(candidateId);
+const candidate = await Candidate.findById(candidateId);
 
-        if (!candidate) {
-          return res.status(404).json({ error: 'Candidate not found' });
-        }
+if (!candidate) {
+  return res.status(404).json({ error: 'Candidate not found' });
+}
 
-        candidate.coverLetter = result.coverLetter || extractionResult.trim();
-        await candidate.save();
+// Use the actual cover letter from the Python script's output
+candidate.coverLetter = result.cover_letter || extractionResult.trim();
+await candidate.save();
 
-        res.json({
-          message: 'Cover letter generated and saved successfully',
-          result,
-        });
+res.json({
+  message: 'Cover letter generated successfully',
+  result: { coverLetter: result.cover_letter || extractionResult.trim() },
+});
       } catch (error) {
         console.error("⚠️ JSON parse error:", error.message);
         res.status(500).json({
