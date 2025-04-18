@@ -67,6 +67,10 @@ const candidateSchema = new mongoose.Schema(
       location: { type: String, trim: true },
       summary: { type: String, trim: true },
     },
+    profilePic: {
+      type: String, // Store the URL of the profile picture
+      default: null, // Default to null if no profile picture is uploaded
+    },
     experience: [
       {
         title: { type: String, trim: true },
@@ -95,6 +99,10 @@ const candidateSchema = new mongoose.Schema(
     coverLetter: {
       type: String,
       trim: true,
+      default: null,
+    },
+    draft: {
+      type: Object, // Store draft data as a generic object
       default: null,
     },
   },
@@ -149,6 +157,12 @@ candidateSchema.methods.getLatestCVWithAnalysis = function () {
     return null;
   }
   return this.cvHistory[this.cvHistory.length - 1];
+};
+
+// Add a method to save candidate draft
+candidateSchema.methods.saveDraft = async function (draftData) {
+  this.draft = draftData;
+  return this.save();
 };
 
 // Validation functions

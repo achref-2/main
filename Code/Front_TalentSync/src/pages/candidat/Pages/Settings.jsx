@@ -1,4 +1,4 @@
-import React, { useState, useRef,useEffect } from "react";
+import React, { useState, useRef,useEffect ,useContext} from "react";
 import {
   Menu,
   History,
@@ -29,6 +29,9 @@ import styled from "styled-components";
 import { useDarkMode } from "../../../components/DarkModeProvider";
 import { Link } from "react-router-dom";
 import axios from "axios"; // Import axios for API calls
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { UserContext } from "../../../components/UserContext";
 
 const NavLink = ({ href, icon: Icon, children, isActive }) => (
   <Link
@@ -262,9 +265,10 @@ const SearchBar = ({ navigationMenu, navigationOption }) => {
     </>
   );
 }
-const UserMenu = () => {
+const UserMenu = ({ profilePic, firstName, lastName, email }) => {
   const { isDarkMode, toggleTheme } = useDarkMode();
-  
+
+
   const handleSignout = () => {
     localStorage.removeItem("token");
     fetch("http://localhost:5000/api/auth/logout", {
@@ -278,17 +282,17 @@ const UserMenu = () => {
   };
 
   const menuItems = [
-    { 
-      label: "Your History", 
-      href: "#profile", 
+    {
+      label: "Your History",
+      href: "/dashboard/PastApplications",
       icon: History,
-      description: "View your past activities"
+      description: "View your past activities",
     },
-    { 
-      label: "Settings", 
-      href: "/Settings", 
+    {
+      label: "Settings",
+      href: "/Settings",
       icon: Settings,
-      description: "Manage your preferences"
+      description: "Manage your preferences",
     },
   ];
 
@@ -298,22 +302,22 @@ const UserMenu = () => {
         <>
           <MenuButton className="flex items-center focus:outline-none">
             <div className="relative">
-              <img
-                className={`h-9 w-9 rounded-full object-cover ring-2 transition-all duration-200 ${
-                  open 
-                    ? 'ring-blue-500 ring-offset-2 ring-offset-white dark:ring-offset-zinc-900' 
-                    : 'ring-gray-200 dark:ring-gray-700 hover:ring-blue-400'
-                }`}
-                src="../../assets/images/avatar.jpg"
-                alt="User avatar"
-              />
+            <img
+  className={`h-9 w-9 rounded-full object-cover ring-2 transition-all duration-200 ${
+    open
+      ? "ring-blue-500 ring-offset-2 ring-offset-white dark:ring-offset-zinc-900"
+      : "ring-gray-200 dark:ring-gray-700 hover:ring-blue-400"
+  }`}
+  src={profilePic} // Use the profilePic prop
+  alt="User avatar"
+/>
               <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-green-500 ring-1 ring-white dark:ring-zinc-900"></span>
             </div>
           </MenuButton>
 
           <MenuItems
             className={`absolute right-0 z-50 mt-2 w-64 origin-top-right rounded-xl py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none transform transition-all duration-100 ${
-              open ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
+              open ? "scale-100 opacity-100" : "scale-95 opacity-0"
             } ${
               isDarkMode
                 ? "bg-zinc-800 text-white border border-zinc-700"
@@ -326,16 +330,16 @@ const UserMenu = () => {
                 <div className="flex-shrink-0">
                   <img
                     className="h-10 w-10 rounded-full"
-                    src="../../assets/images/avatar.jpg"
-                    alt=""
+                    src={profilePic } // Use the profilePic prop
+                    alt="User avatar"
                   />
                 </div>
                 <div className="ml-3">
                   <p className="text-sm font-medium text-gray-900 dark:text-white">
-                    John Doe
+                    {`${firstName} ${lastName}`} {/* Use the firstName and lastName props */}
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                    john.doe@example.com
+                    {email} {/* Use the email prop */}
                   </p>
                 </div>
               </div>
@@ -354,11 +358,13 @@ const UserMenu = () => {
                       }`}
                     >
                       <div className="flex items-center">
-                        <div className={`mr-3 p-1 rounded-md ${
-                          active 
-                            ? 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300' 
-                            : 'bg-gray-100 text-gray-500 dark:bg-zinc-700 dark:text-gray-400'
-                        }`}>
+                        <div
+                          className={`mr-3 p-1 rounded-md ${
+                            active
+                              ? "bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300"
+                              : "bg-gray-100 text-gray-500 dark:bg-zinc-700 dark:text-gray-400"
+                          }`}
+                        >
                           <Icon className="w-4 h-4" />
                         </div>
                         <div>
@@ -370,9 +376,11 @@ const UserMenu = () => {
                           )}
                         </div>
                       </div>
-                      <ChevronRight className={`w-4 h-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity duration-150 ${
-                        active ? 'opacity-100' : ''
-                      }`} />
+                      <ChevronRight
+                        className={`w-4 h-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity duration-150 ${
+                          active ? "opacity-100" : ""
+                        }`}
+                      />
                     </a>
                   )}
                 </MenuItem>
@@ -391,11 +399,13 @@ const UserMenu = () => {
                     }`}
                   >
                     <div className="flex items-center">
-                      <div className={`mr-3 p-1 rounded-md ${
-                        active 
-                          ? 'bg-amber-100 text-amber-600 dark:bg-indigo-900 dark:text-indigo-300' 
-                          : 'bg-gray-100 text-gray-500 dark:bg-zinc-700 dark:text-gray-400'
-                      }`}>
+                      <div
+                        className={`mr-3 p-1 rounded-md ${
+                          active
+                            ? "bg-amber-100 text-amber-600 dark:bg-indigo-900 dark:text-indigo-300"
+                            : "bg-gray-100 text-gray-500 dark:bg-zinc-700 dark:text-gray-400"
+                        }`}
+                      >
                         {isDarkMode ? (
                           <Sun className="w-4 h-4" />
                         ) : (
@@ -414,9 +424,7 @@ const UserMenu = () => {
                     <div className="flex h-5 items-center">
                       <div
                         className={`w-9 h-5 flex items-center rounded-full p-1 ${
-                          isDarkMode 
-                            ? "bg-indigo-600" 
-                            : "bg-gray-300"
+                          isDarkMode ? "bg-indigo-600" : "bg-gray-300"
                         }`}
                       >
                         <div
@@ -443,11 +451,13 @@ const UserMenu = () => {
                     }`}
                   >
                     <div className="flex items-center">
-                      <div className={`mr-3 p-1 rounded-md ${
-                        active 
-                          ? 'bg-red-100 text-red-600 dark:bg-red-900 dark:text-red-300' 
-                          : 'bg-gray-100 text-gray-500 dark:bg-zinc-700 dark:text-gray-400'
-                      }`}>
+                      <div
+                        className={`mr-3 p-1 rounded-md ${
+                          active
+                            ? "bg-red-100 text-red-600 dark:bg-red-900 dark:text-red-300"
+                            : "bg-gray-100 text-gray-500 dark:bg-zinc-700 dark:text-gray-400"
+                        }`}
+                      >
                         <LogOut className="w-4 h-4" />
                       </div>
                       <div>
@@ -560,49 +570,18 @@ const UserMessage = () => {
   );
 };
 const SettingsComp = () => {
+  
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const { isDarkMode } = useDarkMode();
-  const [profilePic, setProfilePic] = useState(""); // Default to an empty string
-  const [firstName, setFirstName] = useState(""); // Default to an empty string
-  const [lastName, setLastName] = useState(""); // Default to an empty string
-  const [email, setEmail] = useState(""); // Default to an empty string
+  const { profilePic: contextProfilePic, firstName: contextFirstName, lastName: contextLastName, email: contextEmail } = useContext(UserContext);
 
-  useEffect(() => {
-    // Ensure the dark class is applied globally
-    if (isDarkMode) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
+  const [profilePic, setProfilePic] = useState(contextProfilePic || ""); // Initialize with context value
+  const [firstName, setFirstName] = useState(contextFirstName || ""); // Initialize with context value
+  const [lastName, setLastName] = useState(contextLastName || ""); // Initialize with context value
+  const [email, setEmail] = useState(contextEmail || ""); // Initialize with context value
 
-    // Fetch user data from the backend
-    const fetchUserData = async () => {
-      try {
-        const token = localStorage.getItem("token"); // Get the token from localStorage
-        const response = await axios.get(
-          "http://localhost:5000/api/candidates/profile",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`, // Pass the token in the Authorization header
-            },
-          }
-        );
-
-        // Assuming the backend returns { profilePic: "url", firstName: "John", lastName: "Doe", email: "john.doe@example.com" }
-        const { profilePic, firstName, lastName, email } = response.data;
-        setProfilePic(profilePic || ""); // Ensure fallback to an empty string
-        setFirstName(firstName || ""); // Ensure fallback to an empty string
-        setLastName(lastName || ""); // Ensure fallback to an empty string
-        setEmail(email || ""); // Ensure fallback to an empty string
-        console.log(email);
-      } catch (error) {
-        console.error("Error fetching user data:", error);
-      }
-    };
-
-    fetchUserData();
-  }, [isDarkMode]);
-
+ 
+ 
   const navigation_menu = [
     { name: "Dashboard", href: "/dashboard", icon: Menu, current: false },
     {
@@ -636,7 +615,64 @@ const SettingsComp = () => {
     }, 100);
     alert("Account deleted");
   };
-  console.log(email);
+
+
+
+  const [profilePicFile, setProfilePicFile] = useState(null);
+  const [loading, setLoading] = useState(false); // Add loading state
+
+  // Update local state when context values change
+  useEffect(() => {
+    setProfilePic(contextProfilePic);
+    setFirstName(contextFirstName);
+    setLastName(contextLastName);
+    setEmail(contextEmail);
+  }, [contextProfilePic, contextFirstName, contextLastName, contextEmail]);
+
+  // Function to handle saving changes
+  const handleSaveChanges = async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+
+      const formData = new FormData();
+      formData.append(
+        "personalInfo",
+        JSON.stringify({
+          name: `${firstName} ${lastName}`,
+          email: email,
+        })
+      );
+      if (profilePicFile) {
+        formData.append("profilePic", profilePicFile);
+      }
+
+      const response = await axios.put(
+        "http://localhost:5000/api/candidates/profile",
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+
+      if (response.status === 200) {
+        toast.success("Profile updated successfully!");
+        // Optionally update context values here if needed
+      } else {
+        toast.error("Failed to update profile. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error saving changes:", error);
+      toast.error("An error occurred while saving changes. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+  useEffect(() => {
+  }, [profilePic]);
   return (
     <div
       className={`min-h-screen ${
@@ -756,7 +792,14 @@ const SettingsComp = () => {
                   <BellIcon className="h-6 w-6" />
                   <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white dark:ring-gray-900" />
                 </button>
-                <UserMenu />
+                <UserMenu
+  profilePic={profilePic}
+  firstName={firstName}
+  lastName={lastName}
+  email={email}
+/>
+
+
               </div>
             </div>
           </header>
@@ -780,9 +823,41 @@ const SettingsComp = () => {
                       <button className="px-4 py-2 dark:text-gray-300 text-gray-700  border-gray-600 border rounded-lg hover:bg-red-500  transition-colors">
                         Cancel
                       </button>
-                      <button className="px-4 py-2 text-white bg-gray-500 rounded-lg hover:bg-gray-800 transition-colors">
-                        Save Changes
-                      </button>
+                      <button
+  className={`flex-1 px-4 py-2 text-white rounded-lg transition-colors ${
+    loading ? "bg-blue-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"
+  }`}
+  onClick={handleSaveChanges}
+  disabled={loading} // Disable the button while loading
+>
+  {loading ? (
+    <span className="flex items-center justify-center">
+      <svg
+        className="animate-spin h-5 w-5 text-white mr-2"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+      >
+        <circle
+          className="opacity-25"
+          cx="12"
+          cy="12"
+          r="10"
+          stroke="currentColor"
+          strokeWidth="4"
+        ></circle>
+        <path
+          className="opacity-75"
+          fill="currentColor"
+          d="M4 12a8 8 0 018-8v8H4z"
+        ></path>
+      </svg>
+      Saving...
+    </span>
+  ) : (
+    "Save Changes"
+  )}
+</button>
                     </div>
                   </div>
                 </div>
@@ -808,8 +883,11 @@ const SettingsComp = () => {
                         value={firstName} // Bind the state to the input
                         onChange={(e) => setFirstName(e.target.value)} // Update state on change
                         placeholder="Enter your first name"
-                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 dark:bg-black text-black bg-gray-200 transition-all duration-300 ease-in-out z-30"
-                        aria-required="true"
+                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 transition-all duration-300 ease-in-out z-30 ${
+                          isDarkMode
+                            ? "bg-black text-gray-300 border-gray-700 focus:ring-gray-500"
+                            : "bg-gray-200 text-gray-800 border-gray-300 focus:ring-blue-500"
+                        }`}                        aria-required="true"
                       />
                     </div>
                     <div className="space-y-2">
@@ -825,8 +903,11 @@ const SettingsComp = () => {
                         value={lastName} // Bind the state to the input
                         onChange={(e) => setLastName(e.target.value)} // Update state on change
                         placeholder="Enter your last name"
-                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 dark:bg-black text-black bg-gray-200 transition-all duration-300 ease-in-out z-30"
-                        aria-required="true"
+                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 transition-all duration-300 ease-in-out z-30 ${
+                          isDarkMode
+                            ? "bg-black text-gray-300 border-gray-700 focus:ring-gray-500"
+                            : "bg-gray-200 text-gray-800 border-gray-300 focus:ring-blue-500"
+                        }`}                        aria-required="true"
                       />
                     </div>
                   </div>
@@ -850,45 +931,60 @@ const SettingsComp = () => {
                       value={email} // Bind the state to the input
                       onChange={(e) => setEmail(e.target.value)} // Update state on change
                       placeholder="your.email@domain.com"
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 dark:bg-black text-black bg-gray-200 transition-all duration-300 ease-in-out z-30"
-                      aria-required="true"
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 transition-all duration-300 ease-in-out z-30 ${
+                        isDarkMode
+                          ? "bg-black text-gray-300 border-gray-700 focus:ring-gray-500"
+                          : "bg-gray-200 text-gray-800 border-gray-300 focus:ring-blue-500"
+                      }`}                      aria-required="true"
                     />
                   </div>
                 </section>
-
-                {/* Profile Picture Section */}
-                <section>
-                  <h2 className="text-lg font-medium mb-4 dark:text-gray-300 text-gray-700 transition-all duration-300 ease-in-out z-30">
-                    Profile Picture
-                  </h2>
-                  <div className="border-2 border-dashed rounded-lg p-6 text-center space-y-4 border-gray-400 dark:border-gray-200">
-                    <div className="mx-auto w-24 h-24 rounded-full bg-gray-50 flex items-center justify-center border-2 dark:border-gray-200">
-                      {profilePic ? (
-                        <img
-                          src={profilePic}
-                          alt="Profile"
-                          className="w-full h-full rounded-full object-cover"
-                        />
-                      ) : (
-                        <Upload className="h-8 w-8 text-gray-400" />
-                      )}
-                    </div>
-                    <div className="space-y-2">
-                      <p className="text-sm dark:text-gray-400 text-gray-600">
-                        Drop an image here or click to upload
-                      </p>
-                      <p className="text-xs dark:text-gray-400 text-gray-600">
-                        PNG, JPG up to 10MB
-                      </p>
-                    </div>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="w-full max-w-xs mx-auto text-sm dark:text-gray-600"
-                      aria-label="Upload profile picture"
-                    />
-                  </div>
-                </section>
+                <ToastContainer
+      position="bottom-right"
+      autoClose={5000}
+      hideProgressBar={false}
+      newestOnTop={false}
+      closeOnClick
+      rtl={false}
+      pauseOnFocusLoss
+      draggable
+      pauseOnHover
+      theme={isDarkMode ? "dark" : "light"}
+    />   {/* Profile Picture Section */}
+               <section>
+  <h2 className="text-lg font-medium mb-4 dark:text-gray-300 text-gray-700 transition-all duration-300 ease-in-out z-30">
+    Profile Picture
+  </h2>
+  <div className="border-2 border-dashed rounded-lg p-6 text-center space-y-4 border-gray-400 dark:border-gray-200">
+    <div className="mx-auto w-24 h-24 rounded-full bg-gray-50 flex items-center justify-center border-2 dark:border-gray-200">
+      {profilePic ? (
+        
+        <img
+        src={profilePic && profilePic.startsWith('/') ? `http://localhost:5000${profilePic}` : profilePic || "../../assets/images/avatar.jpg"}
+          alt="User avatar"
+          className="w-full h-full rounded-full object-cover"
+        />
+      ) : (
+        <Upload className="h-8 w-8 text-gray-400" />
+      )}
+    </div>
+    <div className="space-y-2">
+      <p className="text-sm dark:text-gray-400 text-gray-600">
+        Drop an image here or click to upload
+      </p>
+      <p className="text-xs dark:text-gray-400 text-gray-600">
+        PNG, JPG up to 10MB
+      </p>
+    </div>
+    <input
+      type="file"
+      accept="image/*"
+      onChange={(e) => setProfilePicFile(e.target.files[0])} // Bind the selected file to state
+      className="w-full max-w-xs mx-auto text-sm dark:text-gray-600"
+      aria-label="Upload profile picture"
+    />
+  </div>
+</section>
 
                 {/* Danger Zone Section */}
                 <section className="border-t pt-8">
@@ -979,9 +1075,41 @@ const SettingsComp = () => {
                   <button className="flex-1 px-4 py-2 text-gray-600 border rounded-lg hover:bg-gray-100 transition-colors">
                     Cancel
                   </button>
-                  <button className="flex-1 px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">
-                    Save Changes
-                  </button>
+                  <button
+  className={`flex-1 px-4 py-2 text-white rounded-lg transition-colors ${
+    loading ? "bg-blue-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"
+  }`}
+  onClick={handleSaveChanges}
+  disabled={loading} // Disable the button while loading
+>
+  {loading ? (
+    <span className="flex items-center justify-center">
+      <svg
+        className="animate-spin h-5 w-5 text-white mr-2"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+      >
+        <circle
+          className="opacity-25"
+          cx="12"
+          cy="12"
+          r="10"
+          stroke="currentColor"
+          strokeWidth="4"
+        ></circle>
+        <path
+          className="opacity-75"
+          fill="currentColor"
+          d="M4 12a8 8 0 018-8v8H4z"
+        ></path>
+      </svg>
+      Saving...
+    </span>
+  ) : (
+    "Save Changes"
+  )}
+</button>
                 </div>
               </div>
             </div>

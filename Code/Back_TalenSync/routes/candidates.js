@@ -266,50 +266,28 @@ router.post(
         activities = [], // Default to an empty array if not provided
       } = req.body;
 
-      // Log the incoming request data
-      console.log("Incoming data:", {
-        personalInfo,
-        experience,
-        education,
-        skills,
-        certifications,
-        languages,
-        activities,
-      });
-
       // Validate the required fields
       if (!personalInfo || !experience || !education || !skills) {
-        console.log("Validation failed: Missing required fields");
         return res.status(400).json({ message: "Required fields are missing" });
       }
 
       // Find the candidate profile
       const candidate = await Candidate.findOne({ userId: req.user._id });
       if (!candidate) {
-        console.log("Candidate profile not found for userId:", req.user._id);
         return res.status(404).json({ message: "Candidate profile not found" });
       }
 
-      // Log the existing candidate data
-      console.log("Existing candidate data:", candidate);
-
       // Update candidate data
-      const updatedData = {
-        personalInfo,
-        experience,
-        education,
-        skills,
-        certifications,
-        languages,
-        activities,
-      };
-      Object.assign(candidate, updatedData);
+      candidate.personalInfo = personalInfo;
+      candidate.experience = experience;
+      candidate.education = education;
+      candidate.skills = skills;
+      candidate.certifications = certifications;
+      candidate.languages = languages;
+      candidate.activities = activities;
 
       // Save the updated candidate data
       await candidate.save();
-
-      // Log the updated candidate data
-      console.log("Updated candidate data:", candidate);
 
       res.status(200).json({
         message: "Candidate data saved successfully",
@@ -321,6 +299,38 @@ router.post(
     }
   })
 );
+router.post("/save-candidate-draft",  async (req, res) => {
+  try {
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ message: "Unauthorized: User information is missing." });
+    }
+
+    const userId = req.user.id; // Extract user ID from the token
+    const draftData = req.body; // Candidate draft data from the request body
+
+    // Find the candidate by user ID
+    let candidate = await Candidate.findOne({ userId });
+
+    if (!candidate) {
+      // If no candidate exists, create a new one
+      candidate = new Candidate({
+        userId,
+        draft: draftData,
+      });
+    } else {
+      // Update the existing candidate's draft
+      candidate.draft = draftData;
+    }
+
+    // Save the candidate data
+    await candidate.save();
+
+    res.status(200).json({ message: "Draft saved successfully" });
+  } catch (error) {
+    console.error("Error saving candidate draft:", error);
+    res.status(500).json({ message: "Failed to save candidate draft" });
+  }
+});
 // Submit analysis for a CV
 router.post(
   "/submit-analysis/:cvIndex",
@@ -363,14 +373,104 @@ router.get(
   auth,
   checkRole(["candidate"]),
   asyncHandler(async (req, res) => {
-    const candidate = await Candidate.findOne({
-      userId: req.user._id,
-    }).populate("userId", "-password");
+    try {
+      const candidate = await Candidate.findOne({
+        userId: req.user._id,
+      }).populate("userId", "email");
 
-    if (!candidate)
-      return res.status(404).json({ message: "Candidate profile not found" });
+      if (!candidate) {
+        return res.status(404).json({ message: "Candidate profile not found" });
+      }
 
-    res.status(200).json(candidate);
+
+      const response = {
+        name: candidate.personalInfo?.name || null,
+        email: candidate.userId.email,
+        profilePic: candidate.profilePic || null,
+      };
+
+      res.status(200).json({
+        message: "Candidate profile retrieved successfully",
+        candidate: response,
+      });
+    } catch (error) {
+      console.error("Error fetching candidate profile:", error.message);
+      res.status(500).json({ message: "Internal Server Error" });
+    }
+  })
+);
+// Update candidate profile
+
+// Configure multer for profile picture uploads
+const uploadProfilePic = multer({
+  storage: multer.memoryStorage(), // Use memory storage to access file buffer
+  limits: { fileSize: 2 * 1024 * 1024 }, // 2MB limit
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ["image/jpeg", "image/png", "image/jpg"];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error("Invalid file type. Only JPEG and PNG are allowed."));
+    }
+  },
+});
+
+router.put(
+  "/profile",
+  auth,
+  checkRole(["candidate"]),
+  uploadProfilePic.single("profilePic"),
+  asyncHandler(async (req, res) => {
+    try {
+
+      const { personalInfo } = req.body;
+
+      if (!personalInfo) {
+        return res.status(400).json({ message: "Personal info is required." });
+      }
+
+      const parsedPersonalInfo = JSON.parse(personalInfo);
+      if (!parsedPersonalInfo.name || !parsedPersonalInfo.email) {
+        return res
+          .status(400)
+          .json({ message: "Name and email are required fields." });
+      }
+
+      const candidate = await Candidate.findOne({ userId: req.user._id });
+      if (!candidate) {
+        return res
+          .status(404)
+          .json({ message: "Candidate profile not found." });
+      }
+
+
+      candidate.personalInfo = parsedPersonalInfo;
+
+      if (req.file) {
+        // Convert the uploaded file to a Base64 string
+        const fileBuffer = req.file.buffer;
+        const base64Image = fileBuffer.toString("base64");
+        const mimeType = req.file.mimetype;
+
+        // Save the Base64 image in the database
+        candidate.profilePic = `data:${mimeType};base64,${base64Image}`;
+      }
+
+      // Save the updated candidate profile, including the profile picture
+      await candidate.save();
+
+      res.status(200).json({
+        message: "Profile updated successfully.",
+        candidate: {
+          name: candidate.personalInfo.name,
+          email: candidate.personalInfo.email,
+          profilePic: candidate.profilePic,
+        },
+      });
+    } catch (error) {
+      console.error("Error updating candidate profile:", error);
+      res.status(500).json({ message: "Internal Server Error" });
+    }
   })
 );
 router.get(
@@ -450,21 +550,7 @@ router.get(
   })
 );
 
-router.get("/profile", auth, checkRole(["candidate"]), async (req, res) => {
-  try {
-    const recruiter = await Recruiter.findOne({ userId: req.user._id })
-      .populate('userId', '-password')
-      .populate('jobPostings');
-    
-    if (!recruiter) 
-      return res.status(404).send({ message: "Recruiter profile not found" });
-    
-    res.status(200).send(recruiter);
-  } catch (error) {
-    console.error("Error fetching recruiter profile:", error);
-    res.status(500).send({ message: "Internal Server Error" });
-  }
-});
+
 // Get all CVs for the candidate
 router.get(
   "/cv-history",

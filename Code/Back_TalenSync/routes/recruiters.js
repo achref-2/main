@@ -171,7 +171,7 @@ router.post("/auth/google", async (req, res) => {
 });
 
 // Get recruiter profile
-router.get("/profile", auth, checkRole(["candidate"]), async (req, res) => {
+router.get("/profile", auth, checkRole(["recruiter"]), async (req, res) => {
   try {
     const recruiter = await Recruiter.findOne({ userId: req.user._id })
       .populate('userId', '-password')

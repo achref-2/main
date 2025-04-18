@@ -27,6 +27,9 @@ import TestingPage from "./pages/candidat/Pages/Testing";
 import Application from "./pages/candidat/Pages/Application";
 import NotFoundPage from "./pages/404";
 import Blog from "./pages/landingPage/Blog";
+import CvPreview from "./components/Cvpreview";
+import SinglePage from "./pages/candidat/Pages/SinglePage";
+import { UserProvider } from "./components/UserContext"
 export const scroll = new SmoothScroll('a[href*="#"]', {
   speed: 1000,
   speedAsDuration: true,
@@ -37,6 +40,7 @@ const App = () => {
 
   return (
     <DarkModeProvider>
+      <UserProvider>
       <Router>
         <AuthWrapper>
           <Routes>
@@ -50,11 +54,14 @@ const App = () => {
             <Route path="/Blog" element={<Blog />} />
             <Route path="/Jobs" element={<Jobs />} />
             <Route path="*" element={<NotFoundPage />} />
+            
             {!user ? (
               <Route path="/" element={<Navigate to="/" />} />
             ) : (
-              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/dashboard" element={ <Dashboard />} />
             )}
+        
+                    <Route path="/cv-preview" element={<CvPreview />} />
 
             <Route path="/dashboard/PastApplications" element={<PastApplications />}/>
             <Route path="/Settings" element={<Settings />} />
@@ -84,6 +91,7 @@ const App = () => {
           </Routes>
         </AuthWrapper>
       </Router>
+      </UserProvider>
     </DarkModeProvider>
   );
 };

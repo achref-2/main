@@ -1,4 +1,4 @@
-import React, { useState,useRef, useEffect } from "react";
+import React, { useState,useRef, useEffect,useContext } from "react";
 import {
   Menu,
   History,
@@ -27,6 +27,9 @@ import {
   ArrowRight,
   LogOut,
    FileClock,
+   Users,
+   Mail,
+   Calendar
 
 } from "lucide-react";
 import { Menu as HeadlessMenu } from "@headlessui/react";
@@ -35,6 +38,7 @@ import { MenuButton, MenuItem, MenuItems } from "@headlessui/react";
 import { Link } from "react-router-dom";
 import { useDarkMode } from "../../../../components/DarkModeProvider";
 import { JobCategoryIcon } from "../../../../components/Joblogo";
+import { UserContext } from "../../../../components/UserContext";
 
 const NavLink = ({ href, icon: Icon, children, isActive }) => (
   <Link
@@ -272,7 +276,7 @@ const SearchBar = ({ navigationMenu, navigationOption }) => {
 const UserMessage = () => {
   const { isDarkMode, toggleTheme } = useDarkMode();
   
-  
+ 
 
   
   const notifications = [
@@ -361,9 +365,11 @@ const UserMessage = () => {
     </HeadlessMenu>
   );
 };
- const UserMenu = () => {
+const UserMenu = ({ profilePic, firstName, lastName, email }) => {
   const { isDarkMode, toggleTheme } = useDarkMode();
-  
+  console.log("UserMenu received props:", { profilePic, firstName, lastName, email });
+
+
   const handleSignout = () => {
     localStorage.removeItem("token");
     fetch("http://localhost:5000/api/auth/logout", {
@@ -377,17 +383,17 @@ const UserMessage = () => {
   };
 
   const menuItems = [
-    { 
-      label: "Your History", 
-      href: "#profile", 
+    {
+      label: "Your History",
+      href: "/dashboard/PastApplications",
       icon: History,
-      description: "View your past activities"
+      description: "View your past activities",
     },
-    { 
-      label: "Settings", 
-      href: "/Settings", 
+    {
+      label: "Settings",
+      href: "/Settings",
       icon: Settings,
-      description: "Manage your preferences"
+      description: "Manage your preferences",
     },
   ];
 
@@ -397,22 +403,22 @@ const UserMessage = () => {
         <>
           <MenuButton className="flex items-center focus:outline-none">
             <div className="relative">
-              <img
-                className={`h-9 w-9 rounded-full object-cover ring-2 transition-all duration-200 ${
-                  open 
-                    ? 'ring-blue-500 ring-offset-2 ring-offset-white dark:ring-offset-zinc-900' 
-                    : 'ring-gray-200 dark:ring-gray-700 hover:ring-blue-400'
-                }`}
-                src="../../assets/images/avatar.jpg"
-                alt="User avatar"
-              />
+            <img
+  className={`h-9 w-9 rounded-full object-cover ring-2 transition-all duration-200 ${
+    open
+      ? "ring-blue-500 ring-offset-2 ring-offset-white dark:ring-offset-zinc-900"
+      : "ring-gray-200 dark:ring-gray-700 hover:ring-blue-400"
+  }`}
+  src={profilePic} // Use the profilePic prop
+  alt="User avatar"
+/>
               <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-green-500 ring-1 ring-white dark:ring-zinc-900"></span>
             </div>
           </MenuButton>
 
           <MenuItems
             className={`absolute right-0 z-50 mt-2 w-64 origin-top-right rounded-xl py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none transform transition-all duration-100 ${
-              open ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
+              open ? "scale-100 opacity-100" : "scale-95 opacity-0"
             } ${
               isDarkMode
                 ? "bg-zinc-800 text-white border border-zinc-700"
@@ -425,16 +431,16 @@ const UserMessage = () => {
                 <div className="flex-shrink-0">
                   <img
                     className="h-10 w-10 rounded-full"
-                    src="../../assets/images/avatar.jpg"
-                    alt=""
+                    src={profilePic } // Use the profilePic prop
+                    alt="User avatar"
                   />
                 </div>
                 <div className="ml-3">
                   <p className="text-sm font-medium text-gray-900 dark:text-white">
-                    John Doe
+                    {`${firstName} ${lastName}`} {/* Use the firstName and lastName props */}
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                    john.doe@example.com
+                    {email} {/* Use the email prop */}
                   </p>
                 </div>
               </div>
@@ -453,11 +459,13 @@ const UserMessage = () => {
                       }`}
                     >
                       <div className="flex items-center">
-                        <div className={`mr-3 p-1 rounded-md ${
-                          active 
-                            ? 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300' 
-                            : 'bg-gray-100 text-gray-500 dark:bg-zinc-700 dark:text-gray-400'
-                        }`}>
+                        <div
+                          className={`mr-3 p-1 rounded-md ${
+                            active
+                              ? "bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300"
+                              : "bg-gray-100 text-gray-500 dark:bg-zinc-700 dark:text-gray-400"
+                          }`}
+                        >
                           <Icon className="w-4 h-4" />
                         </div>
                         <div>
@@ -469,9 +477,11 @@ const UserMessage = () => {
                           )}
                         </div>
                       </div>
-                      <ChevronRight className={`w-4 h-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity duration-150 ${
-                        active ? 'opacity-100' : ''
-                      }`} />
+                      <ChevronRight
+                        className={`w-4 h-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity duration-150 ${
+                          active ? "opacity-100" : ""
+                        }`}
+                      />
                     </a>
                   )}
                 </MenuItem>
@@ -490,11 +500,13 @@ const UserMessage = () => {
                     }`}
                   >
                     <div className="flex items-center">
-                      <div className={`mr-3 p-1 rounded-md ${
-                        active 
-                          ? 'bg-amber-100 text-amber-600 dark:bg-indigo-900 dark:text-indigo-300' 
-                          : 'bg-gray-100 text-gray-500 dark:bg-zinc-700 dark:text-gray-400'
-                      }`}>
+                      <div
+                        className={`mr-3 p-1 rounded-md ${
+                          active
+                            ? "bg-amber-100 text-amber-600 dark:bg-indigo-900 dark:text-indigo-300"
+                            : "bg-gray-100 text-gray-500 dark:bg-zinc-700 dark:text-gray-400"
+                        }`}
+                      >
                         {isDarkMode ? (
                           <Sun className="w-4 h-4" />
                         ) : (
@@ -513,9 +525,7 @@ const UserMessage = () => {
                     <div className="flex h-5 items-center">
                       <div
                         className={`w-9 h-5 flex items-center rounded-full p-1 ${
-                          isDarkMode 
-                            ? "bg-indigo-600" 
-                            : "bg-gray-300"
+                          isDarkMode ? "bg-indigo-600" : "bg-gray-300"
                         }`}
                       >
                         <div
@@ -542,11 +552,13 @@ const UserMessage = () => {
                     }`}
                   >
                     <div className="flex items-center">
-                      <div className={`mr-3 p-1 rounded-md ${
-                        active 
-                          ? 'bg-red-100 text-red-600 dark:bg-red-900 dark:text-red-300' 
-                          : 'bg-gray-100 text-gray-500 dark:bg-zinc-700 dark:text-gray-400'
-                      }`}>
+                      <div
+                        className={`mr-3 p-1 rounded-md ${
+                          active
+                            ? "bg-red-100 text-red-600 dark:bg-red-900 dark:text-red-300"
+                            : "bg-gray-100 text-gray-500 dark:bg-zinc-700 dark:text-gray-400"
+                        }`}
+                      >
                         <LogOut className="w-4 h-4" />
                       </div>
                       <div>
@@ -566,7 +578,11 @@ const UserMessage = () => {
     </HeadlessMenu>
   );
 };
-const SidebarLayout = () => {
+// Improved Card component with proper score display
+
+const Jobs = () => {
+    const { profilePic, firstName, lastName, email } = useContext(UserContext);
+  
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const { isDarkMode } = useDarkMode();
   const [jobType, setJobType] = useState("all");
@@ -596,7 +612,8 @@ const SidebarLayout = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [sortOption, setSortOption] = useState("newest"); // State for sorting
-
+ 
+       
   const clearFilters = () => {
     setFilters({
       fullTime: false,
@@ -612,7 +629,8 @@ const SidebarLayout = () => {
   };
   const [selectedJob, setSelectedJob] = useState(null);
   const [jobs, setJobs] = useState([]); // Your original jobs from API/source
-
+const requestMade = useRef(false);
+      const [isLoading, setIsLoading] = useState(true);
   const [allJobs, setAllJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -629,7 +647,6 @@ const SidebarLayout = () => {
   });
   const [activeFilter, setActiveFilter] = useState("all");
 
-  // Handler function for job type change
 
   // Fetch jobs from the backend
   useEffect(() => {
@@ -775,10 +792,8 @@ const SidebarLayout = () => {
     return result;
   };
 
-  // Update the `useEffect` to dynamically update `filteredJobs` whenever filters, search, or sorting change
 
   {
-    /*const filteredJobs = getFilteredJobs();*/
   }
 
   // Function to safely render requirements
@@ -897,6 +912,7 @@ const SidebarLayout = () => {
   }, [searchQuery, filters, activeFilter, sortOption, allJobs, pinnedJobIds]); // Add pinnedJobIds as a dependency
   // Update the JSX for Quick Filters, Sort, and Advanced Filters
 
+
   return (
     <div
       className={`min-h-screen ${
@@ -999,8 +1015,13 @@ const SidebarLayout = () => {
                 navigationOption={navigation_option}
               />
               <div className="flex items-center gap-3">
-                
-                <UserMenu />
+              <UserMessage/>
+              <UserMenu
+  profilePic={profilePic || "../../assets/images/avatar.jpg"}
+  firstName={firstName || "First Name"}
+  lastName={lastName || "Last Name"}
+  email={email || "example@example.com"}
+/>
               </div>
             </div>
           </header>
@@ -1949,4 +1970,4 @@ const SidebarLayout = () => {
   );
 };
 
-export default SidebarLayout;
+export default Jobs;
