@@ -149,8 +149,16 @@ router.post('/apply-job', auth, checkRole(['candidate']), upload.single('cv'), a
     console.log('Request received for /apply-job');
 
     const { jobId, level, coverLetter: userCoverLetter } = req.body;
+    
+    // Validate required fields
+    if (!jobId) {
+      return res.status(400).json({
+        error: 'Missing required field',
+        details: 'Job ID is required'
+      });
+    }
 
-    // Process the uploaded CV file using the same logic as /api/TakeData
+    // Validate uploaded file
     if (!req.file) {
       return res.status(400).json({
         error: 'No CV file uploaded',
@@ -159,9 +167,69 @@ router.post('/apply-job', auth, checkRole(['candidate']), upload.single('cv'), a
     }
 
     console.log('File received:', req.file);
-
     const cvPath = req.file.path;
-    const pythonProcess = spawn('python', ['python/ExtractData.py', cvPath]);
+    
+    // Find candidate profile first to fail fast if not found
+    const candidate = await Candidate.findOne({ userId: req.user._id });
+    if (!candidate) {
+      // Clean up uploaded file
+      try {
+        fs.unlinkSync(cvPath);
+      } catch (err) {
+        console.error('Could not delete CV file after candidate not found:', err);
+      }
+      return res.status(404).json({ message: 'Candidate profile not found' });
+    }
+    
+    // Get job description for comparison
+    const job = await Job.findOne({ _id: jobId, status: 'active' }).populate({ 
+      path: 'recruiter', 
+      strictPopulate: false 
+    });
+    
+    if (!job) {
+      // Clean up uploaded file
+      try {
+        fs.unlinkSync(cvPath);
+      } catch (err) {
+        console.error('Could not delete CV file after job not found:', err);
+      }
+      return res.status(404).json({ message: 'Job posting not found or not active' });
+    }
+    
+    // Check deadline
+    if (job.deadline && new Date() > new Date(job.deadline)) {
+      // Clean up uploaded file
+      try {
+        fs.unlinkSync(cvPath);
+      } catch (err) {
+        console.error('Could not delete CV file after deadline check:', err);
+      }
+      return res.status(400).json({ message: 'Application deadline has passed' });
+    }
+
+    // Check existing application
+    const existingApplication = await Application.findOne({
+      candidateId: candidate._id,
+      jobId: job._id,
+    });
+    
+    if (existingApplication) {
+      // Clean up uploaded file
+      try {
+        fs.unlinkSync(cvPath);
+      } catch (err) {
+        console.error('Could not delete CV file after existing application check:', err);
+      }
+      return res.status(409).json({ message: 'You have already applied for this job' });
+    }
+
+    // Save job description temporarily to pass to Python script
+    const jobDescPath = path.join(os.tmpdir(), `job_desc_${jobId}_${Date.now()}.txt`);
+    fs.writeFileSync(jobDescPath, job.description);
+    
+    // Pass both CV and job description to the Python script
+    const pythonProcess = spawn('python', ['python/ExtractData.py', cvPath, jobDescPath]);
 
     let extractionResult = '';
     let errorOutput = '';
@@ -175,94 +243,136 @@ router.post('/apply-job', auth, checkRole(['candidate']), upload.single('cv'), a
       console.error(`Python script error: ${data.toString()}`);
     });
 
+    // Set timeout for Python process
+    const timeout = setTimeout(() => {
+      pythonProcess.kill();
+      console.error('Python script execution timed out');
+      
+      // Clean up files
+      try {
+        fs.unlinkSync(jobDescPath);
+      } catch (err) {
+        console.error('Could not delete temporary job description file:', err);
+      }
+      
+      return res.status(500).json({
+        error: 'Python script execution timed out',
+        details: 'The CV analysis process took too long to complete'
+      });
+    }, 30000); // 30 seconds timeout
+
     pythonProcess.on('close', async (code) => {
+      clearTimeout(timeout);
+      
+      // Cleanup the temporary job description file
+      try {
+        fs.unlinkSync(jobDescPath);
+      } catch (err) {
+        console.error('Could not delete temporary job description file:', err);
+      }
+
       if (code !== 0) {
         return res.status(500).json({
           error: 'Python script failed',
-          details: errorOutput.trim(),
+          details: errorOutput.trim() || 'Unknown error in CV analysis'
         });
       }
 
       try {
         console.log('Raw Extraction Result:', extractionResult);
 
+        // Properly extract JSON from the output
         let jsonMatch = extractionResult.match(/\{[\s\S]*\}/);
-        let cleanedResult = jsonMatch ? jsonMatch[0] : '{}';
-
-        cleanedResult = cleanedResult
+        if (!jsonMatch) {
+          throw new Error('Could not extract valid JSON from Python script output');
+        }
+        
+        let cleanedResult = jsonMatch[0]
           .replace(/}\s*{/g, ',')
           .replace(/]\s*\[/g, ',')
           .replace(/,,+/g, ',');
 
-        let result = JSON.parse(cleanedResult);
+        let result;
+        try {
+          result = JSON.parse(cleanedResult);
+        } catch (parseError) {
+          console.error('JSON parse error:', parseError);
+          throw new Error('Failed to parse JSON from Python script output');
+        }
 
         console.log('Parsed Extraction Result:', result);
 
-        // Save the extracted result to the candidate's profile
-        const candidate = await Candidate.findOne({ userId: req.user._id });
-        if (!candidate) {
-          return res.status(404).json({ message: 'Candidate profile not found' });
+        // Extract match score with improved robustness
+        let matchScore = 0;
+        
+        // First try to get it from job_match structure
+        if (result.job_match) {
+          const jobMatch = result.job_match;
+          if (typeof jobMatch.overall_match === 'number') {
+            matchScore = jobMatch.overall_match;
+          } else if (typeof jobMatch.overall_match === 'string') {
+            // Try to extract percentage from string like "75%" or "Score: 75%"
+            const percentMatch = jobMatch.overall_match.match(/(\d+(?:\.\d+)?)%?/);
+            if (percentMatch && percentMatch[1]) {
+              matchScore = parseFloat(percentMatch[1]);
+            }
+          }
+        } 
+        // Fall back to other possible fields
+        else if (result.similarity_score !== undefined) {
+          matchScore = typeof result.similarity_score === 'number' 
+            ? result.similarity_score 
+            : parseFloat(result.similarity_score) || 0;
+        } else if (result.score !== undefined) {
+          matchScore = typeof result.score === 'number'
+            ? result.score
+            : parseFloat(result.score) || 0;
         }
-
-        // Ensure similarity_score is present
-        if (!result.similarity_score) {
-          result.similarity_score = 0.5; // Default value if missing
+        
+        // Ensure score is between 0 and 1
+        if (matchScore > 1) {
+          matchScore = matchScore / 100;
         }
+        matchScore = Math.max(0, Math.min(1, matchScore));
 
+        console.log('Calculated match score:', matchScore);
+        
+        // Extract job match data
+        const jobMatch = result.job_match || {};
+        
+        // Update candidate's latestAnalysis
         candidate.latestAnalysis = {
-          similarity_score: result.similarity_score,
+          similarity_score: matchScore,
           skills: result.skills || [],
           suggestions: result.suggestions || [],
-          analyzedAt: new Date(),
+          job_match_details: {
+            improvement_suggestions: jobMatch.improvement_suggestions || [],
+            reasons: jobMatch.reasons || "No specific matching details provided",
+            strengths: jobMatch.strengths || [],
+            weaknesses: jobMatch.weaknesses || []
+          },
+          analyzedAt: new Date()
         };
+        
         await candidate.save();
-
         console.log('Saved extraction result to candidate profile:', candidate._id);
 
-        // Fetch job and recruiter
-        const job = await Job.findOne({ _id: jobId, status: 'active' }).populate({ path: 'recruiter', strictPopulate: false });
-        if (!job) return res.status(404).json({ message: 'Job posting not found or not active' });
-
-        console.log('Job found:', {
-          id: job._id,
-          title: job.title,
-          recruiter: job.recruiter?.companyName || 'N/A',
-        });
-
-        // Check deadline
-        if (job.deadline && new Date() > new Date(job.deadline)) {
-          console.error('Application deadline has passed for job:', jobId);
-          return res.status(400).json({ message: 'Application deadline has passed' });
-        }
-
-        // Check existing application
-        const existingApplication = await Application.findOne({
-          candidateId: candidate._id,
-          jobId: job._id,
-        });
-        if (existingApplication) {
-          console.error('Candidate has already applied for this job:', jobId);
-          return res.status(409).json({ message: 'You have already applied for this job' });
-        }
-
-        console.log('No existing application found. Proceeding to create a new one.');
-
         // Use provided cover letter or default from candidate
-        let finalCoverLetter = userCoverLetter || candidate.coverLetter || 'N/A';
+        const finalCoverLetter = userCoverLetter || candidate.coverLetter || '';
 
         // Create application
         const application = new Application({
           candidateId: candidate._id,
           jobId: job._id,
-          recruiterId: job.recruiter?._id, // Set recruiterId
+          recruiterId: job.recruiter?._id, 
           coverLetter: finalCoverLetter,
           cvPath,
           file: cvPath,
-          score: 0,
+          score: matchScore,
           date: new Date(),
           title: job.title,
           level: level || 'JUNIOR',
-          status: 'Pending',
+          status: 'Pending'
         });
 
         await application.save();
@@ -270,7 +380,7 @@ router.post('/apply-job', auth, checkRole(['candidate']), upload.single('cv'), a
           id: application._id,
           candidateId: application.candidateId,
           jobId: application.jobId,
-          recruiterId: application.recruiterId,
+          score: application.score
         });
 
         // Update job with new applicant
@@ -286,23 +396,29 @@ router.post('/apply-job', auth, checkRole(['candidate']), upload.single('cv'), a
         job.jobApplications.push(application._id);
 
         await job.save();
-
         console.log('Job updated with new applicant:', {
           jobId: job._id,
-          applicationCount: job.applicationCount,
-          applicants: job.applicants.map(applicant => applicant.toString()),
-          jobApplications: job.jobApplications.map(app => app.toString()),
+          applicationCount: job.applicationCount
         });
 
+        // Return successful response with application details
         res.status(201).json({
           message: 'Application submitted successfully',
-          application,
+          applicationId: application._id,
+          jobTitle: job.title,
+          matchScore: matchScore,
+          job_match: {
+            overall_score: matchScore,
+            improvement_suggestions: jobMatch.improvement_suggestions || [],
+            strengths: jobMatch.strengths || [],
+            reasons: jobMatch.reasons || "No specific matching details provided"
+          }
         });
       } catch (error) {
-        console.error('Failed to parse extraction results:', error.message);
+        console.error('Failed to process application:', error.message);
         res.status(500).json({
-          error: 'Failed to parse extraction results',
-          details: error.message,
+          error: 'Failed to process application',
+          details: error.message
         });
       }
     });
@@ -311,7 +427,6 @@ router.post('/apply-job', auth, checkRole(['candidate']), upload.single('cv'), a
     res.status(500).json({ message: 'Internal Server Error', error: error.message });
   }
 });
-
 router.put('/applications/:applicationId/status',auth, checkRole(['recruiter']), async (req, res) => {
   try {
     const { applicationId } = req.params;

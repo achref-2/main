@@ -886,7 +886,36 @@ router.get(
     });
   })
 );
+router.delete(
+  "/applications/:applicationId",
+  auth,
+  checkRole(["candidate"]),
+  asyncHandler(async (req, res) => {
+    const candidate = await Candidate.findOne({ userId: req.user._id });
+    if (!candidate) {
+      return res.status(404).json({ message: "Candidate profile not found" });
+    }
 
+    const { applicationId } = req.params;
+
+    // Find the application to ensure it belongs to the current candidate
+    const application = await Application.findOne({
+      _id: applicationId,
+      candidateId: candidate._id,
+    });
+
+    if (!application) {
+      return res.status(404).json({ message: "Application not found" });
+    }
+
+    // Delete the application
+    await Application.deleteOne({ _id: applicationId });
+
+    res.status(200).json({
+      message: "Application deleted successfully",
+    });
+  })
+);
 // Get candidate's cover letter by ID
 router.get('/candidate/:id/cover-letter', async (req, res) => {
   try {

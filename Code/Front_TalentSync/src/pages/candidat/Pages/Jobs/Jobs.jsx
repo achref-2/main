@@ -38,18 +38,24 @@ import { Link } from "react-router-dom";
 import { useDarkMode } from "../../../../components/DarkModeProvider";
 import { JobCategoryIcon } from "../../../../components/Joblogo";
 import { UserContext } from "../../../../components/UserContext";
-
-const NavLink = ({ href, icon: Icon, children, isActive }) => (
+const NavLink = ({ href, icon: Icon, children, isActive, disabled }) => (
   <Link
-    to={href}
+    to={disabled ? "#" : href} // Prevent navigation if disabled
     className={`group flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-300 ease-in-out z-30
       ${
-        isActive
-          ? "bg-zinc-200 text-black dark:bg-zinc-900 dark:text-white transition-all duration-300 ease-in-out z-30"
+        disabled
+          ? "cursor-not-allowed text-gray-400 dark:text-gray-600"
+          : isActive
+          ? "bg-zinc-200 text-black dark:bg-zinc-900 dark:text-white"
           : "text-gray-500 hover:bg-zinc-200 hover:text-black dark:text-gray-400 dark:hover:bg-zinc-900 dark:hover:text-white"
       }
     `}
     aria-current={isActive ? "page" : undefined}
+    onClick={(e) => {
+      if (disabled) {
+        e.preventDefault(); // Prevent navigation if disabled
+      }
+    }}
   >
     <Icon className="w-5 h-5 flex-shrink-0" />
     <span className="truncate">{children}</span>
@@ -371,6 +377,8 @@ const UserMenu = ({ profilePic, firstName, lastName, email }) => {
   const { isDarkMode, toggleTheme } = useDarkMode();
 
   const handleSignout = () => {
+    localStorage.clear();
+    sessionStorage.clear();
     localStorage.removeItem("token");
     fetch("http://localhost:5000/api/auth/logout", {
       method: "POST",
@@ -607,7 +615,7 @@ const Jobs = () => {
   ];
   const navigation_option = [
     { name: "Settings", href: "/Settings", icon: Settings, current: false },
-    { name: "Support", href: "/cv", icon: Wrench, current: false },
+    { name: "Support", href: "/cv", icon: Wrench, current: false , disabled: true},
   ];
   const [showFilters, setShowFilters] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -965,6 +973,7 @@ const Jobs = () => {
                   href={item.href}
                   icon={item.icon}
                   isActive={item.current}
+                  disabled={item.disabled}
                 >
                   {item.name}
                 </NavLink>
@@ -1086,7 +1095,7 @@ const Jobs = () => {
                       className={`relative px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-zinc-500 ${
                         activeFilter === "all"
                           ? "text-zinc-700 dark:text-zinc-200 shadow-sm"
-                          : " text-zinc-200 hover:text-zinc-900 dark:hover:text-white"
+                          : " text-zinc-500 hover:text-zinc-900 dark:hover:text-white"
                       }`}
                       onClick={() => setActiveFilter("all")}
                       aria-current={activeFilter === "all" ? "page" : undefined}
@@ -1100,12 +1109,11 @@ const Jobs = () => {
                       )}
                       <span className="relative">All Jobs</span>
                     </button>
-
                     <button
                       className={`relative px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-zinc-500 ${
                         activeFilter === "suggested"
-                          ? "text-white shadow-sm"
-                          : "text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+                          ? "text-zinc-700 dark:text-zinc-200 shadow-sm"
+                          : " text-zinc-500 hover:text-zinc-900 dark:hover:text-white"
                       }`}
                       onClick={() => setActiveFilter("suggested")}
                       aria-current={
@@ -1114,8 +1122,8 @@ const Jobs = () => {
                     >
                       {activeFilter === "suggested" && (
                         <span
-                          className="absolute inset-0 bg-zinc-600 dark:bg-zinc-700 rounded-md"
-                          aria-hidden="true"
+                        className="absolute  bg-zinc-100  inset-0 group-hover:bg-zinc-300 dark:group-hover:bg-zinc-700 hover:bg-zinc-200 active:bg-zinc-300 text-zinc-700 rounded-md text-sm font-medium transition-all duration-200 flex items-center gap-2 shadow-sm border border-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:active:bg-zinc-600 dark:text-zinc-200 dark:border-zinc-700 group"
+                        aria-hidden="true"
                         ></span>
                       )}
                       <span className="relative">Suggested For You</span>
@@ -1124,8 +1132,8 @@ const Jobs = () => {
                     <button
                       className={`relative px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-zinc-500 ${
                         activeFilter === "pinned"
-                          ? "text-white shadow-sm"
-                          : "text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+                          ? "text-zinc-700 dark:text-zinc-200 shadow-sm"
+                          : " text-zinc-500 hover:text-zinc-900 dark:hover:text-white"
                       }`}
                       onClick={() => setActiveFilter("pinned")}
                       aria-current={
@@ -1134,8 +1142,8 @@ const Jobs = () => {
                     >
                       {activeFilter === "pinned" && (
                         <span
-                          className="absolute inset-0 bg-zinc-600 dark:bg-zinc-700 rounded-md"
-                          aria-hidden="true"
+                        className="absolute  bg-zinc-100  inset-0 group-hover:bg-zinc-300 dark:group-hover:bg-zinc-700 hover:bg-zinc-200 active:bg-zinc-300 text-zinc-700 rounded-md text-sm font-medium transition-all duration-200 flex items-center gap-2 shadow-sm border border-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:active:bg-zinc-600 dark:text-zinc-200 dark:border-zinc-700 group"
+                        aria-hidden="true"
                         ></span>
                       )}
                       <span className="relative">Pinned</span>

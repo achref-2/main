@@ -50,9 +50,10 @@ def extract_text_from_pdf(pdf_path):
     
     return text.strip() if text.strip() else None
 
-def analyze_resume(resume_text):
+def analyze_resume(resume_text, job_description=None):
     """
     Analyze resume using Google Generative AI and return a structured JSON response
+    Optional job_description parameter to compare resume against job requirements
     """
     if not resume_text:
         return json.dumps({"error": "No resume text available for analysis."})
@@ -72,7 +73,16 @@ def analyze_resume(resume_text):
     
     Resume Content:
     {resume_text}
+    """
     
+    # Add job description to prompt if available
+    if job_description:
+        prompt += f"""
+    Job Description:
+    {job_description}
+    """
+    
+    prompt += """
     Analysis Criteria:
     1. Extract and organize contact information (name, email, phone).
     2. Summarize work experience.
@@ -81,7 +91,21 @@ def analyze_resume(resume_text):
     5. Provide feedback on the resume's strengths and areas for improvement.
     6. Suggest improvements for the candidate's LinkedIn profile based on the resume content.
     7. Highlight key projects.
-
+    """
+    
+    # Add scoring criteria if job description is provided
+    if job_description:
+        prompt += """
+    8. Resume vs. Job Description Score: 
+       - Provide a match score from 0-100% based on how well the resume matches the job description.
+       - Break down the score by:
+         a) Skills match (0-100%)
+         b) Experience match (0-100%)
+         c) Overall match (0-100%)
+       - Explain why you gave these scores and provide specific suggestions for improving the match.
+    """
+    
+    prompt += """
     Detailed Breakdown:
     - Extract contact information (name, email, phone).
     - Summarize the candidate's work experience, including roles.
@@ -90,6 +114,14 @@ def analyze_resume(resume_text):
     - Provide actionable feedback on the resume's structure, content, and clarity.
     - Suggest LinkedIn profile improvements to align with the resume and enhance professional visibility.
     - Highlight key projects undertaken by the candidate.
+    """
+    
+    if job_description:
+        prompt += """
+    - For the Resume vs. Job Description Score:
+      * Explain what skills from the job description are missing in the resume.
+      * Identify what experience requirements aren't adequately addressed.
+      * Suggest specific additions or modifications to better target this job.
     """
     
     # Generate analysis
@@ -102,7 +134,7 @@ def analyze_resume(resume_text):
             analysis_text = response.text.strip()
             
             # Organize the data
-            return json.dumps({
+            result = {
                 "contacts": {
                     "name": extract_field_from_text(analysis_text, "name"),
                     "email": extract_field_from_text(analysis_text, "email"),
@@ -110,13 +142,25 @@ def analyze_resume(resume_text):
                 },
                 "experience": extract_section(analysis_text, "experience"),
                 "skills": extract_section(analysis_text, "skills"),
-                "languages": extract_section(analysis_text, "languages"), 
-                 "feedback": {
-                    "resume": extract_section(analysis_text, "resume feedback"),  # Feedback for the resume
-                    "linkedin": extract_section(analysis_text, "linkedin feedback")  # Feedback for LinkedIn
-                }, 
+                "languages": extract_section(analysis_text, "languages"),
+                "feedback": {
+                    "resume": extract_section(analysis_text, "resume feedback"),
+                    "linkedin": extract_section(analysis_text, "linkedin feedback")
+                },
+                "projects": extract_section(analysis_text, "projects"),
                 "raw_analysis": analysis_text
-            }, indent=4)
+            }
+            
+            # Add job match scores if job description was provided
+            if job_description:
+                result["job_match"] = {
+                    "skills_match": extract_score(analysis_text, "skills match"),
+                    "experience_match": extract_score(analysis_text, "experience match"),
+                    "overall_match": extract_score(analysis_text, "overall match"),
+                    "improvement_suggestions": extract_section(analysis_text, "job match suggestions")
+                }
+            
+            return json.dumps(result, indent=4)
         else:
             return json.dumps({"error": "Empty response from AI model."})
     except Exception as e:
@@ -146,11 +190,11 @@ def extract_section(text, section_name):
     section_indicators = {
         "experience": ["experience", "work history", "employment"],
         "skills": ["skills", "technical skills", "capabilities"],
-        "languages": ["languages", "spoken languages", "proficient in"]  ,
-                "resume feedback": ["resume feedback", "feedback on resume", "resume improvement"],
-      "linkedin feedback": ["linkedin feedback", "linkedin improvement", "linkedin suggestions"]
-
-        # New indicator for languages
+        "languages": ["languages", "spoken languages", "proficient in"],
+        "resume feedback": ["resume feedback", "feedback on resume", "resume improvement"],
+        "linkedin feedback": ["linkedin feedback", "linkedin improvement", "linkedin suggestions"],
+        "projects": ["key projects", "projects", "portfolio"],
+        "job match suggestions": ["match improvement", "suggestions to improve match", "targeting the job"]
     }
     
     if section_name in section_indicators:
@@ -162,13 +206,54 @@ def extract_section(text, section_name):
     
     return f"Extracted {section_name} from the response"
 
+def extract_score(text, score_type):
+    """
+    Extract percentage scores from the text for job matching
+    """
+    score_patterns = {
+        "skills match": ["skills match", "skill match"],
+        "experience match": ["experience match"],
+        "overall match": ["overall match", "total match", "overall score"]
+    }
+    
+    # Default score if extraction fails
+    default_score = "Score not found"
+    
+    # Look for the score in the text
+    if score_type in score_patterns:
+        for pattern in score_patterns[score_type]:
+            for line in text.lower().split('\n'):
+                if pattern in line and ('%' in line or 'percent' in line):
+                    # Try to extract a numeric value followed by %
+                    import re
+                    match = re.search(r'(\d+)%', line)
+                    if match:
+                        return f"{match.group(1)}%"
+                    
+                    # If no exact match, return the relevant line
+                    return line.strip()
+    
+    return default_score
+
 def main():
     """Main function to extract and analyze resume text from a PDF."""
     if len(sys.argv) < 2:
         print("\033[91m[Error]\033[0m Please provide the PDF file path as an argument.")
+        print("Usage: python script.py <resume_pdf_path> [job_description_file_path]")
         sys.exit(1)
 
     pdf_path = sys.argv[1]
+    job_description = None
+    
+    # Check if job description file is provided
+    if len(sys.argv) >= 3:
+        job_description_path = sys.argv[2]
+        try:
+            with open(job_description_path, 'r') as job_file:
+                job_description = job_file.read()
+            print("\033[94m[Processing]\033[0m Job description provided. Will compare resume against job requirements.\n")
+        except Exception as e:
+            print(f"\033[93m[Warning]\033[0m Failed to read job description file: {e}")
     
     print("\033[94m[Processing]\033[0m Extracting text from the resume...\n")
     
@@ -182,7 +267,7 @@ def main():
         print("\n" + "="*50 + "\n")
 
         print("\033[1m--- Resume Analysis ---\033[0m")
-        analysis_json = analyze_resume(resume_text)
+        analysis_json = analyze_resume(resume_text, job_description)
         
         # Parse the JSON for better display
         try:

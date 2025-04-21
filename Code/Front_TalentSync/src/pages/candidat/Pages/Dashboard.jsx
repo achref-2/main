@@ -36,17 +36,24 @@ import axios from "axios";
 import { UserContext } from "../../../components/UserContext";
 
 import { useDarkMode } from "../../../components/DarkModeProvider";
-const NavLink = ({ href, icon: Icon, children, isActive }) => (
+const NavLink = ({ href, icon: Icon, children, isActive, disabled }) => (
   <Link
-    to={href}
+    to={disabled ? "#" : href} // Prevent navigation if disabled
     className={`group flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-300 ease-in-out z-30
       ${
-        isActive
-          ? "bg-zinc-200 text-black dark:bg-zinc-900 dark:text-white transition-all duration-300 ease-in-out z-30"
+        disabled
+          ? "cursor-not-allowed text-gray-400 dark:text-gray-600"
+          : isActive
+          ? "bg-zinc-200 text-black dark:bg-zinc-900 dark:text-white"
           : "text-gray-500 hover:bg-zinc-200 hover:text-black dark:text-gray-400 dark:hover:bg-zinc-900 dark:hover:text-white"
       }
     `}
     aria-current={isActive ? "page" : undefined}
+    onClick={(e) => {
+      if (disabled) {
+        e.preventDefault(); // Prevent navigation if disabled
+      }
+    }}
   >
     <Icon className="w-5 h-5 flex-shrink-0" />
     <span className="truncate">{children}</span>
@@ -276,6 +283,8 @@ const UserMenu = ({ profilePic, firstName, lastName, email }) => {
 
 
   const handleSignout = () => {
+    localStorage.clear();
+    sessionStorage.clear();
     localStorage.removeItem("token");
     fetch("http://localhost:5000/api/auth/logout", {
       method: "POST",
@@ -1047,7 +1056,7 @@ const Dashboard  = () => {
   ];
   const navigation_option = [
     { name: "Settings", href: "/Settings", icon: Settings, current: false },
-    { name: "Support", href: "/cv", icon: Wrench, current: false },
+    { name: "Support", href: "/cv", icon: Wrench, current: false, disabled: true },
   ];
   const [isLoading, setIsLoading] = useState(true);
 
@@ -1115,6 +1124,7 @@ const Dashboard  = () => {
                   href={item.href}
                   icon={item.icon}
                   isActive={item.current}
+                  disabled={item.disabled}
                 >
                   {item.name}
                 </NavLink>

@@ -278,6 +278,8 @@ const UserMenu = ({ profilePic, firstName, lastName, email }) => {
   const { isDarkMode, toggleTheme } = useDarkMode();
 
   const handleSignout = () => {
+    localStorage.clear();
+    sessionStorage.clear();
     localStorage.removeItem("token");
     fetch("http://localhost:5000/api/auth/logout", {
       method: "POST",
@@ -639,7 +641,7 @@ const SettingsComp = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
-
+  
       const formData = new FormData();
       formData.append(
         "personalInfo",
@@ -651,7 +653,7 @@ const SettingsComp = () => {
       if (profilePicFile) {
         formData.append("profilePic", profilePicFile);
       }
-
+  
       const response = await axios.put(
         "http://localhost:5000/api/candidates/profile",
         formData,
@@ -662,27 +664,24 @@ const SettingsComp = () => {
           },
         }
       );
-
+  
       if (response.status === 200) {
         toast.success("Profile updated successfully!");
-
-        // Update context values
-        setProfilePic(
-          profilePicFile ? URL.createObjectURL(profilePicFile) : profilePic
-        );
-        setFirstName(firstName);
-        setLastName(lastName);
+  
+        // Update context values with the Base64 string from the backend
+        const { profilePic, name, email } = response.data.candidate;
+        setProfilePic(profilePic);
+        setFirstName(name.split(" ")[0]);
+        setLastName(name.split(" ").slice(1).join(" "));
         setEmail(email);
-
+  
         // Optionally update sessionStorage
         sessionStorage.setItem(
           "userData",
           JSON.stringify({
-            profilePic: profilePicFile
-              ? URL.createObjectURL(profilePicFile)
-              : profilePic,
-            firstName,
-            lastName,
+            profilePic,
+            firstName: name.split(" ")[0],
+            lastName: name.split(" ").slice(1).join(" "),
             email,
           })
         );
@@ -696,7 +695,6 @@ const SettingsComp = () => {
       setLoading(false);
     }
   };
-  useEffect(() => {}, [profilePic]);
   return (
     <div
       className={`min-h-screen ${
@@ -985,7 +983,7 @@ const SettingsComp = () => {
     <div className="relative mx-auto w-28 h-28 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-700 mb-4 shadow-md group">
       {profilePic ? (
         <img
-          src={profilePic && profilePic.startsWith('/') ? `http://localhost:5000${profilePic}` : profilePic || "../../assets/images/avatar.jpg"}
+          src={profilePic && profilePic.startsWith('/') ? `http://localhost:5000${profilePic}` : profilePic || "./assets/images/avatar.jpg"}
           alt="User avatar"
           className="w-full h-full object-cover"
         />

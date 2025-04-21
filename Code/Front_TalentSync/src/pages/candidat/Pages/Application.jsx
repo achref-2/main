@@ -35,23 +35,29 @@ import { useNavigate } from "react-router-dom"; // Import useNavigate
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { ToastContainer } from "react-toastify";
-const NavLink = ({ href, icon: Icon, children, isActive }) => (
+const NavLink = ({ href, icon: Icon, children, isActive, disabled }) => (
   <Link
-    to={href}
+    to={disabled ? "#" : href} // Prevent navigation if disabled
     className={`group flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-300 ease-in-out z-30
       ${
-        isActive
-          ? "bg-zinc-200 text-black dark:bg-zinc-900 dark:text-white transition-all duration-300 ease-in-out z-30"
+        disabled
+          ? "cursor-not-allowed text-gray-400 dark:text-gray-600"
+          : isActive
+          ? "bg-zinc-200 text-black dark:bg-zinc-900 dark:text-white"
           : "text-gray-500 hover:bg-zinc-200 hover:text-black dark:text-gray-400 dark:hover:bg-zinc-900 dark:hover:text-white"
       }
     `}
     aria-current={isActive ? "page" : undefined}
+    onClick={(e) => {
+      if (disabled) {
+        e.preventDefault(); // Prevent navigation if disabled
+      }
+    }}
   >
     <Icon className="w-5 h-5 flex-shrink-0" />
     <span className="truncate">{children}</span>
   </Link>
 );
-
 const SearchBar = ({ navigationMenu, navigationOption }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -159,6 +165,8 @@ const UserMenu = ({ profilePic, firstName, lastName, email }) => {
 
 
   const handleSignout = () => {
+    localStorage.clear();
+    sessionStorage.clear();
     localStorage.removeItem("token");
     fetch("http://localhost:5000/api/auth/logout", {
       method: "POST",
@@ -417,7 +425,7 @@ const SidebarLayout = () => {
   ];
   const navigation_option = [
     { name: "Settings", href: "/Settings", icon: Settings, current: false },
-    { name: "Support", href: "/cv", icon: Wrench, current: false },
+    { name: "Support", href: "/cv", icon: Wrench, current: false , disabled: true},
   ];
 
   const { isDarkMode } = useDarkMode();
@@ -471,6 +479,7 @@ const SidebarLayout = () => {
   
         if (response.status === 200 && response.data.candidate) {
           const candidateData = response.data.candidate;
+          const analysisData = response.data.analysis; // Fetch analysis data from the response
   
           // Map the fetched data to the form fields
           const savedData = {
@@ -479,15 +488,18 @@ const SidebarLayout = () => {
             phone: candidateData.personalInfo?.phone || "",
             experience: candidateData.experience || "",
             skills: candidateData.skills || "",
-            languages: candidateData.personalInfo?.languages || "",
+            languages: candidateData.languages || "", // Updated to fetch directly from candidateData.languages
             linkedIn: candidateData.personalInfo?.linkedIn || "",
             github: candidateData.personalInfo?.github || "",
+            analysisFeedback: analysisData?.feedback?.resume || "", // Include analysis feedback
+            analysisSuggestions: analysisData?.feedback?.linkedin || "", // Include LinkedIn suggestions
           };
   
           setFormData(savedData); // Populate the form with fetched data
-          console.log("Fetched candidate data:", savedData);
-          setCurrentPage(5); // Navigate to Step 2
+          console.log("Fetched candidate data and analysis:", savedData);
+          setCurrentPage(2); // Navigate to Step 2
         } else {
+          console.warn("Unexpected response format:", response);
           alert("Failed to retrieve candidate data. Please try again.");
         }
       } catch (error) {
@@ -505,6 +517,8 @@ const SidebarLayout = () => {
         languages: "",
         linkedIn: "",
         github: "",
+        analysisFeedback: "",
+        analysisSuggestions: "",
       });
     }
   };
@@ -907,7 +921,7 @@ const SidebarLayout = () => {
     setMessage("");
     setError("");
     setIsUploading(true); // Set loading state to true
-  
+    
     try {
       const token = localStorage.getItem("token");
       if (!token) {
@@ -915,18 +929,18 @@ const SidebarLayout = () => {
         setIsUploading(false); // Reset loading state
         return;
       }
-  
+      
       console.log("selectedJob:", selectedJob._id);
       console.log("Submitting application with the following data:");
       console.log("Cover Letter:", coverLetter);
       console.log("File:", file);
-  
+      
       // Create FormData to send the file and other data
       const formData = new FormData();
       formData.append("jobId", selectedJob._id);
       formData.append("coverLetter", coverLetter);
       formData.append("cv", file); // Attach the CV file
-  
+      
       // Make the API request
       const response = await axios.post(
         "http://localhost:5000/api/applications/apply-job",
@@ -938,19 +952,66 @@ const SidebarLayout = () => {
           },
         }
       );
-  
+      
       console.log("Application submitted successfully:", response.data);
-      setMessage(response.data.message);
-  
+      
+      // Display the resume-to-job match score if available
+      if (response.data.application && response.data.application.score !== undefined) {
+        const score = response.data.application.score;
+        const scorePercentage = typeof score === 'number' ? `${Math.round(score * 100)}%` : score;
+        
+        setMessage(`Application submitted successfully. Your resume match score: ${scorePercentage}`);
+        
+        // Show toast with score information
+        toast.success(
+          <div>
+            <p>Application submitted successfully!</p>
+            <p>Resume match score: <strong>{scorePercentage}</strong></p>
+            <p className="text-sm">Redirecting to Past Applications...</p>
+          </div>,
+          {
+            position: "bottom-right",
+            autoClose: 5000, // Give users a bit more time to see the score
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+            theme: "colored",
+            onClose: () => {
+              // Redirect to Past Applications after toast closes
+              window.location.href = "/dashboard/PastApplications";
+            },
+          }
+        );
+      } else {
+        // Fallback if no score is available
+        setMessage(response.data.message);
+        toast.success("Application submitted successfully. Redirecting...", {
+          position: "bottom-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+          theme: "colored",
+          onClose: () => {
+            // Redirect to Past Applications after toast closes
+            window.location.href = "/dashboard/PastApplications";
+          },
+        });
+      }
+      
       // Clear form fields
       setCoverLetter("");
       setFile(null);
     } catch (err) {
       console.error("Error submitting application:", err);
-  
+      
       if (err.response) {
         console.error("Backend response:", err.response.data);
-  
+        
         // Handle specific error for already applied
         if (err.response.status === 409) {
           toast.error("You have already applied for this job.", {
@@ -1039,11 +1100,7 @@ const SidebarLayout = () => {
 
   
   // Loading animation component
-  const LoadingAnimation = () => (
-    <div className="inline-block mr-2">
-      <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-    </div>
-  );
+
 
   
   // Auto-populate job details from selectedJob when available
@@ -1157,7 +1214,8 @@ const SidebarLayout = () => {
                     </button>
                   </div>
                 </div>
-        
+                
+                {/* Rest of the code remains the same... */}
                 <div className="bg-gray-50 dark:bg-zinc-950 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
                   <h3 className="text-sm font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-3">
                     Current Selection
@@ -1209,7 +1267,7 @@ const SidebarLayout = () => {
             </div>
           </div>
           
-          
+         
         </div>
         );
 
@@ -1400,25 +1458,44 @@ const SidebarLayout = () => {
               </button>
               
               {(activeSection === 'experience' || activeSection === null) && (
-                <div className="px-6 py-4 border-t border-gray-200 dark:border-zinc-800">
-                  {editMode ? (
-                    renderEditableField(
-                      "Experience Details",
-                      "experience",
-                      formData.experience,
-                      true
-                    )
-                  ) : backendData?.result?.raw_analysis ? (
-                    <div className="prose dark:prose-invert max-w-none">
-                      {parseExperienceSection(backendData.result.raw_analysis)}
-                    </div>
-                  ) : (
-                    <p className="text-gray-500 dark:text-gray-400">
-                      No work experience data available
-                    </p>
-                  )}
-                </div>
-              )}
+  <div className="px-6 py-4 border-t border-gray-200 dark:border-zinc-800">
+    {editMode ? (
+      renderEditableField(
+        "Experience Details",
+        "experience",
+        formData.experience,
+        true
+      )
+    ) : backendData?.result?.raw_analysis ? (
+      <div className="prose dark:prose-invert max-w-none">
+        {parseExperienceSection(backendData.result.raw_analysis)}
+      </div>
+    ) : formData.experience && formData.experience.length > 0 ? (
+      <div className="prose dark:prose-invert max-w-none">
+        {formData.experience.map((exp, index) => (
+          <div key={index} className="mb-4 last:mb-0">
+            <div className="flex justify-between items-start">
+              <h4 className="font-medium text-gray-900 dark:text-white mb-1">{exp.title} at {exp.company}</h4>
+              <span className="text-sm text-gray-500 dark:text-gray-400">{exp.period}</span>
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">{exp.location}</p>
+            {exp.responsibilities && exp.responsibilities.length > 0 && (
+              <ul className="list-disc pl-5 text-sm text-gray-600 dark:text-gray-300">
+                {exp.responsibilities.map((resp, idx) => (
+                  <li key={idx}>{resp}</li>
+                ))}
+              </ul>
+            )}
+          </div>
+        ))}
+      </div>
+    ) : (
+      <p className="text-gray-500 dark:text-gray-400">
+        No work experience data available
+      </p>
+    )}
+  </div>
+)}
             </div>
     
             {/* Skills */}
@@ -1447,20 +1524,33 @@ const SidebarLayout = () => {
               </button>
               
               {(activeSection === 'skills' || activeSection === null) && (
-                <div className="px-6 py-4 border-t border-gray-200 dark:border-zinc-800">
-                  {editMode ? (
-                    renderEditableField("Skills", "skills", formData.skills, true)
-                  ) : backendData?.result?.raw_analysis ? (
-                    <div className="prose dark:prose-invert max-w-none">
-                      {parseSkillsSection(backendData.result.raw_analysis)}
-                    </div>
-                  ) : (
-                    <p className="text-gray-500 dark:text-gray-400">
-                      No skills data available
-                    </p>
-                  )}
-                </div>
-              )}
+  <div className="px-6 py-4 border-t border-gray-200 dark:border-zinc-800">
+    {editMode ? (
+      renderEditableField("Skills", "skills", formData.skills, true)
+    ) : backendData?.result?.raw_analysis ? (
+      <div className="prose dark:prose-invert max-w-none">
+        {parseSkillsSection(backendData.result.raw_analysis)}
+      </div>
+    ) : formData.skills && formData.skills.length > 0 ? (
+      <div className="prose dark:prose-invert max-w-none">
+        <div className="flex flex-wrap gap-2">
+          {formData.skills.map((skill, index) => (
+            <span 
+              key={index} 
+              className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300"
+            >
+              {skill}
+            </span>
+          ))}
+        </div>
+      </div>
+    ) : (
+      <p className="text-gray-500 dark:text-gray-400">
+        No skills data available
+      </p>
+    )}
+  </div>
+)}
             </div>
             
             {/* Languages */}
@@ -2115,6 +2205,7 @@ const SidebarLayout = () => {
                   href={item.href}
                   icon={item.icon}
                   isActive={item.current}
+                  disabled={item.disabled}
                 >
                   {item.name}
                 </NavLink>
